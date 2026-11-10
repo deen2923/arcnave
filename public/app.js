@@ -4377,6 +4377,43 @@ function plxOf(o) {
   return best ? best.plx : null;
 }
 const CHI99 = { 2: 9.21, 4: 13.28, 6: 16.81, 8: 20.09 };
+/* v0.55 field self-calibration. The single images' errors miss a part that is the same for a whole pass (seen on
+   Epsilon Indi B: the images of a pass scatter less than their errors, the passes more; most likely the undersampled
+   6.2″ pixels, where a star falls at a different place inside a pixel in each pass and a Gaussian fit shifts a little).
+   So each field measures it: up to 40 Gaia stars of these same images (G 9 to 17.5, with Gaia motion and parallax, not
+   saturated, three or more passes) are measured exactly like a mover and compared with where Gaia puts them in each pass.
+   The floor is the error added to every pass that makes their χ² equal its degrees of freedom (0 when their errors are
+   already big enough). Tested: Epsilon Indi field 0.178″ (17 stars), WISE 0855 0.133″ (21), Barnard 0 (33). Cached per
+   run and per number of images loaded. */
+const FLOOR = { key: null, res: null, busy: false };
+function fieldFloor() {
+  if (!GAIA.data || !S.field || S.eps.length < 2) return null;
+  const key = S.run + ':' + S.frames.size; if (FLOOR.key === key) return FLOOR.res; if (FLOOR.busy) return null;
+  FLOOR.busy = true; let res = null;
+  try {
+    const f = S.field, n = f.n, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n };
+    const passRes = (ff, pmE, pmN, plx) => { const P = ff.passes, t0 = P[0].mjd, r0 = ff.frames[0];
+      const m = P.map(q => { const t = (q.mjd - t0) / 365.25, pf = plxFactor(r0.ra, r0.dec, q.mjd); return { q, mE: pmE * t + plx / 1000 * pf[0], mN: pmN * t + plx / 1000 * pf[1] }; });
+      const wE = m.map(x => 1 / x.q.sE ** 2), wN = m.map(x => 1 / x.q.sN ** 2), sw = a => a.reduce((x, y) => x + y, 0);
+      const zE = m.reduce((a, x, i) => a + wE[i] * (x.q.E - x.mE), 0) / sw(wE), zN = m.reduce((a, x, i) => a + wN[i] * (x.q.N - x.mN), 0) / sw(wN);
+      return m.map(x => ({ rE: x.q.E - x.mE - zE, rN: x.q.N - x.mN - zN, sE: x.q.sE, sN: x.q.sN })); };
+    const chiWith = (rs, s) => rs.reduce((a, x) => a + x.rE ** 2 / (x.sE ** 2 + s * s) + x.rN ** 2 / (x.sN ** 2 + s * s), 0);
+    const refs = GAIA.data.stars.filter(s => s.pmra != null && s.plx != null && s.g > 9 && s.g < 17.5).map(s => { const q = gAt(s, epMid(0)); return { s, g: F.skyToGrid(q[0], q[1], grid) }; })
+      .filter(o => o.g && o.g[0] > 15 && o.g[1] > 15 && o.g[0] < n - 16 && o.g[1] < n - 16).sort((a, b) => a.s.g - b.s.g).slice(0, 40);
+    const meas = [];
+    for (const o of refs) { const obj = gaiaObj(o.s), ff = ffCore((e, fr, im) => F.skyToGrid(...ctAt(obj, im.mjd), grid), { H: 3, minSnr: 5, plx: o.s.plx, raw: true });
+      if (!ff || ff.fail || ff.passes.length < Math.min(3, S.eps.length) || ff.nSat) continue;
+      const rs = passRes(ff, (o.s.pmra || 0) / 1000, (o.s.pmdec || 0) / 1000, o.s.plx); meas.push({ rs, k: 2 * rs.length - 2 }); }
+    if (meas.length >= 5) {
+      const K = meas.reduce((a, x) => a + x.k, 0), tot = s => meas.reduce((a, x) => a + chiWith(x.rs, s), 0);
+      let lo = 0, hi = 3; if (tot(0) <= K) hi = 0; for (let i = 0; i < 50 && hi > 0; i++) { const s = (lo + hi) / 2; if (tot(s) > K) lo = s; else hi = s; }
+      res = { floor: (lo + hi) / 2, refs: meas.length, before: tot(0) / K };
+    }
+  } catch (e) { console.warn('fieldFloor', e); }
+  FLOOR.busy = false; FLOOR.key = key; FLOOR.res = res; return res;
+}
+// the share of a frame-by-frame measurement's images in which the star is saturated (its centre blank)
+const satShare = ff => ff && ff.nKept ? ff.nSat / ff.nKept : 0;
 // Ranks 2 and 3: the star in every image of every pass, then one straight line through the passes.
 // A position on the aligned grid (lined up on pass 1) moved back onto one image's own grid, before ARCNAVE's star alignment.
 const toRaw = (fr, x, y) => { const sh = fr.shift, ap = sh && sh.ok && !sh.ref && Math.hypot(sh.dx, sh.dy) > 0.05 && Math.hypot(sh.dx, sh.dy) < 4; return [x - (ap ? sh.dx : 0), y - (ap ? sh.dy : 0)]; };
@@ -4423,6 +4460,11 @@ function ffCore(guess, opt = {}) {
     passes.push({ e, mjd: k.reduce((s, q) => s + q.mjd, 0) / k.length, E, N, sE, sN, nUsed: k.length, nAll: fs.length, sat: k.some(q => q.sat),
       ra: r0.ra + E / 3600 / cd, dec: r0.dec + N / 3600 });
   }
+  // v0.55: the field's own systematic floor (fieldFloor: measured on Gaia stars of these same images) is added to every
+  // pass's error; opt.raw (the calibration itself) leaves the errors as measured
+  const FL = opt.raw ? null : fieldFloor();
+  if (FL && FL.floor > 0) passes.forEach(q => { q.sE0 = q.sE; q.sN0 = q.sN; q.sE = Math.hypot(q.sE, FL.floor); q.sN = Math.hypot(q.sN, FL.floor); });
+  base.floor = FL; base.nSat = frames.filter(q => q.sat && !q.out).length; base.nKept = frames.filter(q => !q.out).length;
   base.passes = passes;
   if (passes.length < 2) return Object.assign(base, { fail: 'only one pass could be measured' });
   const plx = opt.plx || null, t0 = passes[0].mjd;
@@ -4440,13 +4482,34 @@ function ffCore(guess, opt = {}) {
   const at = t => [r0.ra + (lE.b + lE.mu * t) / 3600 / cd, r0.dec + (lN.b + lN.mu * t) / 3600];
   const muCat = opt.muCat ?? null;   // v0.55 U4: catE, catN, cat, catSmu kept for catRow
   return Object.assign(base, { plx, label, muCat, catE: opt.catE ?? null, catN: opt.catN ?? null, cat: opt.cat || null, catSmu: opt.catSmu || null, fit: { muE: lE.mu, muN: lN.mu, sE: lE.s, sN: lN.s, mu, smu, sig, chi2, dof, crit, pa, dir: COMPASS[Math.round(pa / 45) % 8],
+    uwe: dof > 0 ? Math.sqrt(chi2 / dof) : null,   // v0.55: unit weight error, as Gaia's RUWE (1 = the passes fit within their errors)
     days: last.mjd - t0, line: [at(0), at(last.t)] }, used: passes.reduce((s, q) => s + q.nUsed, 0) });
 }
 const FF_COL = ['#ffffff', '#5eead4', '#c4b5fd', '#fbbf24', '#67e8f9', '#f9a8d4'];
+/* v0.55 fit quality, as Gaia's RUWE: the unit weight error of the straight line through the passes, with the field's
+   floor in the errors. Above 1.4 (Gaia's usual cut) the passes do not sit on one line as well as their errors say: an
+   unresolved binary (its centre of light wobbles), a blend, or one bad pass. And a saturated star (most images with a
+   blank centre) is fitted on its wings, which can go wrong: said plainly. */
+// χ² limits by degrees of freedom: 95 % and 99 % (with 2 to 6 numbers, a fixed UWE cut like Gaia's 1.4 would flag one
+// steady star in seven by chance, so the limit follows the degrees of freedom)
+const CHI95_1 = { 1: 3.84, 2: 5.99, 3: 7.81, 4: 9.49, 5: 11.07, 6: 12.59, 7: 14.07, 8: 15.51 }, CHI99_1 = { 1: 6.63, 2: 9.21, 3: 11.34, 4: 13.28, 5: 15.09, 6: 16.81, 7: 18.48, 8: 20.09 };
+const fitLevel = (chi, dof) => !(dof > 0) ? null : chi > (CHI99_1[dof] || dof + 3 * Math.sqrt(2 * dof)) ? 'bad' : chi > (CHI95_1[dof] || dof + 2 * Math.sqrt(2 * dof)) ? 'high' : 'ok';
+function fitQuality(ff) {
+  if (!ff || ff.fail || !ff.fit) return null; const t = ff.fit, sat = satShare(ff), out = [], lv = fitLevel(t.chi2, t.dof);
+  if (lv) out.push(lv === 'bad' ? `⚠ Fit quality: UWE ${t.uwe.toFixed(2)} (χ² ${t.chi2.toFixed(1)} for ${t.dof} degrees of freedom, past the 99 % limit): the passes scatter more than their errors allow, even with this field's own floor. An unresolved binary (its centre of light wobbles as the pair orbits), a blend with a neighbour or one bad pass can do this: treat the motion with care.`
+    : lv === 'high' ? `△ Fit quality: UWE ${t.uwe.toFixed(2)} (χ² ${t.chi2.toFixed(1)} for ${t.dof} degrees of freedom, past the 95 % but within the 99 % limit): a little more scatter than the errors say; one steady star in twenty does this by chance.`
+    : `✓ Fit quality: UWE ${t.uwe.toFixed(2)} (χ² ${t.chi2.toFixed(1)} for ${t.dof} degrees of freedom): the passes fit one straight line within their errors.`);
+  else out.push('Fit quality: not testable with two passes (a straight line always fits two points).');
+  if (sat > 0.5) out.push(`⚠ Saturated in ${ff.nSat} of ${ff.nKept} images: too bright for SPHEREx, so it was fitted on the wings of its light only. Such a fit can be off by more than its error; the catalogue's motion is the safer number.`);
+  return h('p', { class: 'fitq' + (lv === 'bad' || sat > 0.5 ? ' warn' : '') }, out.join(' '));
+}
 function ffCard(ff) {
   if (!ff) return null;
   const note = h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'How: every image is lined up on Gaia DR3 by itself' + (ff.reg.n ? ` (${ff.reg.stars} Gaia stars per image on average, ${ff.reg.rms.toFixed(2)}″ typical scatter)` : '') +
-    '; the star is fitted in each image with a pixel-integrated Gaussian, leaving out flagged or saturated pixels; the images of one pass (about two weeks) are averaged, and their scatter gives the error; one straight line is fitted through the passes. Only a motion of 5σ or more counts as measured.');
+    '; the star is fitted in each image with a pixel-integrated Gaussian, leaving out flagged or saturated pixels; the images of one pass (about two weeks) are averaged, and their scatter gives the error; one straight line is fitted through the passes. Only a motion of 5σ or more counts as measured.' +
+    // v0.55: the field's own calibration
+    (ff.floor ? ff.floor.floor > 0.0005 ? ` Each pass's error also includes ${ff.floor.floor.toFixed(2)}″ that this field's images share: ${ff.floor.refs} Gaia stars here, measured the same way, scatter that much more than their own errors around where Gaia's motion and parallax put them.`
+      : ` ${ff.floor.refs} Gaia stars here, measured the same way, stay within their own errors around where Gaia puts them, so the errors are used as they are.` : ''));
   if (ff.fail) return h('div', { class: 'ffbox' }, h('p', { class: 'trksum' }, h('b', {}, 'Frame by frame: '), `not possible here, ${ff.fail} (${ff.tried} images tried).`), note);
   const t = ff.fit, yrs = t.days / 365.25, cat = ff.muCat != null ? ` Its catalogue motion is ${ff.muCat.toFixed(2)}″/yr.` : '';
   const head = {
@@ -4459,6 +4522,7 @@ function ffCard(ff) {
   return h('div', { class: 'ffbox' },
     h('p', { class: 'trksum' }, h('b', {}, 'Frame by frame: '), head),
     catRow({ mu: t.mu, smu: t.smu, cat: ff.cat, catMu: ff.muCat, catSmu: ff.catSmu, diff: ff.catE != null ? Math.hypot(t.muE - ff.catE, t.muN - ff.catN) : null }),   // v0.55 U4
+    fitQuality(ff),   // v0.55: the RUWE-like check and the saturation share
     flagRow(ff.passes.map(q => { const p = F.skyToGrid(q.ra, q.dec, cardGrid()); return p && { e: q.e, x: p[0], y: p[1] }; }).filter(Boolean)),   // v0.55 U6
     h('table', { class: 'fftab' }, h('thead', {}, h('tr', {}, ...['Pass', 'Images used', 'East″', 'North″', '±″'].map(s => h('th', {}, s)))),
       h('tbody', {}, ...ff.passes.map((q, i) => h('tr', {}, h('td', {}, h('i', { class: 'ffdot', style: `background:${FF_COL[i % FF_COL.length]}` }), `${q.e + 1} · ${fmtMonth(S.eps[q.e].t0)}`),
@@ -4534,7 +4598,9 @@ async function deepSearch() {
     const all = [];
     for (let i = 0; i < src.length; i++) {
       if ((run !== S.run || DS.stop)) return;
-      const s = src[i], ff = ffCore((e, fr) => toRaw(fr, s.x, s.y), { H: 3, minSnr: 3 });
+      // v0.55: the search decides on the errors as measured (raw), with its own field calibration (kErr below); the
+      // field floor is added afterwards, for what the cards show (ffShow)
+      const s = src[i], ff = ffCore((e, fr) => toRaw(fr, s.x, s.y), { H: 3, minSnr: 3, raw: true });
       if (ff && !ff.fail && ff.fit) all.push({ s, ff });
       if (i % 25 === 0) { say(`A stack of ${D.nImg} images found ${src.length} sources down to 5σ. Each is now measured in every image, lined up on Gaia.`, i, src.length); await sleep(0); }
     }
@@ -4552,13 +4618,16 @@ async function deepSearch() {
       .map(x => { const p = x.ff.passes[0], fl = { ff: x.ff, ra: p.ra, dec: p.dec, snr: x.s.snr, mu: x.ff.fit.mu, dir: x.ff.fit.dir }; Object.assign(fl, dsGaia(fl, days));
         // matched to a Gaia star: fit again with its parallax taken off (a nearby star swings back and forth), then label again
         const P = fl.gaia && fl.gaia.plx > 1 ? fl.gaia.plx : fl.label === 'target' && CHALLENGE[S.ct].plx > 1 ? CHALLENGE[S.ct].plx : null;
-        if (P) { const ff2 = ffCore((e, fr) => toRaw(fr, x.s.x, x.s.y), { H: 3, minSnr: 3, plx: P, muCat: fl.pm });
+        if (P) { const ff2 = ffCore((e, fr) => toRaw(fr, x.s.x, x.s.y), { H: 3, minSnr: 3, plx: P, muCat: fl.pm, raw: true });
           if (ff2 && !ff2.fail && ff2.fit) { fl.ff = ff2; fl.mu = ff2.fit.mu; fl.dir = ff2.fit.dir; Object.assign(fl, dsGaia(fl, days)); } }
         else if (fl.pm != null) fl.ff.muCat = fl.pm;
-        return fl; })
+        fl.src = x.s; return fl; })
       .sort((a, b) => b.snr - a.snr)
       .filter((fl, i, arr) => !arr.some((o, j) => j < i && Math.hypot((o.ra - fl.ra) * Math.cos(fl.dec * Math.PI / 180), o.dec - fl.dec) * 3600 < 1.5 * arc))   // one source, two peaks: keep the brighter
       .sort((a, b) => b.ff.fit.sig - a.ff.fit.sig);
+    // v0.55: what the cards, the film and the charts show: the same fit with the field's floor in the errors
+    for (const fl of flagged) { const o = fl.ff, fd = ffCore((e, fr) => toRaw(fr, fl.src.x, fl.src.y), { H: 3, minSnr: 3, plx: o.plx || undefined, muCat: o.muCat ?? fl.pm ?? null });
+      if (fd && !fd.fail && fd.fit) { fl.ffRaw = o; fl.ff = fd; } }
     const grid = { ra0: f.ra, dec0: f.dec, s: f.s, n }, mjd0 = epMid(0);
     const missed = GAIA.data.stars.filter(s => s.pmra != null && gPm(s) * days / 365.25 >= 1.5 && !flagged.some(fl => fl.gaia === s) && (() => { const q = gAt(s, mjd0), g = F.skyToGrid(q[0], q[1], grid); return g && g[0] > 12 && g[1] > 12 && g[0] < n - 13 && g[1] < n - 13; })());
     DS.res = { run, flagged, nSrc: src.length, nGood: good.length, nImg: D.nImg, thr, kErr, mSig, days, missed, secs: (performance.now() - t0) / 1000 };
@@ -4753,10 +4822,11 @@ async function diffSearch() {
     for (let i = 0; i < pre.length; i++) {
       const fl = pre[i], T = S.ct && CHALLENGE[S.ct], P = fl.gaia && fl.gaia.plx > 1 ? fl.gaia.plx : fl.label === 'target' && T && T.plx > 1 ? T.plx : null;
       say('Checking each moving source with a second, independent measurement...', i + 1, pre.length); await sleep(0); if ((run !== S.run || DF.stop)) return;
-      fl.fff = ffCore((e, fr) => toRaw(fr, fl.s.x, fl.s.y), { H: 3, minSnr: 2, plx: P, muCat: fl.pm ?? null });
+      fl.fff = ffCore((e, fr) => toRaw(fr, fl.s.x, fl.s.y), { H: 3, minSnr: 2, plx: P, muCat: fl.pm ?? null, raw: true });   // v0.55: decided on raw errors
       const t = fl.fff && !fl.fff.fail && fl.fff.fit, sd = fl.smu * fl.k;
       const cos = t && t.mu > 0 ? (t.muE * fl.muE + t.muN * fl.muN) / (t.mu * fl.mu) : -1;
       fl.agree = !!t && t.sig >= 3 && cos > 0.5 && Math.abs(t.mu - fl.mu) < 3 * Math.hypot(t.smu, sd);
+      if (fl.agree) { const fd = ffCore((e, fr) => toRaw(fr, fl.s.x, fl.s.y), { H: 3, minSnr: 2, plx: P, muCat: fl.pm ?? null }); if (fd && !fd.fail && fd.fit) fl.fff = fd; }   // shown with the field floor
       (fl.agree ? flagged : artefacts).push(fl);
     }
     DF.res = { run, flagged, artefacts, out: out.length, nSrc: src.length, pairs: pairs.length, passes: passes.length + 1, slots: slots.length, kAll, days: Math.max(0, ...out.map(o => o.days)), secs: (performance.now() - t0) / 1000, pairsList: pairs };
@@ -4971,7 +5041,7 @@ async function motionScan() {
     for (let i = 0; i < pre.length; i++) {
       const fl = pre[i], T = S.ct && CHALLENGE[S.ct], P = fl.gaia && fl.gaia.plx > 1 ? fl.gaia.plx : fl.label === 'target' && T && T.plx > 1 ? T.plx : null;
       say('Asking the frame-by-frame measurement for a second opinion...', i + 1, pre.length); await sleep(0); if ((run !== S.run || TSC.stop)) return;
-      fl.fff = ffCore((e, fr) => toRaw(fr, fl.s.x, fl.s.y), { H: 3, minSnr: 2, plx: P, muCat: fl.pm ?? null });
+      fl.fff = ffCore((e, fr) => toRaw(fr, fl.s.x, fl.s.y), { H: 3, minSnr: 2, plx: P, muCat: fl.pm ?? null, raw: true });   // v0.55: decided on raw errors
       const t = fl.fff && !fl.fff.fail && fl.fff.fit, cat = fl.label === 'known' || fl.label === 'target';
       // no catalogue behind it: its brightness must hold between passes (more than 3x: a variable source or a blend, whose
       // light centre shifts without any motion)
@@ -4987,6 +5057,8 @@ async function motionScan() {
       fl.check = t.mu >= 3 * t.smu && Math.abs(t.mu - fl.mu) < 3 * Math.hypot(t.smu, fl.smu) && cos > 0.5 ? 'agrees' : cat ? 'catalogue' : 'disagrees';   // it must see a motion itself
       (fl.check === 'disagrees' ? artefacts : flagged).push(fl);
     }
+    // v0.55: the kept finds are shown with the field floor in their errors
+    for (const fl of flagged) { if (!fl.fff || fl.fff.fail) continue; const fd = ffCore((e, fr) => toRaw(fr, fl.s.x, fl.s.y), { H: 3, minSnr: 2, plx: fl.fff.plx || undefined, muCat: fl.fff.muCat ?? fl.pm ?? null }); if (fd && !fd.fail && fd.fit) fl.fff = fd; }
     TSC.res = { run, flagged, artefacts, all: out, nSrc: src.length, scanned: out.length, nImg: D.nImg, passes: PS.length, kG, sigPsf, days, PS: PS.map(q => ({ e: q.e, nIm: q.nIm, mjd: q.mjd, dt: q.dt })), secs: (performance.now() - t0) / 1000 };
     showScan();
   } finally { TSC.busy = false; srchDone(TSC); }   // v0.55 U9
@@ -5084,9 +5156,10 @@ function movieMovers() {
     list.push({ name: name || `Moving star ${list.length + 1}`, label, src, mu, dir, cw: fl && fl.cw, cwNear: fl && fl.cwNear, pm: fl && fl.pm, how: (fl && fl.how) || 'measured', catPm: fl && fl.catPm, slow: fl && fl.slow,
       // v0.55 U4: a search's own error (its frame-by-frame fit) and its Gaia match, for the SPHEREx vs catalogue row
       smu: fl ? (fl.smu ?? (fl.ff && fl.ff.fit ? fl.ff.fit.smu : fl.fff && fl.fff.fit ? fl.fff.fit.smu : fl.smu)) : undefined, gaia: fl && fl.gaia,
+      satNote: fl && fl.satNote,   // v0.55: "13 of 17 images" when a saturated star is shown by its catalogue motion instead
       // v0.55: a frame-by-frame pass keeps its measured offsets (E, N), their errors and the parallax shift, for the epochs chart
       passes: passes.map(q => ({ e: q.e, ra: q.ra, dec: q.dec, g: F.skyToGrid(q.ra, q.dec, grid), mjd: q.mjd ?? null,
-        E: q.E ?? null, N: q.N ?? null, sE: q.sE ?? null, sN: q.sN ?? null, pE: q.pE || 0, pN: q.pN || 0 })) });
+        E: q.E ?? null, N: q.N ?? null, sE: q.sE ?? null, sN: q.sN ?? null, sE0: q.sE0 ?? null, pE: q.pE || 0, pN: q.pN || 0 })) });
   };
   const okFF = ff => ff && !ff.fail && ff.fit && ff.passes && ff.passes.length >= 2;
   if (DS.res && DS.res.run === S.run) DS.res.flagged.forEach(fl => okFF(fl.ff) && add(nameOf(fl), fl.label, '🔭', fl.ff.passes, fl.ff.fit.mu, fl.ff.fit.dir, fl));
@@ -5101,6 +5174,11 @@ function movieMovers() {
     // on Epsilon Indi A: 2.5″/yr east); otherwise 🔍's pass-by-pass track
     const muMS = fl.shift / (MS.res.days / 365.25);
     const cat = known ? { gaia: fl.gaia, pm: gPm(fl.gaia) } : null;   // v0.55 U4: its Gaia match, for the SPHEREx vs catalogue row
+    // v0.55: saturated in most images (Epsilon Indi A: 13 of 17): neither track can be trusted, so Gaia's motion is shown
+    // (dashed, "predicted") and the card says why
+    if (known && satShare(tr.ff) > 0.5) { const pa = Math.atan2(fl.gaia.pmra || 0, fl.gaia.pmdec || 0) * 180 / Math.PI;
+      const exp = S.eps.map((_, e) => { if (!frameOf(e)) return null; const p = ctAt(o, epMid(e)); return { e, ra: p[0], dec: p[1] }; }).filter(Boolean);
+      return add('Gaia DR3 ' + fl.gaia.id, 'predicted', '★ Gaia', exp, gPm(fl.gaia), COMPASS[Math.round(((pa + 360) % 360) / 45) % 8], { ...cat, how: 'predicted', catPm: gPm(fl.gaia), satNote: `${tr.ff.nSat} of ${tr.ff.nKept} images` }); }
     if (okFF(tr.ff) && Math.abs(tr.ff.fit.mu - muMS) < Math.max(1, 0.3 * muMS)) add(known ? 'Gaia DR3 ' + fl.gaia.id : null, fl.label, '🔍', tr.ff.passes, tr.ff.fit.mu, tr.ff.fit.dir, cat && { ...cat, smu: tr.ff.fit.smu });
     else add(known ? 'Gaia DR3 ' + fl.gaia.id : null, fl.label, '🔍', tr.pts, tr.total / (tr.days / 365.25), tr.dir, cat); });
   // v0.54: the catalogues' movers, in every field: Gaia DR3 stars and CatWISE2020 movers whose own motion takes them 1″ or
@@ -5115,7 +5193,8 @@ function movieMovers() {
     if (exp.length < 2 || !exp.every(q => inField(F.skyToGrid(q.ra, q.dec, grid)))) return;
     const expTot = pm * days / 365.25; let passes = exp, how = 'predicted', mu = pm, smu = null;
     if (expTot >= 1.5) { const tr = trackAcross(o);
-      if (tr && okFF(tr.ff) && Math.abs(tr.ff.fit.mu - pm) < Math.max(1, 0.3 * pm)) { passes = tr.ff.passes; how = 'measured'; mu = tr.ff.fit.mu; smu = tr.ff.fit.smu; }
+      if (tr && satShare(tr.ff) > 0.5) extra = { ...extra, satNote: `${tr.ff.nSat} of ${tr.ff.nKept} images` };   // v0.55: saturated: stays "predicted"
+      else if (tr && okFF(tr.ff) && Math.abs(tr.ff.fit.mu - pm) < Math.max(1, 0.3 * pm)) { passes = tr.ff.passes; how = 'measured'; mu = tr.ff.fit.mu; smu = tr.ff.fit.smu; }
       // the patch track only where the star is clearly there in every pass (S/N ≥ 5): its search starts at the catalogue
       // place, so on a source too faint to see it would only follow the catalogue (WISE 0855 at 4.7 µm, 2 images a pass)
       else if (tr && tr.pts.length >= 2 && Math.abs(tr.total - expTot) < Math.max(1.5, 0.4 * expTot) &&
@@ -5231,7 +5310,9 @@ function epochLine(m) {
     const lb = el('text', { x, y: H_ - B + 13, 'text-anchor': 'middle', ...tx }); lb.textContent = 'P' + (p.q.e + 1); svg.append(lb);
     const dt = el('text', { x, y: H_ - B + 23, 'text-anchor': 'middle', ...tx, 'font-size': 8, fill: 'rgba(200,210,230,.6)' }); dt.textContent = fmtMonth(S.eps[p.q.e].t0); svg.append(dt); }
   const note = `Each dot: how far it had gone along its path (toward the ${m.dir}) by that pass` + (hasErr ? ', with its measured error' : '') + `. The line through them: ${mu.toFixed(2)}″ per year.` +
-    (chi != null ? ` The dots ${chi <= ({ 1: 6.63, 2: 9.21, 3: 11.34, 4: 13.28, 5: 15.09, 6: 16.81 }[pts.length - 2] || pts.length + 8) ? 'sit on a straight line' : 'scatter more than their errors allow: check it by eye'} (χ² ${chi.toFixed(1)} for ${pts.length - 2} degrees of freedom).` : pts.length === 2 ? ' Two passes only: a straight line always fits; a third pass would test it.' : '') +
+    (chi != null ? ` The dots ${{ ok: 'sit on a straight line', high: 'sit near a straight line, with a little more scatter than their errors (past 95 %, within 99 %)', bad: 'scatter more than their errors allow: check it by eye' }[fitLevel(chi, pts.length - 2)]} (χ² ${chi.toFixed(1)} for ${pts.length - 2} degrees of freedom, UWE ${Math.sqrt(chi / (pts.length - 2)).toFixed(2)}).` : pts.length === 2 ? ' Two passes only: a straight line always fits; a third pass would test it.' : '') +
+    (hasErr && pts.some(p => p.q.sE0 != null) && FLOOR.res ? ` The errors include ${FLOOR.res.floor.toFixed(2)}″ per pass that this field's images share (measured on ${FLOOR.res.refs} Gaia stars here).` : '') +
+    (m.satNote ? ` Saturated in ${m.satNote}: not measured, the catalogue's motion is shown.` : '') +
     (pts.some(p => p.q.pE) ? ' Parallax taken off.' : '') + (m.how === 'predicted' ? ' These are the catalogue\'s predicted places, not measurements.' : '');
   return h('div', { class: 'epline' }, svg, h('p', { class: 'epnote' }, note));
 }
@@ -5263,7 +5344,7 @@ function movieCard() {
     ms.length ? h('div', { class: 'mvgrid' }, ...MOVIE.tiles.map(t => t.el)) : null,
     ms.length > 6 ? h('p', { style: 'font-size:.8rem' }, `The first 6 are shown as cut-outs; all ${ms.length} are animated on the sky.`) : null,
     ms.length ? h('ul', { class: 'mslist' }, ...ms.map((m, i) => h('li', {}, h('b', { style: `color:${movieCol(m)}` }, `${i + 1}. ${m.name}`), ` ${m.mu.toFixed(2)}″ per year toward the ${m.dir} (found by ${m.src}); `,
-      h('span', { class: 'badge ' + (m.label === 'target' ? 'ok' : m.label === 'predicted' ? 'near' : msLabel(m)[0]) }, m.label === 'target' ? '✓ Known mover: the NASA target' : m.label === 'predicted' ? `Predicted by ${m.src.replace(/^\S+ /, '')} (${m.catPm.toFixed(2)}″/yr): ${m.slow ? 'too small' : 'too faint or too small'} for SPHEREx to measure here` : m.how === 'measured' && m.catPm != null ? `✓ Measured here${m.smu ? ` (${m.mu.toFixed(2)} ± ${m.smu.toFixed(2)}″/yr, every image)` : ''}; ${m.src.replace(/^\S+ /, '')} agrees (${m.catPm.toFixed(2)}″/yr)` : msLabel(m)[1]),
+      h('span', { class: 'badge ' + (m.label === 'target' ? 'ok' : m.label === 'predicted' ? 'near' : msLabel(m)[0]) }, m.label === 'target' ? '✓ Known mover: the NASA target' : m.label === 'predicted' ? (m.satNote ? `Too bright for SPHEREx (saturated in ${m.satNote}): ${m.src.replace(/^\S+ /, '')}'s motion shown, ${m.catPm.toFixed(2)}″/yr` : `Predicted by ${m.src.replace(/^\S+ /, '')} (${m.catPm.toFixed(2)}″/yr): ${m.slow ? 'too small' : 'too faint or too small'} for SPHEREx to measure here`) : m.how === 'measured' && m.catPm != null ? `✓ Measured here${m.smu ? ` (${m.mu.toFixed(2)} ± ${m.smu.toFixed(2)}″/yr, every image)` : ''}; ${m.src.replace(/^\S+ /, '')} agrees (${m.catPm.toFixed(2)}″/yr)` : msLabel(m)[1]),
       h('div', { style: 'font-size:.82rem;margin-top:2px' }, (m.how === 'predicted' ? 'Predicted ' : 'Moved ') + movieFromTo(m) + '.'),
       movieCat(m) ? catRow(movieCat(m)) : null,   // v0.55 U4
       flagRow(m.passes.filter(q => q.g).map(q => ({ e: q.e, x: q.g[0], y: q.g[1] }))),   // v0.55 U6

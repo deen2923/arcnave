@@ -1638,3 +1638,6 @@ html.landing,html.landing body,#landing{background:#000}
 #card .epline .epc{display:block;width:100%;max-width:340px;height:auto;border-radius:8px;background:rgba(4,6,12,.55)}
 #card .epline .epc circle{transition:r .25s,stroke-width .25s}
 #card .epnote{margin:.25rem 0 0;font-size:.74rem;line-height:1.45;color:var(--fg-3)}
+/* v0.55 fit quality line (RUWE-like) */
+#card .fitq{font-size:.8rem;line-height:1.5;color:var(--fg-2)}
+#card .fitq.warn{color:#ffb05a}
