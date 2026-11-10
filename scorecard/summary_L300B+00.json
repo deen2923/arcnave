@@ -1,0 +1,13 @@
+{
+ "id": "summary_L300B+00",
+ "fields": [
+  {
+   "id": "L300B+00",
+   "status": "ok",
+   "limitAB300plus": 14,
+   "noiseLimitAB": 16.62,
+   "error": null
+  }
+ ],
+ "savedAt": "2026-10-22T09:56:03.076Z"
+}

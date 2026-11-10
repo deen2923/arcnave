@@ -1,0 +1,4 @@
+v0.40.0 final verification, 2026-11-04T16:34:32.902Z
+GUIDE (desktop): 30 steps; tool on screen in 30; fully (>=90 %) in 29; partial: [[14,"Changes","100/59%","spot"]]; page errors: none
+GUIDE (phone): 30 steps; tool on screen in 30; fully (>=90 %) in 30; partial: []; page errors: none
+DONE

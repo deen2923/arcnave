@@ -1,0 +1,4 @@
+mover,name,label,found_by,how,mu_arcsec_yr,mu_err,direction,catalogue,cat_mu_arcsec_yr,cat_mu_err,verdict,pass,pass_mid_mjd,date,ra_deg,dec_deg
+1,WISE 0855−0714 (CatWISE J085506.91-071437.5),known,◆ WISE,measured,8.8176,1.0959,west,CatWISE2020,7.9353,0.1524,agrees,1,60800.7022,2025-05-05,133.7612278,-7.2423402
+1,WISE 0855−0714 (CatWISE J085506.91-071437.5),known,◆ WISE,measured,8.8176,1.0959,west,CatWISE2020,7.9353,0.1524,agrees,2,60993.5088,2025-11-14,133.7597165,-7.2421134
+1,WISE 0855−0714 (CatWISE J085506.91-071437.5),known,◆ WISE,measured,8.8176,1.0959,west,CatWISE2020,7.9353,0.1524,agrees,3,61156.0862,2026-04-26,133.7587367,-7.2419516

@@ -1,0 +1,918 @@
+{
+ "built": "2026-10-26T08:32:50.941Z",
+ "summary": {
+  "fields": 18,
+  "measured": 18,
+  "stars": 720,
+  "all": [
+   {
+    "gain": 1,
+    "caught": 54,
+    "of": 720,
+    "pct": 8
+   },
+   {
+    "gain": 1.1,
+    "caught": 120,
+    "of": 720,
+    "pct": 17
+   },
+   {
+    "gain": 1.25,
+    "caught": 384,
+    "of": 720,
+    "pct": 53
+   },
+   {
+    "gain": 1.5,
+    "caught": 593,
+    "of": 720,
+    "pct": 82
+   },
+   {
+    "gain": 2,
+    "caught": 644,
+    "of": 720,
+    "pct": 89
+   },
+   {
+    "gain": 3,
+    "caught": 654,
+    "of": 720,
+    "pct": 91
+   }
+  ],
+  "plane": [
+   {
+    "gain": 1,
+    "caught": 30,
+    "of": 160,
+    "pct": 19
+   },
+   {
+    "gain": 1.1,
+    "caught": 45,
+    "of": 160,
+    "pct": 28
+   },
+   {
+    "gain": 1.25,
+    "caught": 101,
+    "of": 160,
+    "pct": 63
+   },
+   {
+    "gain": 1.5,
+    "caught": 141,
+    "of": 160,
+    "pct": 88
+   },
+   {
+    "gain": 2,
+    "caught": 149,
+    "of": 160,
+    "pct": 93
+   },
+   {
+    "gain": 3,
+    "caught": 151,
+    "of": 160,
+    "pct": 94
+   }
+  ],
+  "rest": [
+   {
+    "gain": 1,
+    "caught": 24,
+    "of": 560,
+    "pct": 4
+   },
+   {
+    "gain": 1.1,
+    "caught": 75,
+    "of": 560,
+    "pct": 13
+   },
+   {
+    "gain": 1.25,
+    "caught": 283,
+    "of": 560,
+    "pct": 51
+   },
+   {
+    "gain": 1.5,
+    "caught": 452,
+    "of": 560,
+    "pct": 81
+   },
+   {
+    "gain": 2,
+    "caught": 495,
+    "of": 560,
+    "pct": 88
+   },
+   {
+    "gain": 3,
+    "caught": 503,
+    "of": 560,
+    "pct": 90
+   }
+  ],
+  "planeDeg": 5,
+  "method": "real isolated stars made brighter by a known factor in every image of the last pass; the Changes view (changeMaps, 8 sigma, 25 % rule on a 5x5 box) must report them"
+ },
+ "rows": [
+  {
+   "id": "L000B-40",
+   "ra": 18.4577,
+   "dec": -36.139,
+   "eclLon": 0,
+   "eclLat": -40,
+   "galLat": -79.8,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 9,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 25,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 40,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 40,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T08:05:28.488Z"
+  },
+  {
+   "id": "L060B-40",
+   "ra": 66.1004,
+   "dec": -19.0174,
+   "eclLon": 60,
+   "eclLat": -40,
+   "galLat": -40.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 1,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 4,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 25,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 38,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 38,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 38,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T08:12:26.388Z"
+  },
+  {
+   "id": "L120B-40",
+   "ra": 113.8996,
+   "dec": -19.0174,
+   "eclLon": 120,
+   "eclLat": -40,
+   "galLat": 0.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 2,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 10,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 29,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 38,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 38,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T08:22:31.581Z"
+  },
+  {
+   "id": "L180B-40",
+   "ra": 161.5423,
+   "dec": -36.139,
+   "eclLon": 180,
+   "eclLat": -40,
+   "galLat": 20.2,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 9,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 25,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 38,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 39,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T08:26:39.839Z"
+  },
+  {
+   "id": "L240B-40",
+   "ra": 222.6629,
+   "dec": -58.6095,
+   "eclLon": 240,
+   "eclLat": -40,
+   "galLat": 0.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 6,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 10,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 28,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 37,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 37,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 38,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T08:27:09.036Z"
+  },
+  {
+   "id": "L300B-40",
+   "ra": 317.3371,
+   "dec": -58.6095,
+   "eclLon": 300,
+   "eclLat": -40,
+   "galLat": -40.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 0,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 2,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 5,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 5,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 5,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T08:27:26.334Z"
+  },
+  {
+   "id": "L000B+00",
+   "ra": 0,
+   "dec": 0,
+   "eclLon": 0,
+   "eclLat": 0,
+   "galLat": -60.2,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 2,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 29,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 37,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 37,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 38,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:49:26.025Z"
+  },
+  {
+   "id": "L060B+00",
+   "ra": 57.8187,
+   "dec": 20.1504,
+   "eclLon": 60,
+   "eclLat": 0,
+   "galLat": -25.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 9,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 32,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 35,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 39,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:50:12.290Z"
+  },
+  {
+   "id": "L120B+00",
+   "ra": 122.1813,
+   "dec": 20.1504,
+   "eclLon": 120,
+   "eclLat": 0,
+   "galLat": 25.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 1,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 2,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 22,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 40,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:54:38.862Z"
+  },
+  {
+   "id": "L180B+00",
+   "ra": 180,
+   "dec": 0,
+   "eclLon": 180,
+   "eclLat": 0,
+   "galLat": 60.2,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 2,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 5,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 18,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 30,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 36,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 36,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:54:50.502Z"
+  },
+  {
+   "id": "L240B+00",
+   "ra": 237.8187,
+   "dec": -20.1504,
+   "eclLon": 240,
+   "eclLat": 0,
+   "galLat": 25.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 5,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 11,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 34,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 39,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:55:50.030Z"
+  },
+  {
+   "id": "L300B+00",
+   "ra": 302.1813,
+   "dec": -20.1504,
+   "eclLon": 300,
+   "eclLat": 0,
+   "galLat": -25.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 0,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 1,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 13,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 38,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 40,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:56:09.098Z"
+  },
+  {
+   "id": "L000B+40",
+   "ra": 341.5423,
+   "dec": 36.139,
+   "eclLon": 0,
+   "eclLat": 40,
+   "galLat": -20.2,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 1,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 6,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 28,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 40,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 40,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:56:21.604Z"
+  },
+  {
+   "id": "L060B+40",
+   "ra": 42.6629,
+   "dec": 58.6095,
+   "eclLon": 60,
+   "eclLat": 40,
+   "galLat": -0.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 4,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 9,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 30,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 36,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 36,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 36,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:56:40.096Z"
+  },
+  {
+   "id": "L120B+40",
+   "ra": 137.3371,
+   "dec": 58.6095,
+   "eclLon": 120,
+   "eclLat": 40,
+   "galLat": 40.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 1,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 2,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 3,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 31,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 40,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:56:56.865Z"
+  },
+  {
+   "id": "L180B+40",
+   "ra": 198.4577,
+   "dec": 36.139,
+   "eclLon": 180,
+   "eclLat": 40,
+   "galLat": 79.8,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 0,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 5,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 16,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 26,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 29,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 32,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:57:26.216Z"
+  },
+  {
+   "id": "L240B+40",
+   "ra": 246.1004,
+   "dec": 19.0174,
+   "eclLon": 240,
+   "eclLat": 40,
+   "galLat": 40.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 2,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 7,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 29,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 35,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 36,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 37,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:58:06.117Z"
+  },
+  {
+   "id": "L300B+40",
+   "ra": 293.8996,
+   "dec": 19.0174,
+   "eclLon": 300,
+   "eclLat": 40,
+   "galLat": -0.7,
+   "status": "ok",
+   "error": null,
+   "stars": 40,
+   "byGain": [
+    {
+     "gain": 1,
+     "caught": 18,
+     "of": 40
+    },
+    {
+     "gain": 1.1,
+     "caught": 23,
+     "of": 40
+    },
+    {
+     "gain": 1.25,
+     "caught": 33,
+     "of": 40
+    },
+    {
+     "gain": 1.5,
+     "caught": 39,
+     "of": 40
+    },
+    {
+     "gain": 2,
+     "caught": 38,
+     "of": 40
+    },
+    {
+     "gain": 3,
+     "caught": 39,
+     "of": 40
+    }
+   ],
+   "measuredAt": "2026-10-26T07:59:15.470Z"
+  }
+ ]
+}

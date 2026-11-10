@@ -1,0 +1,127 @@
+{
+  "tool": "ARCNAVE",
+  "version": "0.55.0",
+  "made": "2026-11-10T09:43:25.458Z",
+  "field": {
+    "ra": 331.09661,
+    "dec": -56.80061
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "midMjd": 60795.0863,
+      "month": "Apr 2025"
+    },
+    {
+      "pass": 2,
+      "midMjd": 60948.9999,
+      "month": "Sep 2025"
+    },
+    {
+      "pass": 3,
+      "midMjd": 61159.504,
+      "month": "Apr 2026"
+    },
+    {
+      "pass": 4,
+      "midMjd": 61310.318,
+      "month": "Sep 2026"
+    }
+  ],
+  "rule": "verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare",
+  "note": "how = measured: on the SPHEREx images; predicted: the catalogue's positions. A candidate is something to check, never a discovery claim.",
+  "movers": [
+    {
+      "mover": 1,
+      "name": "Epsilon Indi B",
+      "label": "target",
+      "foundBy": "🔭",
+      "how": "measured",
+      "muArcsecPerYr": 4.2198,
+      "muErr": 0.1819,
+      "direction": "south-east",
+      "catalogue": "published value",
+      "catMuArcsecPerYr": 4.6842,
+      "catMuErr": null,
+      "verdict": "agrees",
+      "difference": 0.4643,
+      "limit": 1.4052,
+      "passes": [
+        {
+          "pass": 1,
+          "midMjd": 60795.0863,
+          "date": "2025-04-30",
+          "ra": 331.0956174,
+          "dec": -56.8003933
+        },
+        {
+          "pass": 2,
+          "midMjd": 60948.9999,
+          "date": "2025-09-30",
+          "ra": 331.0964639,
+          "dec": -56.8007531
+        },
+        {
+          "pass": 3,
+          "midMjd": 61159.504,
+          "date": "2026-04-29",
+          "ra": 331.0977447,
+          "dec": -56.8011523
+        },
+        {
+          "pass": 4,
+          "midMjd": 61310.318,
+          "date": "2026-09-27",
+          "ra": 331.0980295,
+          "dec": -56.8013753
+        }
+      ]
+    },
+    {
+      "mover": 2,
+      "name": "Gaia DR3 6412595290592307840",
+      "label": "known",
+      "foundBy": "🔍",
+      "how": "measured",
+      "muArcsecPerYr": 3.1439,
+      "muErr": null,
+      "direction": "south-east",
+      "catalogue": "Gaia DR3",
+      "catMuArcsecPerYr": 4.7081,
+      "catMuErr": null,
+      "verdict": "differs",
+      "difference": 1.5643,
+      "limit": 1.4124,
+      "passes": [
+        {
+          "pass": 1,
+          "midMjd": 60795.0863,
+          "date": "2025-04-30",
+          "ra": 330.8911745,
+          "dec": -56.8038253
+        },
+        {
+          "pass": 2,
+          "midMjd": 60948.9999,
+          "date": "2025-09-30",
+          "ra": 330.8905476,
+          "dec": -56.8043368
+        },
+        {
+          "pass": 3,
+          "midMjd": 61159.504,
+          "date": "2026-04-29",
+          "ra": 330.893354,
+          "dec": -56.804683
+        },
+        {
+          "pass": 4,
+          "midMjd": 61310.318,
+          "date": "2026-09-27",
+          "ra": 330.8930429,
+          "dec": -56.8045117
+        }
+      ]
+    }
+  ]
+}

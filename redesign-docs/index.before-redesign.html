@@ -1,0 +1,842 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARCNAVE: spot what moves in SPHEREx's sky</title>
+<meta name="description" content="Blink real NASA SPHEREx infrared images of any spot in the sky and see what moves: asteroids, comets, changes. Free, in the browser, no expertise needed.">
+<meta name="theme-color" content="#05070f">
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icon-180.png"><link rel="manifest" href="/manifest.webmanifest">
+<meta property="og:type" content="website"><meta property="og:site_name" content="ARCNAVE">
+<meta property="og:title" content="ARCNAVE: spot what moves in NASA's infrared sky">
+<meta property="og:description" content="Blink real NASA SPHEREx images of any spot, like Clyde Tombaugh did, and see asteroids jump. Free, in the browser.">
+<meta property="og:url" content="%ORIGIN%/"><meta property="og:image" content="%ORIGIN%/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ARCNAVE: two real SPHEREx images of the same spot, not there on 30 May 2026 and with asteroid 3865 Lindbloom on 5 June 2026">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="ARCNAVE: spot what moves in NASA's infrared sky">
+<meta name="twitter:description" content="Blink real NASA SPHEREx images and see asteroids jump. Free, in the browser."><meta name="twitter:image" content="%ORIGIN%/og.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+/* ARCNAVE design tokens (v0.11). The sky is the hero; the interface is a quiet instrument around it.
+   One bold element: the 102-tick spectral ruler (SPHEREx's 102 colours, 0.75 to 5 um), drawn in the same false-colour
+   scale as the images (hue 190 -> 40, see app.js). It is the brand mark, the intro moment and the Color slider. */
+:root{color-scheme:dark;
+--void:#05070f;--ink:#0a0e1a;--glass:rgba(9,13,24,.84);--raise:rgba(255,255,255,.04);--line:#222b40;--line2:#323d57;
+--text:#eef1f7;--dust:#8e98ae;--ir:#ffb05a;--cy:#5fe3f0;--vi:#9b8cff;--ok:#5ff0a0;--bad:#ff7a7a;--focus:#ffc46b;
+--spec:linear-gradient(90deg,hsl(190 85% 58%),hsl(115 85% 58%),hsl(40 85% 58%));
+--disp:'Archivo',system-ui,sans-serif;--ui:'Archivo',system-ui,sans-serif;--mono:'Archivo',system-ui,sans-serif;
+--r1:6px;--r2:10px;--r3:14px;box-sizing:border-box}
+:root[data-hc="1"]{--glass:rgba(0,0,0,.95);--line:#fff;--line2:#fff;--dust:#fff}
+*{box-sizing:inherit}
+html,body{height:100%;margin:0;background:var(--void);color:var(--text);font:400 15px/1.5 var(--ui);font-variation-settings:'wdth' 100;overflow:hidden;font-variant-numeric:tabular-nums}
+#aladin{position:fixed;inset:0;z-index:0}
+#ov{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--raise);border:1px solid var(--line2);border-radius:var(--r1);padding:.42rem .85rem;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+button:hover{border-color:#5a6886;background:rgba(255,255,255,.07)}
+button:disabled{opacity:.45;cursor:default}
+/* primary action: solid starlight, dark text (an instrument switch, not a gradient) */
+.hbtn,#intro #go{background:var(--text);color:#070a12;border-color:var(--text);font-weight:650}
+.hbtn:hover,#intro #go:hover{background:#fff;border-color:#fff}
+button[aria-pressed=true]{background:rgba(255,196,107,.12);border-color:rgba(255,196,107,.55);color:#ffe2b0}
+select{background:var(--raise);border:1px solid var(--line2);border-radius:var(--r1);padding:.38rem .6rem}
+select option{background:var(--ink)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%);box-shadow:0 12px 40px -18px rgba(0,0,0,.9)}
+.top,.tele,.panel,#card,#lab,:is(#drawer,#tdrawer),#intro,#toast,.foot{z-index:5}
+/* header: one slim bar */
+.top{z-index:20;position:fixed;top:max(env(safe-area-inset-top,0px),10px);left:12px;right:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{display:grid;gap:3px;padding:.15rem .1rem;color:var(--text)}
+.wm{font:800 1.3rem/1 var(--disp);font-variation-settings:'wdth' 125;letter-spacing:.06em}
+.spec{display:block;height:5px;width:100%;background:var(--spec);-webkit-mask:repeating-linear-gradient(90deg,#000 0 1px,transparent 1px 2px);mask:repeating-linear-gradient(90deg,#000 0 1px,transparent 1px 2px);opacity:.9}
+.brand small{display:block;font:400 .72rem var(--ui);color:var(--dust)}
+.aladin-location,.aladin-location-copy,.aladin-fov,.aladin-status-bar{display:none!important} /* Aladin's coordinate box sat on top of the title; our own RA/Dec panel shows the same numbers */
+#sf{display:flex;flex:1 1 240px;max-width:420px;background:var(--glass);border:1px solid var(--line2);border-radius:var(--r2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow:hidden}
+#sf:focus-within{border-color:#5a6886}
+#q{flex:1;min-width:0;background:transparent;border:0;padding:.5rem .85rem;outline:none}
+#q::placeholder{color:#69738a}
+#sf button{border:0;border-left:1px solid var(--line2);border-radius:0;background:rgba(255,255,255,.06);font-weight:600;padding:.5rem 1rem}
+.acts{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:3px;border-radius:var(--r2)}
+.acts>button,.acts>select{background:var(--glass);border-color:var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+/* welcome screen: only the whole sky and the words; the instrument panels fade in when exploring starts */
+.panel,.tele,#agents,.foot{transition:opacity .6s}
+body.intro:has(#intro:not([hidden])) :is(.panel,.tele,#agents,#card,.foot,#mnav,#lab){opacity:0;pointer-events:none}
+.tmw{position:relative;display:inline-flex}
+.tmw>button{background:var(--glass);border-color:var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.tmenu{position:absolute;right:0;top:calc(100% + 6px);display:grid;gap:4px;padding:6px;border-radius:var(--r2);min-width:250px;z-index:30}
+.tmenu[hidden]{display:none}
+.tmenu button{display:grid;gap:2px;text-align:left;border-color:transparent;background:none;padding:.55rem .7rem}
+.tmenu button:hover,.tmenu button:focus-visible{background:rgba(255,255,255,.07)}
+.tmenu small{color:var(--dust);font-size:.75rem}
+#hc{font-size:1.05rem;line-height:1;padding:.42rem .7rem}
+@media(min-width:701px){.top{flex-wrap:nowrap}#sf{flex:1 1 160px;min-width:150px;max-width:340px}.acts{flex-wrap:nowrap;flex:none}}
+@media(min-width:701px) and (max-width:1320px){.brand small{display:none}.acts>button,.acts>select,.tmw>button{padding:.42rem .6rem}#survey{max-width:11.5rem}}
+.acts>button[aria-pressed=true]{background:rgba(255,196,107,.14);border-color:rgba(255,196,107,.55)}
+/* telemetry: an instrument readout */
+.tele{position:fixed;top:84px;left:12px;margin:0;padding:.55rem .8rem;border-radius:var(--r2);font:500 .78rem/1.6 var(--mono);display:grid;grid-template-columns:auto auto;gap:0 1rem;min-width:170px}
+.tele dt{color:var(--dust)}.tele dd{margin:0;color:var(--text);text-align:right;font-weight:600}
+/* control deck */
+.panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(40px + env(safe-area-inset-bottom,0px));width:min(760px,calc(100% - 20px));padding:0 1rem .85rem;border-radius:var(--r3);display:grid;gap:.55rem}
+.tabs{display:flex;gap:0;flex-wrap:wrap;margin:0 -1rem;padding:0 .6rem;border-bottom:1px solid var(--line)}
+.tabs [role=tab]{background:none;border:0;border-radius:0;padding:.7rem .7rem .6rem;color:var(--dust);font-weight:550;position:relative}
+.tabs [role=tab]:hover{color:var(--text);background:none}
+.tabs [role=tab][aria-selected=true]{color:var(--text);background:none}
+.tabs [role=tab][aria-selected=true]::after{content:"";position:absolute;left:.7rem;right:.7rem;bottom:-1px;height:2px;background:var(--spec);border-radius:2px}
+.tabs [data-m=px]{color:#ffd9a1}
+.presets,.loadrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.loadrow{padding-top:.15rem}
+.help{margin:0;color:var(--dust);font-size:.87rem;max-width:72ch}
+#stat{font:500 .8rem var(--mono);color:var(--cy);flex:1 1 100%}#stat.err{color:var(--bad)}
+.row{display:flex;gap:.8rem;align-items:center}
+.row label{min-width:4.6rem;font-weight:600;font-size:.88rem}
+input[type=range]{flex:1;accent-color:var(--ir);height:26px}
+output{font:600 .8rem var(--mono);color:var(--ir);min-width:9.5rem;text-align:right}
+/* the Color slider is the spectral ruler */
+#band{-webkit-appearance:none;appearance:none;height:16px;border-radius:2px;background:var(--spec);-webkit-mask:none}
+#band{background:repeating-linear-gradient(90deg,rgba(5,7,15,.85) 0 1px,transparent 1px calc(100%/102)),var(--spec)}
+#band::-webkit-slider-thumb{-webkit-appearance:none;width:4px;height:24px;border-radius:2px;background:#fff;box-shadow:0 0 0 2px #05070f}
+#band::-moz-range-thumb{width:4px;height:24px;border:0;border-radius:2px;background:#fff;box-shadow:0 0 0 2px #05070f}
+#lam{font:400 .78rem var(--mono);color:var(--dust);margin:0}
+.presets button{font-size:.8rem;padding:.3rem .7rem}
+.foot{position:fixed;left:0;right:0;bottom:0;padding:.45rem 12px calc(.45rem + env(safe-area-inset-bottom,0px));font-size:.7rem;color:var(--dust);display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;background:linear-gradient(transparent,rgba(5,7,15,.92));pointer-events:none}
+/* result card */
+#card{position:fixed;right:12px;top:84px;width:min(300px,calc(100% - 24px));max-height:calc(100% - 330px);overflow:auto;padding:1rem 1.05rem;border-radius:var(--r3)}
+#card h3{margin:0 0 .25rem;font:700 1.05rem/1.25 var(--disp);font-variation-settings:'wdth' 112}#card p{margin:.3rem 0;font-size:.88rem;line-height:1.45}
+#card{z-index:6}#card a{color:var(--cy)}
+#card.wide{width:min(420px,calc(100% - 24px))}.specsvg{width:100%;height:auto;display:block;margin:.4rem 0 .2rem}
+#card>.x{float:right;margin:-.35rem -.4rem .3rem .6rem;width:30px;height:30px;padding:0;line-height:1;font-size:1.1rem;color:var(--dust)}
+.tag{display:inline-block;font:600 .7rem var(--mono);color:var(--ir);border:1px solid rgba(255,176,90,.5);border-radius:4px;padding:0 .4rem}
+#card .mv{display:block;width:100%;text-align:left;border-radius:var(--r2);margin:.3rem 0;padding:.45rem .7rem}
+#card .mv small{display:block;color:var(--dust)}
+#card .badge{display:inline-block;margin:.15rem 0 .5rem;padding:.15rem .55rem;border-radius:4px;font-size:.78rem;font-weight:650}
+#card .badge.ok{background:rgba(95,240,160,.12);color:var(--ok);border:1px solid rgba(95,240,160,.45)}
+#card .badge.near{background:rgba(255,176,90,.1);color:var(--ir);border:1px solid rgba(255,176,90,.45)}
+#card .badge.unc{background:rgba(160,170,200,.1);color:var(--dust);border:1px solid rgba(160,170,200,.35)}
+#card .proof{display:flex;gap:8px;margin:.3rem 0}
+#card .proof figure{margin:0;flex:1;min-width:0}
+#card .proof canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;border-radius:var(--r1);border:1px solid var(--line2);display:block}
+#card .proof figcaption{font-size:.72rem;margin-top:.25rem}#card .proof figcaption small{display:block;color:var(--dust)}
+#card .legend{font-size:.72rem;color:var(--dust)}
+#card .checks{list-style:none;padding:0;margin:.4rem 0;font-size:.8rem}#card .checks li{margin:0;padding:.3rem 0 .3rem .1rem;border-top:1px solid var(--line)}
+#card .checks li.pass b{color:var(--ok)}#card .checks li.fail b{color:var(--ir)}
+#card .proof.four{flex-wrap:wrap}#card .proof.four figure{flex:1 1 calc(50% - 8px)}
+.strip{display:flex;gap:10px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:thin}
+.sg{display:flex;gap:3px;align-items:center;flex:none}
+.sgl{font:600 .7rem var(--mono);color:var(--dust);margin-right:2px}
+.th{padding:0;border-radius:4px;border:1px solid var(--line2);width:34px;height:34px;overflow:hidden;background:#03050b;flex:none}
+.th canvas{width:100%;height:100%;display:block}
+.pxp{margin:.1rem 0 .2rem}.pxb{display:flex;gap:8px;flex-wrap:wrap;margin:.4rem 0}.pxt{font-size:.8rem;color:var(--dust);margin:.25rem 0}
+.pxt b{color:var(--text)}.pxt a{color:var(--cy)}#pxc{width:100%;max-width:560px;height:auto;display:block;margin-top:.3rem;border-radius:var(--r1);background:rgba(0,0,0,.3);border:1px solid var(--line)}
+.pxbig{font:750 1.35rem/1.2 var(--disp);font-variation-settings:'wdth' 115;margin:.1rem 0 .4rem}.pxbig.ok{color:var(--ok)}.pxbig.no{color:var(--bad)}
+.chg{margin:.2rem 0 .3rem}.chgb{display:flex;gap:6px;margin-bottom:.35rem}.chgb button{padding:.25rem .75rem;font-size:.8rem}
+.chgsum,.chgbar,.chgks{flex:1 1 100%}
+.chgsum{margin:.2rem 0 .5rem;font-size:.92rem;line-height:1.45;color:var(--text)}
+.chgbar{display:flex;height:10px;border-radius:5px;overflow:hidden;gap:2px;margin:0 0 .6rem}
+.chgks{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px;width:100%}
+.chgk{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;text-align:left;align-items:start;padding:.4rem .6rem;border-color:color-mix(in srgb,var(--kc) 45%,transparent)}
+.chgk .ki{grid-row:span 2;font-size:1.35rem;line-height:1;color:var(--kc);width:1.6rem;text-align:center}
+.chgk .kt{font-size:.88rem;color:var(--text)}.chgk .kt strong{color:var(--kc)}.chgk em{font-style:normal;color:var(--kc);font-size:.78rem}
+.chgk small{font-size:.72rem;color:var(--dust);line-height:1.3}
+.chgk.on{background:color-mix(in srgb,var(--kc) 14%,transparent);border-color:var(--kc)}.chgk:disabled{opacity:.45}
+.chgall{margin-top:.5rem;font-size:.8rem}
+.chgfw{display:grid;justify-items:center;gap:4px;margin:.6rem 0}.chgflip{width:168px;height:168px;border-radius:10px;image-rendering:pixelated;background:#000}
+.chgfl{font-size:.75rem;color:var(--dust)}
+.chgl{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:.78rem;color:var(--dust)}
+.chgl i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px}
+.chgl .grad{display:inline-block;width:140px;height:10px;border-radius:2px;vertical-align:-1px;margin:0 6px;background:linear-gradient(90deg,hsl(275,100%,55%),hsl(200,100%,55%),hsl(120,100%,55%),hsl(55,100%,55%),hsl(0,100%,55%))}
+.chgt{display:flex;align-items:flex-end;gap:2px;height:46px;margin-top:.35rem;padding-bottom:12px;position:relative;overflow-x:auto}
+.chgt button{flex:1 0 9px;min-width:9px;max-width:22px;padding:0;border:0;border-radius:2px 2px 0 0;position:relative;background:none;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
+.chgt button span{display:block;width:100%;border-radius:2px 2px 0 0}.chgt button span.sh{opacity:.3}
+.chgt button.on{outline:2px solid var(--focus);outline-offset:1px}.chgt .sep{flex:none;width:1px;height:100%;background:var(--line);margin:0 3px}
+.chgt .el{position:absolute;bottom:-1px;font-size:.62rem;color:#c9d0de;background:#070a12;padding:0 2px;border-radius:2px;line-height:1.2}
+.th.wait{opacity:.35;border-style:dashed}.th.on{outline:2px solid var(--focus);outline-offset:1px}.th.ast{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+/* Learn drawer */
+:is(#drawer,#tdrawer){position:fixed;z-index:30;top:0;right:0;bottom:0;width:min(400px,100%);padding:1.2rem 1.4rem 4rem;overflow:auto;transform:translateX(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);background:#070a13;border-left:1px solid var(--line)}
+:is(#drawer,#tdrawer).open{transform:none}
+:is(#drawer,#tdrawer) h2{font:700 1.02rem var(--disp);font-variation-settings:'wdth' 112;margin:1.4rem 0 .35rem}:is(#drawer,#tdrawer) p,:is(#drawer,#tdrawer) dd{margin:.25rem 0;color:#c9d0de;font-size:.92rem;line-height:1.55}:is(#drawer,#tdrawer) dt{font-weight:650;color:var(--text);margin-top:.7rem}
+/* intro: the opening moment. The ruler draws in, one tick per SPHEREx colour, then the words */
+#intro{position:fixed;inset:0;z-index:40;display:flex;padding:1.5rem clamp(1.5rem,5vw,4.5rem);background:linear-gradient(90deg,rgba(5,7,15,.96) 0,rgba(5,7,15,.86) 34%,rgba(5,7,15,.35) 62%,rgba(5,7,15,0) 80%);overflow:auto;transition:opacity .9s}
+#intro>div{width:min(600px,100%);margin:auto auto auto 0}
+#intro .kick{font:600 .74rem var(--ui);letter-spacing:.16em;text-transform:uppercase;color:var(--cy);margin:0 0 .9rem}
+#intro .hl{font:700 clamp(1.35rem,2.6vw,1.9rem)/1.2 var(--disp);font-variation-settings:'wdth' 110;margin:0 0 .7rem;max-width:22ch}
+#intro .cta{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin:1.2rem 0 .4rem}
+#intro .cta button{padding:.7rem 1.2rem;font-size:.97rem}
+#intro .ghost{background:rgba(255,255,255,.04);border-color:var(--line2)}
+#intro .look{position:fixed;right:clamp(1rem,4vw,3rem);bottom:calc(56px + env(safe-area-inset-bottom,0px));font-size:.78rem;color:var(--dust);text-align:right;max-width:30ch;pointer-events:none}
+#intro h1{font:800 clamp(2.6rem,10vw,5.6rem)/.95 var(--disp);font-variation-settings:'wdth' 125;letter-spacing:.04em;margin:0}
+.ruler{margin:1rem 0 .35rem;height:22px;background:var(--spec);-webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102));mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102));animation:draw 1.6s steps(102,end) .2s both}
+.rlab{display:flex;gap:1rem;justify-content:space-between;font-size:.75rem;color:var(--dust);margin-bottom:1.6rem}
+.rlab span:nth-child(2){text-align:center}
+@keyframes draw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+#intro .lede{font-size:1.15rem;line-height:1.5;max-width:46ch;margin:0 0 .6rem}
+#intro .hist{font-size:.92rem;color:var(--dust);max-width:56ch;margin:0 0 1.4rem}
+#intro #go{padding:.7rem 1.5rem;font-size:1rem}
+#intro .exs{margin-top:1.6rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+#intro .exs small{grid-column:1/-1;color:var(--dust)}
+#intro .cts{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:.35rem;margin-top:.2rem}#intro .cts small{flex-basis:100%;color:var(--dust)}#intro button.ct{flex:1 1 9rem;text-align:left;background:rgba(95,227,240,.06);color:var(--text);border:1px solid var(--line2);border-radius:var(--r2);padding:.45rem .6rem;font-size:.82rem;font-weight:600}#intro button.ct em{display:block;font-style:normal;font-weight:400;font-size:.72rem;color:var(--dust)}
+#intro button.ex{display:block;width:100%;text-align:left;background:rgba(255,255,255,.03);color:var(--text);border:1px solid var(--line2);border-radius:var(--r2);padding:.8rem 1rem;font-weight:400}
+#intro button.ex b{display:block;font-weight:650;margin-bottom:.15rem}#intro button.ex span{font-size:.84rem;color:var(--dust)}
+#intro button.ex:hover,#intro button.ex:focus-visible{border-color:#7a88a8;background:rgba(255,255,255,.06)}
+#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);padding:.35rem .9rem;border-radius:var(--r1);font-size:.85rem}
+#toast .tbtn{margin-left:.4rem;padding:.15rem .55rem;font-size:.8rem}
+.flagleg{font-size:.75rem;color:var(--dust);margin:0;display:flex;flex-wrap:wrap;gap:.2rem .7rem;align-items:center}.flagleg i{display:inline-block;width:.75rem;height:.75rem;border-radius:2px;margin-right:.25rem;vertical-align:-1px}
+#embedbar{position:fixed;left:8px;right:8px;bottom:8px;padding:.35rem .7rem;border-radius:var(--r1);font-size:.8rem;z-index:9}#embedbar a{color:var(--cy)}
+html.embed header.top,html.embed .panel,html.embed #agents,html.embed #card,html.embed #mnav,html.embed #intro,html.embed #skyinfo,html.embed #drawer,html.embed #tdrawer,html.embed #strip,html.embed #wait{display:none!important}
+#lab{position:fixed;left:50%;top:100px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));padding:.9rem 1rem;border-radius:var(--r3)}
+#lab p{margin:.3rem 0;font-size:.9rem}#lab output{min-width:5.5rem}
+#lab canvas{width:100%;height:auto;background:rgba(0,0,0,.3);border-radius:var(--r1)}
+/* the agents are a pipeline, so they are numbered */
+#agents{position:fixed;left:12px;top:232px;width:min(280px,calc(100% - 24px));padding:.6rem .85rem;border-radius:var(--r3);z-index:5}
+#agents summary{cursor:pointer;font:700 .9rem var(--disp);font-variation-settings:'wdth' 112}
+#alist{list-style:none;margin:.45rem 0;padding:0;counter-reset:ag}
+.ag{display:grid;grid-template-columns:1.3rem 1fr;gap:.45rem;padding:.4rem 0;border-top:1px solid var(--line);counter-increment:ag}
+.ag b{font-size:.86rem}.ag b::before{content:counter(ag) "  ";color:var(--dust);font-weight:500}
+.ag small{display:block;color:var(--dust);font-size:.74rem;line-height:1.35;overflow-wrap:anywhere}
+.ai{font:700 .95rem var(--mono);text-align:center}
+.ag.run .ai{color:var(--cy);animation:pulse 1s infinite}.ag.done .ai{color:var(--ok)}.ag.warn .ai{color:var(--ir)}.ag.err .ai{color:var(--bad)}.ag.skip{opacity:.5}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@keyframes pulse{50%{opacity:.35}}
+#aauto,#dbg{font-size:.76rem;padding:.3rem .65rem}
+#dbg{margin-left:.3rem}
+.warnbox{border-left:3px solid var(--ir);padding:.35rem .6rem;background:rgba(255,176,90,.08);border-radius:0 var(--r1) var(--r1) 0}
+/* validation scorecard and false-alarm test (Tested drawer) */
+.ntc{font-size:.75rem;color:var(--dust)}.sct td.bad{color:var(--ir)}
+.sct{width:100%;border-collapse:collapse;font-size:.8rem;margin:.5rem 0}
+.sct th{text-align:left;font-weight:600;color:var(--dust);padding:.25rem .3rem;border-bottom:1px solid var(--line2)}
+.sct td{padding:.3rem .3rem;border-bottom:1px solid var(--line);vertical-align:middle}
+.sct td.n{text-align:right;white-space:nowrap}
+.sct .bar{display:block;height:6px;border-radius:1px;background:var(--spec);margin-top:3px;min-width:2px}
+.sct .na{color:var(--dust);font-size:.75rem}
+.scs{font-size:.88rem}
+[hidden]{display:none!important}
+.mnav{display:none}
+/* Phone and narrow panes (v0.8): two-row header (title + search, then one scrolling row of buttons), controls as a
+   scrolling bottom sheet, cards between them. Seen live: at 646 px the header buttons sat on top of the controls. */
+@media(max-width:700px){
+  .top{gap:6px;left:8px;right:8px}
+  .wm{font-size:1rem}.brand small{display:none}.brand{gap:2px}
+  #sf{flex:1;min-width:0}#q{font-size:.9rem;padding:.45rem .7rem}#sf button{padding:.45rem .8rem}
+  .acts{width:100%;display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 2px}
+  .acts>*{flex:none;font-size:.8rem;padding:.4rem .7rem;min-height:38px}
+  .acts.more,.tabs.more{-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);mask-image:linear-gradient(90deg,#000 82%,transparent)}
+  #toast,#wait{top:112px}body.waiting #toast{top:calc(120px + var(--wh,90px))}
+  .tele{display:none}
+  #lab{top:104px}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -.7rem;padding:0 .3rem;position:sticky;top:0;background:var(--glass);z-index:1}.tabs>*{flex:none}
+  .tabs [role=tab]{padding:.65rem .55rem .55rem;font-size:.88rem}
+  #lam,.presets{font-size:.75rem}
+  output{min-width:auto}
+  .pxp .row{flex-wrap:wrap;row-gap:0}.pxp .row output{flex:0 0 100%;text-align:right;margin-top:-.15rem;font-size:.78rem}
+  .pxb button{flex:1}
+  /* Phone (v0.11): the sky on top, ONE bottom sheet at a time (Controls, Agents or Result), chosen in a bottom bar.
+     Tap the open one again to fold it away and see the whole sky. Credits live in Learn. */
+  .foot{display:none}
+  .mnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;gap:6px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:rgba(7,10,19,.97);border-top:1px solid var(--line)}
+  .mnav button{flex:1;position:relative;padding:.55rem .4rem;font-size:.86rem;font-weight:600;color:var(--dust);background:none;border:1px solid transparent}
+  .mnav button[aria-pressed=true]{color:var(--text);background:rgba(255,255,255,.07);border-color:var(--line2)}
+  .mnav button[aria-pressed=true]::after{content:"";position:absolute;left:30%;right:30%;top:-7px;height:2px;background:var(--spec);border-radius:2px}
+  .mnav .dot{position:absolute;top:7px;right:calc(50% - 2.6rem);width:7px;height:7px;border-radius:50%;background:var(--ir)}
+  .panel,#agents,#card{position:fixed;left:0;right:0;top:auto;bottom:calc(53px + env(safe-area-inset-bottom,0px));width:auto;max-height:min(58vh,520px);overflow-y:auto;transform:none;border-radius:var(--r3) var(--r3) 0 0;border-bottom:0;box-shadow:0 -10px 30px -12px rgba(0,0,0,.9)}
+  .panel{padding:0 .8rem .8rem;gap:.5rem}
+  #agents{padding:.6rem .9rem}
+  #card{padding:1rem .95rem}
+  body:not([data-sheet=panel]) .panel,body:not([data-sheet=agents]) #agents,body:not([data-sheet=card]) #card{display:none!important}
+  #intro{background:linear-gradient(0deg,rgba(5,7,15,.97) 0,rgba(5,7,15,.9) 58%,rgba(5,7,15,.2) 82%,rgba(5,7,15,0) 100%);padding:1rem 1rem 1.2rem}
+  #intro{z-index:19;padding-top:118px;background:linear-gradient(0deg,rgba(5,7,15,.97) 0,rgba(5,7,15,.92) 60%,rgba(5,7,15,.8) 100%)}   /* below the two-row header, which stays usable */
+  .presets button{min-height:36px}
+  #intro>div{margin:auto 0 0}
+  #intro .look{display:none}
+  #intro .exs{grid-template-columns:1fr}
+  #intro .lede{font-size:1.02rem}
+}
+/* ---------- Guided tour (v0.13; v0.19: 90-second story, English and Tamil) ---------- */
+:lang(ta){font-family:"Noto Sans Tamil","Nirmala UI","Tamil Sangam MN","Latha",Archivo,system-ui,sans-serif}
+#intro:lang(ta) .hl{font-size:clamp(1.2rem,3.2vw,1.8rem);line-height:1.4;max-width:30ch}
+#tour:lang(ta) .tx,#tour:lang(ta) .tg dd{line-height:1.65}
+.langsel{font-weight:650;padding:.6rem .8rem;font-size:.95rem}
+:lang(hi){font-family:"Noto Sans Devanagari","Nirmala UI","Mangal","Kohinoor Devanagari",Archivo,system-ui,sans-serif}
+#intro:lang(hi) .hl{max-width:30ch;line-height:1.4}#tour:lang(hi) .tx,#tour:lang(hi) .tg dd{line-height:1.65}
+.tvoice[aria-pressed=true]{border-color:#5ff0a0;color:#5ff0a0}
+.tlang{margin-left:auto;font-size:.78rem;padding:.25rem .4rem;min-height:30px;max-width:8.5rem}
+#tour{position:fixed;inset:0;z-index:50;pointer-events:none}
+#tour[hidden]{display:none}
+.tspot{position:fixed;left:50%;top:50%;width:0;height:0;border-radius:12px;box-shadow:0 0 0 200vmax rgba(3,5,12,.62);transition:left .45s cubic-bezier(.2,.8,.2,1),top .45s cubic-bezier(.2,.8,.2,1),width .45s cubic-bezier(.2,.8,.2,1),height .45s cubic-bezier(.2,.8,.2,1)}
+/* the glow is a separate ring that only fades (cheap); the dimming shadow itself never animates */
+.tring{position:absolute;inset:0;border-radius:inherit;opacity:0;box-shadow:0 0 0 1.5px rgba(95,227,240,.95),0 0 24px 2px rgba(95,227,240,.4);transition:opacity .3s}
+.tspot.on .tring{opacity:1;animation:tglow 2.2s ease-in-out infinite}
+@keyframes tglow{50%{opacity:.45}}
+.tcard{position:fixed;pointer-events:auto;left:50%;transform:translateX(-50%);width:min(450px,calc(100% - 24px));top:92px;padding:1rem 1.1rem .9rem;border-radius:var(--r3);
+  background:rgba(7,10,20,.94);border:1px solid var(--line2);box-shadow:0 24px 60px -20px #000;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);transition:top .45s,bottom .45s,left .45s}
+.tcard.low{top:auto;bottom:calc(64px + env(safe-area-inset-bottom,0px))}
+.tcard.side{left:24px;transform:none;top:50%;bottom:auto;translate:0 -50%}
+.tcard.in{animation:tin .5s cubic-bezier(.2,.8,.2,1)}
+@keyframes tin{from{opacity:0;filter:blur(6px)}to{opacity:1;filter:none}}
+.tprog{position:absolute;left:0;right:0;top:0;height:4px;border-radius:var(--r3) var(--r3) 0 0;overflow:hidden;background:rgba(255,255,255,.06)}
+.tprog i{display:block;height:100%;width:0;background:var(--spec);-webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 4px);mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 4px);transition:width .6s}
+.thead{display:flex;align-items:baseline;justify-content:space-between;margin-top:.25rem}
+.tyr{font:800 2.5rem/1 var(--disp);font-variation-settings:'wdth' 125;letter-spacing:.02em;background:var(--spec);-webkit-background-clip:text;background-clip:text;color:transparent}
+.tnum{font:600 .75rem var(--ui);color:var(--dust);letter-spacing:.08em}
+.tt{margin:.35rem 0 .25rem;font:700 1.12rem/1.25 var(--disp);font-variation-settings:'wdth' 112}
+.tx{margin:.2rem 0 .7rem;color:#cfd5e3;font-size:.94rem;line-height:1.55}
+.tnote{margin:-.3rem 0 .6rem;color:var(--bad);font-size:.82rem}
+.tpl{display:grid;justify-items:center;gap:.25rem;margin:.5rem 0 .3rem}
+.tpl canvas{width:240px;max-width:100%;border-radius:4px;box-shadow:0 0 0 1px #5b5446,0 0 0 6px #1b1914,0 0 0 7px #3a352b}
+.tpd{font-size:.72rem;color:var(--dust);letter-spacing:.04em}
+.tbtns{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.tbtns .tskip{margin-left:auto;background:none;border-color:transparent;color:var(--dust)}
+.tbtns .tskip:hover{color:var(--text)}
+.tourb{display:inline-flex;gap:.5rem;align-items:center;border-color:rgba(95,227,240,.5)!important;color:#c9f6fb;background:rgba(95,227,240,.06)!important}
+.tourb::before{content:"";width:0;height:0;border-left:8px solid var(--cy);border-top:5px solid transparent;border-bottom:5px solid transparent}
+body.touring #intro{display:none}
+@media(max-width:700px){
+  .tcard,.tcard.low,.tcard.side{top:max(env(safe-area-inset-top,0px),10px);bottom:auto;left:50%;transform:translateX(-50%);translate:none;padding:.85rem .9rem .75rem}
+  .tyr{font-size:2rem}.tx{font-size:.9rem}.tpl canvas{width:200px}
+  
+}
+.tcard.guide .tyr{font-size:1rem;letter-spacing:.14em;text-transform:uppercase}
+.tjump{margin-left:auto;margin-right:.6rem;max-width:12rem;font-size:.8rem;padding:.25rem .4rem}
+.tjump[hidden]{display:none}
+.tg{margin:.3rem 0 .75rem;display:grid;gap:.15rem}
+.tg dt{font:700 .7rem var(--ui);letter-spacing:.12em;text-transform:uppercase;color:var(--cy);margin-top:.35rem}
+.tg dt:nth-of-type(2){color:var(--ir)}
+.tg dd{margin:0;color:#cfd5e3;font-size:.93rem;line-height:1.5}
+.tnote.wait{color:var(--dust)}
+@media(max-width:700px){.tcard.plow{top:auto!important;bottom:calc(72px + env(safe-area-inset-bottom,0px))!important}.tjump{max-width:9rem}}
+#dcd{background:#070a13;color:var(--text);border:1px solid var(--line);border-radius:16px;padding:1rem 1.1rem 1.1rem;width:min(600px,calc(100vw - 32px));max-height:calc(100dvh - 32px);overflow:auto;box-shadow:0 30px 80px -20px #000}
+#dcd::backdrop{background:rgba(2,4,10,.72)}
+.dcdt{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:.6rem}.dcdt h2{font-size:1.1rem;margin:0}
+#dcdimg{display:block;width:100%;max-height:58dvh;object-fit:contain;border-radius:10px;background:#05070f;image-rendering:auto}
+.dcds{font-size:.78rem;color:var(--dust);margin:.5rem 0 .35rem;display:block}
+.dcdb{display:flex;gap:8px;flex-wrap:wrap;margin:.4rem 0 .6rem}
+.dcdb .btn{display:inline-flex;align-items:center;background:var(--raise);padding:.42rem .85rem;border:1px solid var(--line2);border-radius:var(--r1);color:var(--text);text-decoration:none}
+.dcdb .btn:hover{border-color:var(--text)}
+#dcdtxt{width:100%;box-sizing:border-box;background:#0a0e1a;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:.5rem;font:inherit;font-size:.8rem;resize:vertical}
+#dcard{border-color:var(--ir);color:var(--ir)}
+.cardb{border-color:var(--ir)!important;color:var(--ir)!important}
+#game{background:#070a13;color:var(--text);border:1px solid var(--line);border-radius:16px;padding:1rem 1.1rem 1.1rem;width:min(520px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;box-shadow:0 30px 80px -20px #000}
+#game::backdrop{background:rgba(2,4,10,.78)}
+#gcv{display:block;width:min(100%,52dvh);margin:0 auto;aspect-ratio:1;border-radius:10px;background:#000;cursor:crosshair;touch-action:manipulation}
+.gmsg{font-size:.9rem;line-height:1.45;margin:.1rem 0 .6rem;min-height:2.6em}.gmsg.no{color:#ff9b9b}.gmsg.ok{color:#5ff0a0}
+.gbar{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.78rem;color:var(--dust);margin:.45rem 0}
+#gdots{display:flex;gap:5px}#gdots i{width:7px;height:7px;border-radius:50%;background:#323d57}#gdots i.on{background:var(--ir)}
+.glev{display:flex;gap:6px;margin:0 0 .5rem}.glev button{font-size:.8rem;min-height:34px}.glev button[aria-pressed=true]{border-color:#5ff0a0;color:#5ff0a0}
+.gctl{display:flex;gap:8px;flex-wrap:wrap}.gctl button{min-height:40px;min-width:44px}#gctl2{display:flex;gap:8px;margin-left:auto}
+#gres h3{margin:.8rem 0 .3rem;color:#5ff0a0}#gres p{font-size:.88rem;line-height:1.5;margin:.2rem 0}
+#playb{border-color:#5ff0a0;color:#5ff0a0}.ex.play{border-color:#5ff0a0}.ex.play b{color:#5ff0a0}
+.foot a{color:var(--dust);text-decoration:underline;text-underline-offset:2px}.foot a:hover{color:var(--text)}
+.abl{margin:.2rem 0 1rem;font-size:.85rem}.abl a{color:var(--dust)}.abl a:hover{color:var(--text)}
+#wait{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:21;width:min(460px,calc(100% - 24px));padding:.6rem .85rem .65rem;border-radius:var(--r2);border-color:rgba(255,176,90,.35)}
+#wait .wh{display:flex;align-items:center;gap:.55rem;font-size:.86rem}#wait .wh b{font-weight:600;flex:1}
+#wait .wt{font:600 .8rem var(--mono);color:var(--ir);white-space:nowrap}
+#wait .spin{width:14px;height:14px;flex:none;border-radius:50%;border:2px solid rgba(255,176,90,.25);border-top-color:var(--ir);animation:wspin .9s linear infinite}
+@keyframes wspin{to{transform:rotate(360deg)}}
+#wait .wbar{height:4px;border-radius:2px;background:rgba(255,255,255,.08);margin:.5rem 0 .1rem;overflow:hidden}
+#wait .wbar i{display:block;height:100%;width:0;background:var(--spec);transition:width .4s}
+#wait p{margin:.35rem 0 0;font-size:.76rem;color:var(--dust);line-height:1.4}
+body.waiting #toast{top:calc(72px + var(--wh,90px))}
+@media(prefers-reduced-motion:reduce){.tspot{transition:none}.tspot.on .tring{animation:none}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* ---------- v0.25 desktop: the observatory. The sky owns the middle, framed like an eyepiece; the controls dock to the
+   left, the result and the agents to the right, the readout and a true angular scale sit in the frame's bottom corners.
+   Clear view (key H) slides both docks away. Phones keep the one-sheet layout above. ---------- */
+.eye,.scl,#clearv{display:none}
+@media(max-width:700px){.rdock{display:contents}}
+@media(min-width:701px) and (max-width:1099px){.rdock{display:contents}}
+@media(min-width:1100px){
+  :root{--lw:clamp(350px,23vw,420px);--rw:clamp(300px,19vw,350px);--tp:66px;--bt:28px;--glass:rgba(6,10,20,.74);--dock:cubic-bezier(.2,.8,.2,1)}
+  .top{top:12px;left:14px;right:14px;gap:16px}
+  .brand{flex:none;width:calc(var(--lw) - 16px)}
+  #sf{flex:1 1 220px;max-width:380px;margin-right:auto}
+  /* the header actions are one instrument strip, not a row of separate cards */
+  .acts{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%);gap:2px;padding:3px}
+  .acts>button,.acts>select,.acts .tmw>button{background:none;border:1px solid transparent;backdrop-filter:none;-webkit-backdrop-filter:none;padding:.4rem .7rem;font-size:.9rem}
+  .acts>button:hover,.acts>select:hover,.acts .tmw>button:hover{background:rgba(255,255,255,.07);border-color:transparent}
+  .acts>select{border-right:1px solid var(--line);border-radius:var(--r1) 0 0 var(--r1);padding-right:.5rem}
+  #playb{color:#5ff0a0;border-color:rgba(95,240,160,.35)}
+  #clearv{display:inline-block}
+  .acts>button[aria-pressed=true]{background:rgba(255,196,107,.14);border-color:rgba(255,196,107,.5)}
+  /* left dock: the controls */
+  .panel{left:14px;right:auto;top:var(--tp);bottom:var(--bt);width:var(--lw);transform:none;align-content:start;overflow:hidden auto;scrollbar-width:thin;
+    padding:0 1rem 1rem;border-radius:4px 18px 4px 4px;transition:transform .5s var(--dock),opacity .5s}
+  .tabs{position:sticky;top:0;z-index:2;margin:0 -1rem;padding:.35rem .5rem 0;background:rgba(7,11,21,.97);border-bottom-color:var(--line2)}
+  .tabs::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--spec);opacity:.85;
+    -webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102));mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102))}
+  .tabs [role=tab]{padding:.6rem .55rem .5rem;font-size:.88rem}
+  .tabs [role=tab][aria-selected=true]::after{left:.55rem;right:.55rem}
+  .loadrow{gap:6px 8px}.loadrow .hbtn{flex:1 1 55%;padding:.6rem;font-size:.98rem}#dcard{flex:1 1 30%;padding:.6rem}.loadrow select{padding:.3rem .45rem}
+  #stat{order:9}
+  .chgks{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .row label{min-width:4rem}output{min-width:6.5rem}
+  /* right dock: the result card, then the agents' log */
+  .rdock{position:fixed;z-index:6;right:14px;top:var(--tp);bottom:var(--bt);width:var(--rw);display:flex;flex-direction:column;gap:10px;pointer-events:none;transition:transform .5s var(--dock),opacity .5s}
+  .rdock>*{pointer-events:auto}
+  .rdock #card{position:static;width:auto;max-height:none;flex:0 1 auto;min-height:0;border-radius:18px 4px 4px 4px}
+  .rdock>section{flex:0 1 auto;min-height:0;display:flex;flex-direction:column}
+  #agents{position:static;width:auto;max-height:100%;overflow:hidden auto;scrollbar-width:thin;border-radius:4px}
+  .rdock:has(#card:not([hidden])) #agents{max-height:38vh}
+  #agents:not([open]){overflow:hidden}
+  /* the eyepiece: four corner brackets around the clear sky between the docks */
+  .eye{display:block;position:fixed;z-index:2;pointer-events:none;left:calc(var(--lw) + 30px);right:calc(var(--rw) + 30px);top:calc(var(--tp) + 4px);bottom:calc(var(--bt) + 54px);transition:left .5s var(--dock),right .5s var(--dock)}
+  .eye i{position:absolute;width:26px;height:26px;border:0 solid rgba(160,205,235,.5)}
+  .eye .tl{left:0;top:0;border-width:1px 0 0 1px}.eye .tr{right:0;top:0;border-width:1px 1px 0 0}
+  .eye .bl{left:0;bottom:0;border-width:0 0 1px 1px}.eye .br{right:0;bottom:0;border-width:0 1px 1px 0}
+  /* readout in the frame's bottom-left corner, scale bar in the bottom-right */
+  .tele{top:auto;left:calc(var(--lw) + 30px);bottom:calc(var(--bt) + 10px);display:grid;grid-auto-flow:column;grid-template-rows:auto auto;grid-template-columns:none;gap:0 1.4rem;
+    min-width:0;padding:0;background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-shadow:0 1px 4px #000,0 0 2px #000;transition:left .5s var(--dock)}
+  .tele dt{font-size:.66rem;line-height:1.3}.tele dd{text-align:left;font-size:.84rem;line-height:1.3}
+  .scl{display:grid;justify-items:end;gap:3px;position:fixed;z-index:5;right:calc(var(--rw) + 30px);bottom:calc(var(--bt) + 12px);pointer-events:none;transition:right .5s var(--dock)}
+  .scl i{display:block;height:7px;border:1.5px solid rgba(238,241,247,.85);border-top:0;box-shadow:0 1px 3px #000}
+  .scl span{font-size:.78rem;font-weight:600;text-shadow:0 1px 4px #000}
+  .scl.off{display:none}
+  .foot{left:calc(var(--lw) + 30px);right:calc(var(--rw) + 30px);padding:.4rem 0;background:none;gap:1rem;font-size:.68rem;text-shadow:0 1px 3px #000}
+  /* Clear view */
+  body.clearv .panel{transform:translateX(calc(-100% - 30px));opacity:0;pointer-events:none}
+  body.clearv .rdock{transform:translateX(calc(100% + 30px));opacity:0}
+  body.clearv .rdock>*{pointer-events:none}
+  body.clearv .eye{left:30px;right:30px}
+  body.clearv .tele{left:30px}body.clearv .scl{right:30px}
+  body.clearv .foot{left:30px;right:30px}
+  body.intro:has(#intro:not([hidden])) :is(.eye,.scl,.rdock){opacity:0;pointer-events:none}
+  #toast,#wait{left:calc(50% + (var(--lw) - var(--rw)) / 2)}
+  body.clearv :is(#toast,#wait){left:50%}
+}
+@media(min-width:1100px) and (prefers-reduced-motion:reduce){.panel,.rdock,.eye,.tele,.scl{transition:none}}
+
+/* ---------- v0.26: the same observatory on every screen ----------
+   >= 1500 px: three columns as in v0.25. 1100-1499 (laptops, 1366 x 768 included): compact header, slimmer docks.
+   701-1099 (tablets, small windows): ONE dock on the left, picked with a segmented switch (Controls / Agents / Result),
+   the sky on the right. <= 700 (phones): the same switch at the bottom, one sheet at a time.
+   Everywhere: credits in one line under the docks, the spectral tick strip on top of the controls. */
+.tabs{position:relative}
+.tabs::before{content:"";position:absolute;left:0;right:0;top:0;height:3px;background:var(--spec);opacity:.85;pointer-events:none;
+  -webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102));mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102))}
+@media(min-width:1100px){
+  .foot{left:14px;right:14px;bottom:0;height:var(--bt);padding:0;align-items:center;flex-wrap:nowrap;white-space:nowrap;overflow:hidden}
+}
+@media(min-width:1100px) and (max-width:1499px){
+  :root{--lw:clamp(320px,25vw,360px);--rw:clamp(280px,21vw,310px)}
+  .brand{width:auto}.brand small{display:none}
+  #sf{flex:1 1 170px;min-width:150px;max-width:300px}
+  .acts>button,.acts>select,.acts .tmw>button{padding:.38rem .5rem;font-size:.84rem}
+  #survey{max-width:9.6rem}
+  .loadrow .hbtn{flex:1 1 100%}#dcard{flex:0 1 auto;padding:.42rem .7rem}
+  .foot span:nth-child(2),.foot span:nth-child(3){display:none}
+  .tele{gap:0 1rem}.tele dd{font-size:.8rem}
+  .chgk small{display:none}
+}
+@media(min-width:1100px) and (max-width:1259px){
+  .acts>button,.acts>select,.acts .tmw>button{padding:.36rem .42rem;font-size:.8rem}
+  #survey{max-width:8.4rem}#sf{min-width:130px}
+  .wm{font-size:1.1rem}
+}
+/* tablets and small windows: one dock, a segmented switch on top of it */
+@media(min-width:701px) and (max-width:1099px){
+  :root{--dw:min(390px,46vw);--tp:62px;--sw:44px;--bt:26px;--glass:rgba(6,10,20,.8)}
+  .top{top:10px;left:12px;right:12px;gap:10px;flex-wrap:nowrap}
+  .brand small{display:none}.wm{font-size:1.05rem}
+  #sf{flex:0 1 220px;min-width:120px}
+  .acts{flex:1 1 auto;min-width:0;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;justify-content:flex-start;
+    background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);gap:2px;padding:3px}
+  .acts>*{flex:none}
+  .acts>button,.acts>select,.acts .tmw>button{background:none;border:1px solid transparent;backdrop-filter:none;-webkit-backdrop-filter:none;padding:.36rem .55rem;font-size:.84rem}
+  .acts>select{max-width:9rem}
+  .mnav{display:flex;position:fixed;z-index:8;left:12px;top:var(--tp);width:var(--dw);height:var(--sw);gap:3px;padding:3px;border-radius:12px 12px 4px 4px;
+    background:rgba(7,11,21,.94);border:1px solid var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+  .mnav button{flex:1;position:relative;padding:0 .4rem;font-size:.86rem;font-weight:600;color:var(--dust);background:none;border:1px solid transparent;border-radius:9px 9px 3px 3px}
+  .mnav button[aria-pressed=true]{color:var(--text);background:rgba(255,255,255,.07);border-color:var(--line2)}
+  .mnav button[aria-pressed=true]::after{content:"";position:absolute;left:25%;right:25%;bottom:2px;height:2px;background:var(--spec);border-radius:2px}
+  .mnav .dot{position:absolute;top:8px;right:14%;width:7px;height:7px;border-radius:50%;background:var(--ir)}
+  .panel,#agents,#card{position:fixed;left:12px;right:auto;top:calc(var(--tp) + var(--sw) + 6px);bottom:var(--bt);width:var(--dw);max-height:none;transform:none;
+    overflow:hidden auto;scrollbar-width:thin;border-radius:4px 4px 18px 4px;z-index:6}
+  .panel{padding:0 .9rem .9rem;align-content:start}
+  .tabs{position:sticky;top:0;z-index:2;margin:0 -.9rem;padding:.35rem .4rem 0;background:rgba(7,11,21,.97)}
+  .tabs [role=tab]{padding:.55rem .5rem .45rem;font-size:.86rem}
+  #agents{padding:.6rem .85rem}#card{padding:1rem}
+  body:not([data-sheet=panel]) .panel,body:not([data-sheet=agents]) #agents,body:not([data-sheet=card]) #card{display:none!important}
+  .loadrow .hbtn{flex:1 1 100%}
+  .chgks{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}.chgk small{display:none}
+  .eye{display:block;position:fixed;z-index:2;pointer-events:none;left:calc(var(--dw) + 28px);right:20px;top:calc(var(--tp) + 4px);bottom:calc(var(--bt) + 50px)}
+  .eye i{position:absolute;width:22px;height:22px;border:0 solid rgba(160,205,235,.5)}
+  .eye .tl{left:0;top:0;border-width:1px 0 0 1px}.eye .tr{right:0;top:0;border-width:1px 1px 0 0}
+  .eye .bl{left:0;bottom:0;border-width:0 0 1px 1px}.eye .br{right:0;bottom:0;border-width:0 1px 1px 0}
+  .tele{display:grid;top:auto;left:calc(var(--dw) + 28px);bottom:calc(var(--bt) + 8px);grid-auto-flow:column;grid-template-rows:auto auto;grid-template-columns:none;gap:0 .9rem;
+    min-width:0;padding:0;background:none;border:0;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none;text-shadow:0 1px 4px #000,0 0 2px #000}
+  .tele dt{font-size:.62rem;line-height:1.3}.tele dd{text-align:left;font-size:.76rem;line-height:1.3}
+  .tele dt:nth-of-type(3),.tele dd:nth-of-type(3){display:none}
+  .scl{display:grid;justify-items:end;gap:3px;position:fixed;z-index:5;right:20px;bottom:calc(var(--bt) + 10px);pointer-events:none}
+  .scl i{display:block;height:7px;border:1.5px solid rgba(238,241,247,.85);border-top:0;box-shadow:0 1px 3px #000}
+  .scl span{font-size:.74rem;font-weight:600;text-shadow:0 1px 4px #000}.scl.off{display:none}
+  .foot{display:flex;left:12px;right:12px;bottom:0;height:var(--bt);padding:0;align-items:center;flex-wrap:nowrap;white-space:nowrap;overflow:hidden;background:none;gap:.9rem;font-size:.64rem}
+  .foot span:nth-child(2),.foot span:nth-child(3){display:none}
+  body[data-sheet=none] .eye,body[data-sheet=none] .tele{left:20px}
+  #toast,#wait{left:calc(50% + var(--dw) / 2)}
+  body[data-sheet=none] :is(#toast,#wait){left:50%}
+  body.intro:has(#intro:not([hidden])) :is(.eye,.scl,.mnav,.tele){opacity:0;pointer-events:none}
+}
+/* phones: the same instrument, bottom switch and one sheet */
+@media(max-width:700px){
+  .mnav{gap:4px;padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px));background:rgba(6,9,18,.94);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+  .mnav button{border-radius:10px}
+  .panel,#agents,#card{border-radius:18px 18px 0 0;background:rgba(6,10,20,.92)}
+  .panel::after,#agents::after,#card::after{content:none}
+  .tabs{padding-top:.3rem}
+  .scl{display:grid;justify-items:end;gap:2px;position:fixed;z-index:4;right:12px;top:118px;pointer-events:none}
+  .scl i{display:block;height:6px;border:1.5px solid rgba(238,241,247,.85);border-top:0;box-shadow:0 1px 3px #000}
+  .scl span{font-size:.7rem;font-weight:600;text-shadow:0 1px 4px #000}.scl.off{display:none}
+  body.intro:has(#intro:not([hidden])) .scl{display:none}
+  .loadrow .hbtn{flex:1 1 100%}
+}
+.panel>*{min-width:0}
+@media(max-width:1499px){.loadrow label,.loadrow select{order:1}#dcard{order:2}#stat{order:9}}
+@media(min-width:701px) and (max-width:1099px){.acts{-webkit-mask-image:linear-gradient(90deg,#000 88%,transparent);mask-image:linear-gradient(90deg,#000 88%,transparent)}}
+
+/* ---------- v0.27 identity: "plate and instrument" ----------
+   Tombaugh's glass plates meet a modern telescope readout. One motif carries it: registration marks, four small ticks in
+   the corners of every instrument surface (the same marks as the eyepiece frame around the sky). Titles are set in a serif,
+   like the labels on archive plates; the controls stay in Archivo; numbers are set condensed, like a readout. Corners are
+   sharp (3-6 px): an instrument, not a stack of app cards. */
+:root{--serif:'Instrument Serif','Iowan Old Style','Palatino Linotype',Georgia,serif;--r1:3px;--r2:4px;--r3:6px;--tk:rgba(175,212,240,.62)}
+.panel,#card,#agents,.tcard,#wait,#lab,#dcd,#game,:is(#drawer,#tdrawer),.tmenu{
+  background-image:linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk)),
+    linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk));
+  background-size:11px 1px,1px 11px,11px 1px,1px 11px,11px 1px,1px 11px,11px 1px,1px 11px;
+  background-position:0 0,0 0,100% 0,100% 0,0 100%,0 100%,100% 100%,100% 100%;background-repeat:no-repeat}
+.panel,#card,#agents,.rdock #card,.tcard,#wait,#lab{border-radius:var(--r2)!important}
+.glass{border-color:rgba(120,140,180,.22)}
+/* serif titles */
+#card h3,.tt,:is(#drawer,#tdrawer) h2,#lab>b,.dcdt h2,#gresh{font-family:var(--serif);font-weight:400;letter-spacing:.005em;font-variation-settings:normal}
+#card h3{font-size:1.55rem;line-height:1.1;margin-bottom:.4rem}
+.tt{font-size:1.55rem;line-height:1.15}
+:is(#drawer,#tdrawer) h2{font-size:1.4rem}
+#agents summary{font:400 1.25rem/1.2 var(--serif);letter-spacing:.01em;font-variation-settings:normal}
+:is(#tour,#card,:is(#drawer,#tdrawer)):is(:lang(ta),:lang(hi)) :is(.tt,h3,h2){font-family:inherit;font-weight:650}
+/* intro: the headline is the voice of the page */
+#intro .kick{text-transform:none;letter-spacing:.02em;font-size:.86rem;font-weight:500}
+#intro .hl{font:400 clamp(1.9rem,3.5vw,2.85rem)/1.06 var(--serif);letter-spacing:-.005em;max-width:20ch;margin:.2rem 0 .8rem}
+#intro:lang(ta) .hl,#intro:lang(hi) .hl{font-family:inherit;font-weight:700;font-size:clamp(1.25rem,2.6vw,1.8rem);line-height:1.4}
+#intro button.ex{border-radius:var(--r2);background-image:linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk)),linear-gradient(var(--tk),var(--tk));
+  background-size:9px 1px,1px 9px,9px 1px,1px 9px;background-position:0 0,0 0,100% 100%,100% 100%;background-repeat:no-repeat}
+@media(min-width:701px) and (max-height:820px){#intro .ruler{margin:.6rem 0 .25rem}#intro .rlab{margin-bottom:.9rem}#intro .hist{margin-bottom:.9rem}#intro .exs{margin-top:1rem}#intro .cta{margin-top:.8rem}}
+/* readouts: condensed numbers */
+.tele dd,output,#wait .wt,.tnum{font-variation-settings:'wdth' 78;letter-spacing:.01em}
+.tele dd{font-size:.9rem}
+.tele dt{letter-spacing:.04em}
+/* the agents are a pipeline: one line runs through them, a node per agent */
+#alist{margin-top:.6rem}
+.ag{position:relative;border-top:0;padding:.35rem 0 .55rem;grid-template-columns:1.45rem 1fr;gap:.6rem}
+.ag::after{content:"";position:absolute;left:calc(.725rem - .5px);top:1.75rem;bottom:-.2rem;width:1px;background:linear-gradient(var(--line2),rgba(50,61,87,.25))}
+.ag:last-child::after{display:none}
+.ag b::before{content:none}
+.ai{position:relative;z-index:1;width:1.45rem;height:1.45rem;border-radius:50%;display:grid;place-items:center;font-size:.72rem;line-height:1;background:#070b16;border:1px solid var(--line2);margin-top:.05rem}
+.ag.done .ai{border-color:rgba(95,240,160,.55);box-shadow:0 0 10px -3px rgba(95,240,160,.6)}
+.ag.run .ai{border-color:var(--cy);box-shadow:0 0 12px -2px rgba(95,227,240,.7)}
+.ag.warn .ai{border-color:rgba(255,176,90,.6)}.ag.err .ai{border-color:rgba(255,122,122,.6)}
+.ag.done::after{background:linear-gradient(rgba(95,240,160,.45),rgba(95,240,160,.12))}
+/* buttons: sharp, quiet; the primary is solid starlight */
+button,select,#sf,.acts{border-radius:var(--r1)}
+.hbtn{letter-spacing:.01em}
+.tabs [role=tab]{letter-spacing:.005em}
+.chgk{border-radius:var(--r2)}
+/* the eyepiece corners and the registration marks share one colour */
+.eye i{border-color:var(--tk)!important}
+@media(max-width:700px){.panel,#agents,#card{border-radius:var(--r3) var(--r3) 0 0!important}#card h3{font-size:1.4rem}#intro .hl{font-size:1.85rem}}
+
+
+
+/* ---------- v0.28 "mission control" (desktop, 1100 px and up) ----------
+   Observatory software, not floating widgets: one solid header bar, sidebars flush with the screen edges, a status bar
+   along the bottom with the readout and the credits, the sky framed in the middle. One family (Archivo) in clear weights.
+   The intro: the words on the left, the three real examples as start cards on the right. Same buttons and options as before. */
+@media(min-width:1100px){
+  :root{--hb:54px;--sb:30px;--tp:var(--hb);--bt:var(--sb);--bar:rgba(6,9,18,.97);--side:rgba(7,11,21,.93)}
+  /* serif titles and corner ticks of v0.27 off: a calmer instrument */
+  .panel,#card,#agents,.tcard,#wait,#lab,#dcd,#game,:is(#drawer,#tdrawer),.tmenu,#intro button.ex{background-image:none}
+  #card h3,.tt,:is(#drawer,#tdrawer) h2,#lab>b,.dcdt h2,#gresh,#agents summary{font-family:var(--disp);font-weight:700;font-variation-settings:'wdth' 100;letter-spacing:0}
+  #card h3{font-size:1.25rem}.tt{font-size:1.2rem}#agents summary{font-size:.95rem}
+  /* header bar */
+  .top{top:0;left:0;right:0;height:var(--hb);padding:0 14px;gap:14px;background:var(--bar);border-bottom:1px solid var(--line);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px)}
+  .brand{width:auto;gap:4px}.wm{font-size:1.12rem}.brand small{display:none}.brand .spec{height:4px}
+  #sf{flex:0 1 380px;margin:0 auto;background:rgba(255,255,255,.04);border-color:var(--line2)}
+  .acts{background:none;border:0;backdrop-filter:none;-webkit-backdrop-filter:none;padding:0;gap:2px}
+  .acts>button,.acts>select,.acts .tmw>button{color:#c9d0de}
+  .acts>button:hover,.acts>select:hover,.acts .tmw>button:hover{color:var(--text)}
+  .acts>select{border:1px solid var(--line2);border-radius:var(--r1);margin-right:6px}
+  /* sidebars */
+  .panel{left:0;top:var(--hb);bottom:var(--sb);width:var(--lw);border:0;border-right:1px solid var(--line);border-radius:0!important;background-color:var(--side);box-shadow:none}
+  .tabs{background:rgba(9,13,25,.98);padding-top:.2rem}
+  .tabs::before{height:2px}
+  .rdock{right:0;top:var(--hb);bottom:var(--sb);gap:0;width:var(--rw)}
+  .rdock #card{border:0;border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0!important;background-color:var(--side);box-shadow:none}
+  #agents{border:0;border-left:1px solid var(--line);border-radius:0!important;background-color:var(--side);box-shadow:none;flex:1 1 auto}
+  .rdock:has(#card:not([hidden])) #agents{flex:0 1 auto}
+  /* status bar */
+  .foot{left:0;right:0;bottom:0;height:var(--sb);padding:0 14px 0 calc(var(--lw) + 14px);justify-content:flex-end;gap:1.1rem;background:var(--bar);border-top:1px solid var(--line);font-size:.68rem;color:#7d879c;text-shadow:none;z-index:6}
+  .tele{left:14px;bottom:0;height:var(--sb);display:flex;align-items:center;gap:0;z-index:7;text-shadow:none}
+  .tele dt{font-size:.68rem;margin:0 .35rem 0 0;color:#7d879c}.tele dd{font-size:.78rem;margin:0 1.1rem 0 0;color:var(--text)}
+  /* the sky frame */
+  .eye{left:calc(var(--lw) + 22px);right:calc(var(--rw) + 22px);top:calc(var(--hb) + 18px);bottom:calc(var(--sb) + 18px)}
+  .scl{right:calc(var(--rw) + 34px);bottom:calc(var(--sb) + 28px)}
+  body.clearv .eye{left:22px;right:22px}body.clearv .scl{right:34px}body.clearv .tele{left:14px}body.clearv .foot{left:0;right:0}
+  #toast,#wait{top:calc(var(--hb) + 12px)}
+  .tcard{top:calc(var(--hb) + 24px)}
+  /* intro: words left, the real examples as start cards on the right */
+  #intro{top:var(--hb);background:linear-gradient(90deg,rgba(5,7,15,.97) 0,rgba(5,7,15,.9) 45%,rgba(5,7,15,.55) 75%,rgba(5,7,15,.35) 100%);padding:1.5rem clamp(2rem,5vw,5rem)}
+  #intro>div{width:min(1120px,100%);margin:auto;display:grid;grid-template-columns:minmax(0,600px) minmax(280px,360px);column-gap:clamp(2.5rem,6vw,6rem);align-items:start}
+  #intro>div>*{grid-column:1}
+  #intro .exs{grid-column:2;grid-row:1 / span 20;align-self:center;margin:0;grid-template-columns:1fr;gap:.6rem}
+  #intro .exs small{font-size:.8rem;margin-bottom:.2rem}
+  #intro button.ex{padding:1rem 1.1rem;background:rgba(10,14,26,.85);border-color:var(--line2);border-left:3px solid var(--line2)}
+  #intro button.ex.play{border-left-color:#5ff0a0}#intro [data-ex=proof]{border-left-color:var(--cy)}#intro [data-ex=false]{border-left-color:var(--ir)}
+  #intro button.ex b{font-size:1rem}
+  #intro .kick{color:var(--cy);font-size:.85rem}
+  #intro .hl{font:650 clamp(1.5rem,2.4vw,2.05rem)/1.2 var(--disp);font-variation-settings:'wdth' 100;letter-spacing:-.005em;max-width:24ch}
+  #intro .look{display:none}
+}
+
+/* v0.28.1: the empty space around the whole-sky map carries its key: what the map is (top left) and what the marks mean
+   (bottom left). Only while the whole sky is shown; gone as soon as you zoom into a field. */
+.skyinfo{display:none}
+@media(min-width:1100px){
+  .skyinfo:not([hidden]){display:block}
+  .skycap,.skyleg{position:fixed;z-index:3;pointer-events:none;text-shadow:0 1px 3px #000}
+  .skycap{left:calc(var(--lw) + 44px);top:calc(var(--hb) + 40px);width:min(330px,22vw);display:grid;gap:.35rem;font-size:.8rem;line-height:1.45;color:var(--dust)}
+  .skycap b{font-size:1rem;font-weight:650;color:var(--text)}
+  .skycap .skyhow{margin-top:.35rem;padding-top:.5rem;border-top:1px solid var(--line);color:#aab3c6}
+  .skyleg{left:calc(var(--lw) + 44px);bottom:calc(var(--sb) + 40px);list-style:none;margin:0;padding:.7rem .85rem;display:grid;gap:.4rem;font-size:.78rem;color:#c9d0de;
+    background:rgba(6,9,18,.72);border:1px solid var(--line);border-radius:var(--r2)}
+  .skyleg li{display:flex;align-items:center;gap:.55rem}.skyleg svg{width:18px;height:18px;flex:none}
+  body.clearv .skycap,body.clearv .skyleg{left:44px}
+  body.intro:has(#intro:not([hidden])) .skyinfo,body.touring .skyinfo{display:none}
+}
+</style>
+</head>
+<body class="intro">
+<div id="aladin" tabindex="0" role="application" aria-roledescription="sky map" aria-label="Interactive sky. Drag to pan, scroll to zoom."></div>
+<canvas id="ov" aria-hidden="true"></canvas>
+
+<header class="top">
+  <div class="brand" aria-label="ARCNAVE"><span class="wm">ARCNAVE</span><i class="spec" aria-hidden="true"></i><small>Real SPHEREx images, real known movers</small></div>
+  <form id="sf" role="search"><input id="q" aria-label="Search object name or RA Dec coordinates" placeholder="Name, or RA Dec: 190 -4"><button>Fly to</button></form>
+  <div class="acts">
+    <select id="survey" aria-label="Background sky survey">
+      <option value="P/2MASS/color">Base: 2MASS (near-IR)</option>
+      <option value="P/allWISE/color">Base: AllWISE (infrared)</option>
+      <option value="P/DSS2/color">Base: DSS2 (visible)</option>
+    </select>
+    <button id="ecl" aria-pressed="false" title="The path the Sun and planets trace. Solar-system movers tend to lie near it.">Ecliptic</button>
+    <button id="playb" data-play title="A 60-second game on real SPHEREx images">Find the asteroid</button><button id="exb" title="Open a ready-made real example">Examples</button><button id="share">Share</button><button id="wsky" title="Zoom out to the whole sky">Whole sky</button><button id="clearv" aria-pressed="false" title="Hide the panels and look at the whole view (key H)">Clear view</button><span class="tmw"><button id="tourm" aria-haspopup="true" aria-expanded="false" aria-controls="tmenu">Tour</button><span id="tmenu" class="tmenu glass" role="menu" hidden><button role="menuitem" data-tour><b>90-second story</b><small>Neptune, Pluto, Planet Nine, then a real asteroid</small></button><button role="menuitem" data-guide><b>Every tool, one by one</b><small>What each tool is and how to use it</small></button></span></span><button id="lb" aria-expanded="false" aria-controls="drawer">Learn</button><button id="tb" aria-expanded="false" aria-controls="tdrawer" title="How far you can trust ARCNAVE: the tests, misses included">Tested</button><button id="hc" aria-pressed="false" aria-label="High contrast" title="High contrast">◐</button>
+  </div>
+</header>
+
+<div class="eye" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+<div id="skyinfo" class="skyinfo" hidden>
+  <div class="skycap"><b>The whole sky in near-infrared light</b><span>2MASS survey, the Milky Way across the middle. SPHEREx photographs all of it every six months, in 102 colours.</span>
+    <span class="skyhow">Drag to turn the sky. Scroll or pinch to zoom. Click a marker, or type a place in Fly to, and the agents fetch its SPHEREx images.</span></div>
+  <ul class="skyleg" aria-label="Map key">
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="rgba(238,241,247,.5)"/><circle cx="10" cy="10" r="3" fill="#eef1f7"/></svg>Famous places, ready to open</li>
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="#ffb05a" stroke-width="2"/><circle cx="10" cy="10" r="2.3" fill="#ffb05a"/></svg>A real asteroid example</li>
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="8" height="8" fill="none" stroke="rgba(95,227,240,.85)" stroke-width="1.3"/></svg>Our 18 test fields (how well it works)</li>
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 10h5M9 10h5M17 10h2" stroke="rgba(95,227,240,.7)" stroke-width="1.3"/></svg>Ecliptic, where the planets and most asteroids travel</li>
+  </ul>
+</div>
+<section aria-label="Telemetry"><dl class="tele glass">
+  <dt>RA</dt><dd id="ra">0</dd><dt>Dec</dt><dd id="dec">0</dd><dt>Image λ</dt><dd id="bd">none</dd><dt>Epoch</dt><dd id="ep">none</dd><dt>FoV</dt><dd id="zm">0</dd>
+</dl><div class="scl" id="scl" aria-label="Scale"><i id="sclb"></i><span id="scll"></span></div></section>
+
+<div class="rdock">
+<aside id="card" class="glass" hidden aria-live="polite"></aside>
+<section aria-label="Agents"><details id="agents" class="glass" open>
+  <summary>Agents</summary>
+  <ol id="alist"></ol>
+  <button id="aauto" aria-pressed="true">Auto-run on Fly to: on</button>
+  <button id="dbg" hidden title="Saves the downloaded SPHEREx cutouts and this report into the debug-cutouts folder (local runs only)">Save debug bundle</button>
+  <p id="alive" class="sr" role="status"></p>
+</details></section>
+</div>
+<aside id="lab" class="glass" hidden><b>Motion lab: wobble and drift</b>
+  <p>A far-off planet traces a track on the sky. The yearly wobble comes from Earth's own orbit. The drift is the planet's real motion. Cyan dots mark each year.</p>
+  <canvas id="lc2" width="400" height="140" role="img" aria-label="Track of a distant planet on the sky: a yearly wobble plus a steady drift"></canvas>
+  <div class="row"><label for="ly">Years</label><input id="ly" type="range" min="0.5" max="10" step="0.5" value="2"><output id="lyo" for="ly"></output></div>
+  <div class="row"><label for="ld">Distance</label><input id="ld" type="range" min="200" max="1000" step="50" value="500"><output id="ldo" for="ld"></output></div>
+  <p id="lt"></p></aside>
+
+<section class="panel glass" aria-label="Controls">
+  <div class="tabs" role="tablist" aria-label="View mode">
+    <button role="tab" data-m="time" aria-selected="true">Time machine</button>
+    <button role="tab" data-m="blink" aria-selected="false">Blink</button>
+    <button role="tab" data-m="swipe" aria-selected="false">Swipe</button>
+    <button role="tab" data-m="diff" aria-selected="false">Difference</button>
+    <button role="tab" data-m="change" aria-selected="false">Changes</button>
+    <button role="tab" data-m="px" aria-selected="false">Hide Planet X</button>
+    <button role="tab" data-m="lab" aria-selected="false">Motion lab</button>
+  </div>
+  <div class="loadrow">
+    <button id="load" class="hbtn">Run agents here</button>
+    <button id="dcard" hidden title="Make a looping GIF of this sky patch, with position, dates and colour, to download or share">Discovery card</button>
+    <label for="csize" class="help">Field</label>
+    <select id="csize"><option value="0.25">0.25°</option><option value="0.5" selected>0.5°</option><option value="1">1°</option></select>
+    <label for="ipe" class="help">Images</label>
+    <select id="ipe" title="How many colour-matched images to use from every epoch. More images: deeper stacks, artefacts rejected, and movers caught inside an epoch, but a slower first load."><option value="1">1 per epoch</option><option value="4">4 per epoch</option><option value="8" selected>8 per epoch</option></select>
+    <span id="stat" role="status">Type a position in Fly to and the agents start on their own.</span>
+  </div>
+  <p class="help" id="help"></p>
+  <div class="row" id="tmr"><label for="tm" id="tml">Epoch</label><input id="tm" type="range" min="0" max="0" step="1" value="0"><output id="tmo" for="tm">-</output></div>
+  <div id="strip" class="strip" hidden aria-label="Every image of every epoch. Click one to show it."></div>
+  <div id="chg" class="chg" hidden>
+    <div class="chgb" role="group" aria-label="Colour the changes by">
+      <button data-cv="st" aria-pressed="true">Explained</button><button data-cv="ep" aria-pressed="false">By epoch</button><button data-cv="im" aria-pressed="false">By image</button>
+    </div>
+    <div id="chgl" class="chgl"></div>
+    <div id="chgt" class="chgt" aria-label="What changed in each image. Click a bar to show that image."></div>
+  </div>
+  <div id="pxp" class="pxp" hidden>
+    <div class="row"><label for="pxd">Distance</label><input id="pxd" type="range" min="0" max="10" step="1" value="6"><output id="pxdo" for="pxd"></output></div>
+    <div class="row"><label for="pxm">Brightness</label><input id="pxm" type="range" min="10" max="21" step="0.25" value="15"><output id="pxmo" for="pxm"></output></div>
+    <div class="pxb"><button id="pxgo" class="hbtn">Hide it, agents seek</button><button id="pxmap">Map this field</button></div>
+    <p id="pxt" class="pxt"></p>
+    <canvas id="pxc" width="560" height="250" hidden role="img" aria-label="Detectability map: which fake planets the agents found, by distance and brightness"></canvas>
+    <p id="pxs" class="pxt"></p>
+  </div>
+  <div class="row" id="swr" hidden><label for="sw">Swipe</label><input id="sw" type="range" min="5" max="95" value="50"><button id="flip" hidden>Flip</button></div>
+  <div class="row" id="bandr"><label for="band">Color</label><input id="band" type="range" min="0.75" max="5" step="0.01" value="3"><output id="bo" for="band"></output></div>
+  <p id="lam"></p>
+  <div class="presets" role="group" aria-label="Wavelength presets">
+    <button data-b="3.0" title="Water ice absorbs near 3 microns">Dust &amp; Ice</button>
+    <button data-b="1.0" title="Hot stars shine brightest at short wavelengths">Hot stars</button>
+    <button data-b="4.5" title="Cold objects glow at longer wavelengths">Cool worlds</button>
+    <button id="flagsb" aria-pressed="false" title="Show the pixels the SPHEREx pipeline flagged in the image on screen (Time machine and Blink)">Flags</button>
+    <button id="gaiab" aria-pressed="false" title="Show ESA Gaia's stars here, with arrows for the ones that move fast across the sky">Gaia</button>
+    <button id="deepb" title="Add up the images of each of SPHEREx's 6 detectors in the pass on screen: fainter things show">Deep view</button>
+    <button id="specb" aria-pressed="false" title="Tap a star to see its spectrum: its brightness in about 100 SPHEREx colours, read live from NASA's archive">Spectrum</button>
+  </div>
+  <p id="gaialeg" class="flagleg" hidden></p>
+  <p id="flagleg" class="flagleg" hidden><span><i style="background:#ff9628"></i>flagged bad: saturated, glare, ghost, cosmic ray, hot pixel (left out or repaired)</span><span><i style="background:#b98cff"></i>"outlier" only: a cosmic ray, or a moving object</span></p>
+</section>
+
+<aside id="drawer" aria-label="Learn" aria-hidden="true">
+  <button id="lc">Close</button>
+  <p><a href="/about.html" style="color:var(--cy)">Full page: data, method, test results and limits →</a></p>
+  <h2>What is SPHEREx?</h2>
+  <p>A NASA space telescope launched in March 2025. It maps the whole sky about every six months in 102 colors of near-infrared light, from 0.75 to 5 microns.</p>
+  <h2>What am I looking at?</h2>
+  <p>The faint background is an all-sky survey (2MASS by default, or AllWISE or DSS2) shown through Aladin Lite. The colored patch on top is a real SPHEREx spectral image cutout from the IRSA archive. Each SPHEREx image is one narrow slice of wavelength, so the color is false-color.</p>
+  <p>Orange and cyan rings are <b>known</b> asteroids, comets and planets, placed by IMCCE SkyBoT (using Minor Planet Center orbits), or by the Minor Planet Center's own checker when SkyBoT cannot be reached, for the exact time each image was taken. A ring does not prove the object is visible: faint ones vanish in a single exposure.</p>
+  <h2>The agents</h2>
+  <p>Five small programs run in order when you use Fly to: <b>Navigator</b> points the sky, <b>Archivist</b> finds SPHEREx images and a colour every epoch shares, <b>Aligner</b> downloads cutouts and registers them on the stars, <b>Analyst</b> compares epochs and checks known objects, <b>Reporter</b> writes it up. They are ordinary code, not AI models, and every step shows in the Agents panel.</p>
+  <h2>Difference view</h2>
+  <p>With 8 images per epoch, each epoch is first combined into a median stack of its 8 images (same colours in every epoch), so a cosmic ray or a satellite glint in one image disappears before the comparison.</p>
+  <p>Subtracts the first epoch from a later one after aligning both on the sky. Stars cancel. A mover leaves an orange blob (where it is now) next to a cyan blob (where it was). Leftover speckle is noise, and images at slightly different wavelengths do not cancel perfectly.</p>
+  <h2>Planet X</h2>
+  <p>A <b>hypothesized</b> planet far beyond Neptune, inferred from how some distant icy bodies orbit. It is not confirmed. It would creep across the sky very slowly, so we compare images far apart in time. ARCNAVE does not search for it.</p>
+  <h2>Hide Planet X</h2>
+  <p>A test, not a search. You hide a <b>fake</b> planet in the real SPHEREx images of this field: it gets the blur of the field's own stars, your brightness, and the position a body at your distance would have at the exact time of each image (Earth's yearly orbit makes it jump between passes). Then the agents' detector looks for it in two ways: the plain stacks that the agents use on real data, and a motion-following stack (each image shifted back along the planet's path before stacking) for planets that move too far within one pass. The motion-following stack is only used in this test so far. Astronomers call this an injection-recovery test: it measures how faint and how far a planet could be and still be caught. Planet X itself is hypothetical and is not searched for.</p>
+  <h2>How far can you trust it?</h2>
+  <p>We tested ARCNAVE on 18 sky fields chosen before the run: how faint a moving planet it can still find, and how often it reports a change when nothing changed. Every field is shown, misses included.</p>
+  <p><button id="totb" type="button">Open the tests</button></p>
+  <h2>Glossary</h2>
+  <dl>
+    <dt>Epoch</dt><dd>One full-sky pass, about six months. Grouped here from image dates.</dd>
+    <dt>Visit</dt><dd>SPHEREx sees a spot several times in each epoch, hours to days apart. An asteroid moves between visits; a star does not.</dd>
+    <dt>Blink comparator</dt><dd>Flip between two images of one field. Stars stay. Movers jump.</dd>
+    <dt>Proper motion</dt><dd>A star's slow drift across the sky over years.</dd>
+    <dt>Parallax</dt><dd>A small yearly wobble caused by Earth's orbit. Closer objects wobble more.</dd>
+    <dt>False-color</dt><dd>Invisible light mapped to colors you can see.</dd>
+  </dl>
+  <h2>Credits and honesty</h2>
+  <p>Images: NASA SPHEREx via NASA/IPAC Infrared Science Archive (IRSA). Base sky: CDS HiPS. Movers: IMCCE SkyBoT (fallback: Minor Planet Center checker). Tracks: NASA JPL Horizons. ARCNAVE claims no discovery. Positions assume an observer at Earth's center, so nearby objects can be off by about an arcminute.</p>
+</aside>
+
+<aside id="tdrawer" aria-label="Tested" aria-hidden="true">
+  <button id="tc">Close</button>
+  <h2>How far can you trust it?</h2>
+  <p>Two tests on the same 18 sky fields, picked on a grid before the run (along the ecliptic every 60°, on it and 40° above and below). Nothing was left out: fields where ARCNAVE does badly are in the tables too.</p>
+  <h2>1. Can it find a faint, slow planet?</h2>
+  <p>We hid fake planets in the real images and let the agents' detector look for them, with the plain stacks and with a motion-following stack.</p>
+  <div id="scv"><p>Loading the validation scorecard...</p></div>
+  <h2>2. How often does it cry wolf?</h2>
+  <p>From two passes of a field we build two stacks that hold the same colours and the same mix of dates, so nothing real differs between them. Every "change" the agents still report there is a false alarm. As a check, 16 fake stars are added to one stack, and the agents must find them.</p>
+  <div id="ntv"><p>Loading the false-alarm test...</p></div>
+  <h2>3. Does it notice a star getting brighter?</h2>
+  <p>We made real stars brighter by a known amount in every image of the last pass and checked whether the Changes view reports them. The rule is that a star must gain at least a quarter of its light, so +10 % should not be reported and +50 % should.</p>
+  <div id="btv"><p>Loading the brightness test...</p></div>
+  <h2>What the labels mean</h2>
+  <dl>
+    <dt>Confirmed known asteroid</dt><dd>Position, brightness and shape all match an asteroid the Minor Planet Center already knows. The only label you can rely on.</dd>
+    <dt>Likely artefact</dt><dd>Sharper than any star, or missing from most images: a cosmic-ray hit, hot pixel or glint.</dd>
+    <dt>Unconfirmed</dt><dd>Nothing explains it. A candidate to check, never a discovery. In the Milky Way most of these are noise.</dd>
+    <dt>Possible variable star</dt><dd>A star that gained at least a quarter of its light in some image (test 3).</dd>
+  </dl>
+  <h2>What it can and cannot see</h2>
+  <dl>
+    <dt>Can</dt><dd>Spot what appears, vanishes or moves between SPHEREx passes and between the visits of one pass; name known asteroids and comets from the catalogue and check them (position, brightness, shape); tell you how faint a slow planet could be and still be caught on the field you are looking at (Hide Planet X).</dd>
+    <dt>Cannot yet</dt><dd><b>Brown dwarfs:</b> most drift under an arcsecond a year and even the fastest known only a few, less than one SPHEREx pixel (6.2″) between passes six months apart, so their motion does not show. <b>Unknown movers:</b> an asteroid seen in one pass is far away in the next, and ARCNAVE does not link the two. <b>Searching real data with the motion-following stack:</b> it is used in the Hide Planet X test only; the agents do not yet run it on real fields. <b>Crowded Milky Way fields:</b> most changes there are noise (test 2).</dd>
+    <dt>Not tested</dt><dd>How often fast asteroids and comets are caught; stars that get fainter.</dd>
+    <dt>Never claimed</dt><dd>No discovery. Planet X is a hypothesis and is not searched for. An unconfirmed change is a candidate for an astronomer to check.</dd>
+  </dl>
+</aside>
+
+<div id="intro" role="region" aria-label="Welcome">
+  <div><p class="kick">Real NASA SPHEREx images. No sign-up.</p>
+    <h1>ARCNAVE</h1>
+    <div class="ruler" role="img" aria-label="SPHEREx sees the sky in 102 colours of infrared light, from 0.75 to 5 microns"></div>
+    <div class="rlab" aria-hidden="true"><span>0.75 µm</span><span>102 colours of infrared, one tick each</span><span>5 µm</span></div>
+    <p class="hl">The whole sky, photographed every six months. Find what moves.</p>
+    <p class="lede">Pick any spot on the sky. Agents fetch the real NASA SPHEREx images of it, line them up and show you what changed.</p>
+    <p class="hist">In 1930 Clyde Tombaugh found Pluto by flipping between two photographs taken days apart. ARCNAVE does the same with a space telescope.</p>
+    <div class="cta"><button id="go">Explore the whole sky</button><button class="tourb" data-tour>90-second story</button><button class="ghost" data-guide>Learn every tool</button><select class="langsel" data-lang aria-label="Language"><option value="en">English</option><option value="ta" lang="ta">தமிழ்</option><option value="hi" lang="hi">हिन्दी</option><option value="es" lang="es">Español</option></select></div>
+    <p class="abl"><a href="/about.html">How it works, the data and its limits →</a></p>
+    <div class="exs" role="group" aria-label="Real examples (ready instantly)"><small>Or open a real example, ready in seconds</small>
+      <button class="ex play" data-play><b>Play: find the asteroid</b><span>Flip through real SPHEREx images like Tombaugh did. One dot is moving. Can you spot it?</span></button>
+      <button class="ex" data-ex="proof"><b>Catch a real asteroid</b><span>3865 Lindbloom, caught moving in real SPHEREx images and checked against its known orbit</span></button>
+      <button class="ex" data-ex="false"><b>See a false alarm caught</b><span>One image per epoch shows a 922σ "change". It is a hot pixel</span></button>
+      <div class="cts" role="group" aria-label="The five NASA challenge test targets"><small>NASA's five test targets (about 2 minutes each, real images)</small>
+        <button class="ct" data-ct="barnard">Barnard's Star<em>motion seen</em></button><button class="ct" data-ct="epsindb">Epsilon Indi B<em>motion seen</em></button><button class="ct" data-ct="wise0855">WISE 0855<em>detected (faint)</em></button><button class="ct" data-ct="rwaur">RW Aurigae<em>change likely</em></button><button class="ct" data-ct="rdra">R Draconis<em>change seen</em></button>
+      </div>
+    </div></div>
+  <p class="look" aria-hidden="true">Behind this: the whole sky in near-infrared light (2MASS survey), the Milky Way across the middle.</p>
+</div>
+<div id="toast" class="glass" role="status" hidden></div>
+<div id="embedbar" class="glass" hidden><b>ARCNAVE</b> · real NASA SPHEREx images of this spot, flipping through time · <a target="_blank" rel="noopener">Open the full tool ↗</a></div>
+<div id="wait" class="glass" role="status" aria-live="polite" hidden><div class="wh"><span class="spin" aria-hidden="true"></span><b id="waith"></b><span id="waitt" class="wt"></span></div><div class="wbar" id="waitbar" hidden><i id="waitfill"></i></div><p id="waitp"></p></div>
+<dialog id="dcd" aria-labelledby="dcdh">
+  <div class="dcdt"><h2 id="dcdh">Your discovery card</h2><button id="dcdx" aria-label="Close">✕</button></div>
+  <img id="dcdimg" alt="">
+  <p class="dcds"><span id="dcdsize"></span> · made on your device from the real SPHEREx images</p>
+  <div class="dcdb"><button id="dcdshare" class="hbtn">Share</button><a id="dcddl" class="btn" href="#" download>Download GIF</a><button id="dcdcopy">Copy post text</button></div>
+  <label for="dcdtxt" class="dcds">Post text (includes a link back to this view)</label>
+  <textarea id="dcdtxt" rows="4" readonly></textarea>
+</dialog>
+<dialog id="game" aria-labelledby="gh">
+  <div class="dcdt"><h2 id="gh">Find the asteroid</h2><button id="gx" aria-label="Close">✕</button></div>
+  <div id="glev" class="glev" role="group" aria-label="Level"><button data-lev="easy" aria-pressed="true">Easy: stars removed</button><button data-lev="real" aria-pressed="false">Real: like Tombaugh</button></div>
+  <p id="gmsg" class="gmsg" role="status" aria-live="polite"></p>
+  <canvas id="gcv" role="img" aria-label="Real SPHEREx images of one patch of sky, shown one after another. Tap the dot that moves."></canvas>
+  <div class="gbar"><span id="gframe"></span><span id="gdots" aria-hidden="true"></span></div>
+  <div class="gctl"><button id="gprev" aria-label="Previous image">◀</button><button id="gplay" aria-pressed="true">Pause</button><button id="gnext" aria-label="Next image">▶</button>
+    <span id="gctl2"><button id="ghint">Hint</button><button id="gshow" class="ghost">Show me</button></span></div>
+  <div id="gres" hidden><h3 id="gresh"></h3><p id="grest"></p><p id="grests" class="dcds"></p>
+    <div class="dcdb"><button id="gcard" class="hbtn">Make my discovery card</button><button id="gagain">Play again</button></div></div>
+</dialog>
+<nav id="mnav" class="mnav" aria-label="Panels" hidden>
+  <button data-sheet="panel" aria-pressed="true">Controls</button><button data-sheet="agents" aria-pressed="false">Agents</button><button data-sheet="card" aria-pressed="false">Result<i class="dot" hidden></i></button>
+</nav>
+<footer class="foot"><span>Images: NASA SPHEREx / IRSA</span><span>Movers: IMCCE SkyBoT, MPC, JPL Horizons</span><span>Base sky: CDS HiPS via IRSA</span><span>Colors are false-color</span><span>Planet X is hypothetical</span><a href="/about.html">About, data &amp; limits</a></footer>
+
+<!-- Pinned: "latest" can change on demo day. 3.8.2 = last stable release (2026-03-06). -->
+<!-- v0.21: Aladin Lite from this site first (CDS was unreachable from one network); the CDS copy only as a fallback -->
+<script src="/vendor/aladin-lite-3.8.2.js" charset="utf-8"></script>
+<script>if (!window.A) document.write('<script src="https://aladin.cds.unistra.fr/AladinLite/api/v3/3.8.2/aladin.js" charset="utf-8"><\/script>');</script>
+<script src="/lib/fits.js"></script>
+<script src="/lib/s3cut.js"></script>
+<script src="/lib/wave.js"></script>
+<script src="/lib/spot.js"></script>
+<script src="/lib/slots.js"></script>
+<script src="/lib/planetx.js"></script>
+<script src="/gif.js"></script>
+<script src="/app.js"></script>
+<script src="/i18n.js"></script>
+<script src="/tour.js"></script>
+</body>
+</html>

@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARCNAVE: watch the sky change, find what moves</title>
+<meta name="description" content="Type any place in the sky and watch real NASA SPHEREx infrared images play like a short video. Spot asteroids, fast stars, brown dwarfs and variable stars. Free, in the browser, no sign-up.">
+<meta name="theme-color" content="#050913">
+<meta name="color-scheme" content="dark">
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icon-180.png"><link rel="manifest" href="/manifest.webmanifest">
+<link rel="canonical" href="%ORIGIN%/">
+<meta property="og:type" content="website"><meta property="og:site_name" content="ARCNAVE">
+<meta property="og:title" content="ARCNAVE: watch the sky change, find what moves">
+<meta property="og:description" content="Real NASA SPHEREx images of any spot in the sky, played like a short video. Blink, compare and measure what moves. Free, in the browser.">
+<meta property="og:url" content="%ORIGIN%/"><meta property="og:image" content="%ORIGIN%/og.jpg"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="ARCNAVE: two real SPHEREx images of the same spot, not there on 30 May 2026 and with asteroid 3865 Lindbloom on 5 June 2026">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="ARCNAVE: watch the sky change, find what moves">
+<meta name="twitter:description" content="Real NASA SPHEREx images of any spot in the sky, played like a short video. Free, in the browser."><meta name="twitter:image" content="%ORIGIN%/og.jpg"><meta name="twitter:image:alt" content="Two real SPHEREx images of the same spot; asteroid 3865 Lindbloom appears in the second.">
+<script>
+/* v0.37.0-redesign: first open (no link to follow, not embedded) shows the landing page. Decided before first paint, so
+   hash links (#ra=..&load=1, #ct=barnard, #tour, #play ...) and ?embed=1 open the tool directly, exactly as before. */
+(function () { try {
+  var keys = location.hash.replace(/^#/, '').split('&').map(function (x) { return x.split('=')[0]; }).filter(function (k) { return k && k !== 'lang'; });
+  if (!/[?&#]embed=1\b/.test(location.search + location.hash) && !keys.length) document.documentElement.classList.add('landing');
+} catch (e) { /* show the tool */ } })();
+/* v0.55: the light theme, set before first paint so the page never flashes dark (the sky images stay dark either way) */
+(function () { try { if (localStorage.getItem('arcnave.theme') === 'light') { document.documentElement.dataset.theme = 'light';
+  document.querySelector('meta[name=color-scheme]').content = 'light'; document.querySelector('meta[name=theme-color]').content = '#eef2f8'; } } catch (e) { /* dark */ } })();
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Space+Grotesk:wght@600;700&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap" onload="this.onload=null;this.rel='stylesheet'"><noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600&family=Space+Grotesk:wght@600;700&family=Noto+Sans+Tamil:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap"></noscript>
+<link rel="stylesheet" href="/arc.css">
+</head>
+<body class="intro">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M16.5 16.5 21 21"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24"><path d="M12 3 2 8l10 5 10-5-10-5z"/><path d="m2 16 10 5 10-5"/><path d="m2 12 10 5 10-5"/></symbol>
+  <symbol id="i-ruler" viewBox="0 0 24 24"><path d="M3 17 17 3l4 4L7 21z"/><path d="m7 13 2 2m1-5 2 2m1-5 2 2"/></symbol>
+  <symbol id="i-flask" viewBox="0 0 24 24"><path d="M9 3h6m-5 0v6L4.5 19A1.5 1.5 0 0 0 6 21h12a1.5 1.5 0 0 0 1.5-2L14 9V3"/><path d="M7 15h10"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4m-7.6 6.8 7.6 4.4"/></symbol>
+  <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19V5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2 2 2 0 0 0 2 2h13"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M12 3l8 3v6c0 5-3.5 8-8 9-4.5-1-8-4-8-9V6z"/><path d="m8.5 12 2.5 2.5 4.5-5"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-compass" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m15.5 8.5-2 5-5 2 2-5z"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3c.5 4.5 2 6 6.5 6.5-4.5.5-6 2-6.5 6.5-.5-4.5-2-6-6.5-6.5C10 9 11.5 7.5 12 3z"/><path d="M19 15c.2 1.8.8 2.4 2.5 2.5-1.7.2-2.3.8-2.5 2.5-.2-1.7-.8-2.3-2.5-2.5 1.7-.1 2.3-.7 2.5-2.5z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-sliders" viewBox="0 0 24 24"><path d="M4 6h10m4 0h2M4 12h4m4 0h8M4 18h12m4 0h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></symbol>
+  <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-6-6 6 6-6 6"/></symbol>
+  <symbol id="i-chev" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-down" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+  <symbol id="i-chevr" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5"/></symbol>
+  <symbol id="i-lang" viewBox="0 0 24 24"><path d="M4 5h9M8.5 3v2M6 5c1 4 4 7 7 8m-2-8c-1 4-4 7-7 8m9 8 4-9 4 9m-6.5-3h5"/></symbol>
+  <symbol id="i-phone" viewBox="0 0 24 24"><rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/></symbol>
+  <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4h11l-2 4 2 4H5"/></symbol>
+  <symbol id="i-spectrum" viewBox="0 0 24 24"><path d="M3 20h18"/><path d="m4 16 3-5 3 3 4-8 3 5 3-2"/></symbol>
+  <symbol id="i-planet" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><path d="M4.5 15.5C1.8 17.6 1 19.4 1.8 20.2c1.3 1.3 6.3-1.4 11.1-6.2s7.5-9.8 6.2-11.1c-.8-.8-2.6 0-4.7 2.7"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.6 5.6 6 .7-4.5 4.1 1.2 6L12 16.5l-5.3 2.9 1.2-6-4.5-4.1 6-.7z"/></symbol>
+  <symbol id="i-rock" viewBox="0 0 24 24"><path d="M7 5l6-2 6 4 2 6-3 6-7 2-6-4-1-7z"/><circle cx="10" cy="10" r="1.2"/><circle cx="15" cy="14" r="1.6"/></symbol>
+  <symbol id="i-dwarf" viewBox="0 0 24 24"><circle cx="12" cy="12" r="6"/><path d="M8 10.5c2 1 6 1 8 0M7.5 14c2.5 1 6.5 1 9 0"/></symbol>
+  <symbol id="i-wave" viewBox="0 0 24 24"><path d="M2 12c2-6 4-6 6 0s4 6 6 0 4-6 6 0"/><circle cx="20" cy="5" r="1.6"/></symbol>
+  <symbol id="i-burst" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2.5"/><path d="M12 2v4m0 12v4M2 12h4m12 0h4M5 5l2.8 2.8m8.4 8.4L19 19M5 19l2.8-2.8m8.4-8.4L19 5"/></symbol>
+  <symbol id="i-motion" viewBox="0 0 24 24"><circle cx="6" cy="18" r="2.5"/><path d="M8 16 19 5m-5 0h5v5"/></symbol>
+  <symbol id="i-diff" viewBox="0 0 24 24"><rect x="3" y="3" width="12" height="12" rx="2"/><rect x="9" y="9" width="12" height="12" rx="2"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-9.5v.5"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></symbol>
+  <symbol id="i-lock" viewBox="0 0 24 24"><rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4m0 3v.5"/></symbol>
+  <symbol id="i-logo" viewBox="0 0 64 64"><defs><linearGradient id="lg1" x1="0" x2="1"><stop offset="0" stop-color="#2fd0e6"/><stop offset=".5" stop-color="#8ee05a"/><stop offset="1" stop-color="#ffb05a"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="#0b1328" stroke="rgba(150,180,235,.25)"/><path d="M11 52 A21 21 0 0 1 53 52" fill="none" stroke="url(#lg1)" stroke-width="5" stroke-linecap="round"/><circle cx="18" cy="17" r="2.6" fill="#eef1f7" opacity=".6"/><circle cx="44" cy="18" r="5" fill="#ffb05a"/><circle cx="44" cy="18" r="9.5" fill="none" stroke="#ffb05a" stroke-width="2" stroke-dasharray="4 3"/></symbol>
+</svg>
+
+<!-- ===== Landing page (v0.55: professional redesign). Shown on first open only (see the script in <head>). Every number
+     on it is a result ARCNAVE itself measured (README / CHANGELOG-redesign.md, v0.33-v0.54) or a published mission fact
+     with its source linked; nothing is typed in from elsewhere. English lives here; ta/hi/es are in arc-i18n.js. ===== -->
+<div id="landing" aria-label="ARCNAVE start page">
+  <canvas id="starfield" aria-hidden="true"></canvas>
+  <div class="lp">
+    <nav class="lp-nav" aria-label="Start page">
+      <div class="lp-wrap">
+        <a class="brand" href="#top" aria-label="ARCNAVE, top of the page"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-logo"/></svg><span class="bt"><span class="wm">ARCNAVE</span><i class="spec" aria-hidden="true"></i></span></a>
+        <div class="lp-links" id="lplinks">
+          <a href="#lp-how" data-i18n="nav.how">How it works</a>
+          <a href="#lp-feat" data-i18n="v5.nav.feat">Features</a>
+          <a href="#lp-targets" data-i18n="nav.targets">Test targets</a>
+          <a href="#lp-tested" data-i18n="v5.nav.tested">Tested</a>
+          <a href="/about.html" data-i18n="nav.about">About</a>
+        </div>
+        <button class="lp-menu btn-ghost" type="button" aria-expanded="false" aria-controls="lplinks" aria-label="Menu"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
+        <select class="langsel" data-lang aria-label="Language"><option value="en">English</option><option value="ta" lang="ta">தமிழ்</option><option value="hi" lang="hi">हिन्दी</option><option value="es" lang="es">Español</option></select>
+        <button class="hbtn lp-cta" type="button" data-launch data-i18n="cta.launch">Launch ARCNAVE</button>
+      </div>
+    </nav>
+
+    <header class="lp-hero" id="top">
+      <div class="lp-wrap lp-hgrid">
+        <div class="lp-htext">
+          <p class="lp-kick rv"><i aria-hidden="true"></i><span data-i18n="hero.kick">NASA Space Apps Challenge 2026 · Planet X and SPHEREx</span></p>
+          <h1 class="lp-h1 rv d1"><span data-i18n="hero.h1a">Watch the sky change.</span> <em data-i18n="hero.h1b">Find what moves.</em></h1>
+          <p class="lp-sub rv d2" data-i18n="v5.sub">Real NASA SPHEREx images of any spot in the sky, played as a film, with honest checks against ESA Gaia and NASA WISE.</p>
+          <div class="lp-btns rv d3">
+            <button class="hbtn" type="button" data-launch><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span data-i18n="cta.launch">Launch ARCNAVE</span></button>
+            <button class="alt" type="button" data-launch-ct="barnard"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span data-i18n="cta.barnard">Try Barnard's Star</span></button>
+          </div>
+          <form class="lp-q rv d3" id="lpq" role="search" aria-label="Go straight to a place in the sky">
+            <label for="lpqi" data-i18n="v5.q.l">Or go straight to a place</label>
+            <div class="lp-qrow"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
+              <input id="lpqi" name="q" autocomplete="off" spellcheck="false" placeholder="RA Dec, or a name: 190 -4, M31" data-i18n-ph="v5.q.ph">
+              <button type="submit" data-i18n="v5.q.go">Go</button></div>
+          </form>
+          <ul class="lp-trust rv d4">
+            <li><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span data-i18n="trust.real">Real images from NASA/IPAC IRSA</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-lock"/></svg><span data-i18n="trust.free">Free · no sign-up · no tracking</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg><span data-i18n="trust.phone">Works on phones</span></li>
+          </ul>
+        </div>
+        <figure class="lp-scope lp-media" id="lp-see">
+          <div class="sbar"><span class="rec" aria-hidden="true"><i></i>SPHEREx</span>
+            <span class="lp-mtabs" role="tablist" aria-label="What the picture shows">
+              <button type="button" role="tab" aria-selected="true" aria-controls="lpm-film" id="lpt-film" data-media="film" data-i18n="v5.m.film">Film</button>
+              <button type="button" role="tab" aria-selected="false" aria-controls="lpm-blink" id="lpt-blink" data-media="blink" data-i18n="v5.m.blink">Blink</button></span></div>
+          <div class="sview" id="lpm-film" role="tabpanel" aria-labelledby="lpt-film">
+            <img src="/img/hero/film-epsindi.jpg" width="800" height="504" fetchpriority="high" alt="A real ARCNAVE film frame of NASA's Epsilon Indi B field: numbered circles P1 to P4 mark where Epsilon Indi B and its bright partner Epsilon Indi A were in four SPHEREx passes, both moving south-east.">
+            <span class="stag" aria-hidden="true" data-i18n="start.real">Real SPHEREx images</span>
+          </div>
+          <div class="sview" id="lpm-blink" role="tabpanel" aria-labelledby="lpt-blink" hidden>
+            <img id="lpgif" src="/hero-still.png" data-anim="/hero-blink.gif" width="360" height="323" loading="lazy" alt="Real SPHEREx images of one patch of sky shown one after another: a faint dot, asteroid 3865 Lindbloom, moves while the stars stay still.">
+            <span class="ret" aria-hidden="true"></span>
+            <span class="stag" aria-hidden="true" data-i18n="start.real">Real SPHEREx images</span>
+          </div>
+          <div class="lp-ticks" aria-hidden="true" hidden><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <figcaption><span class="cap-film" data-i18n="v5.m.filmcap">A real ARCNAVE film of NASA's Epsilon Indi B field: four SPHEREx passes, April 2025 to September 2026, a numbered circle for each. Epsilon Indi B moved 5.9″ south-east; its bright partner A moved too.</span><span class="cap-blink" hidden data-i18n="hero.cap">Real SPHEREx frames from ARCNAVE's built-in example: asteroid 3865 Lindbloom moves, the stars stay put.</span></figcaption>
+        </figure>
+      </div>
+    </header>
+
+    <section class="lp-src" id="lp-data" aria-labelledby="h-src">
+      <div class="lp-wrap">
+        <h2 class="lp-srch" id="h-src" data-i18n="v5.src.eye">Data from</h2>
+        <ul class="lp-srcl">
+          <li><b>NASA SPHEREx · NASA/IPAC IRSA</b><span data-i18n="v5.src.sx">the images, QR2 and QR3, read live</span></li>
+          <li><b>ESA Gaia DR3</b><span data-i18n="v5.src.ga">star positions and motions; every image is lined up on it</span></li>
+          <li><b>NASA WISE · CatWISE2020</b><span data-i18n="v5.src.cw">cold brown dwarfs and motions Gaia cannot see</span></li>
+          <li><b>IMCCE SkyBoT · Minor Planet Center</b><span data-i18n="v5.src.sb">which known asteroids were there</span></li>
+          <li><b>CDS Aladin Lite · SIMBAD</b><span data-i18n="v5.src.cds">the sky viewer and object look-ups</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="lp-how" aria-labelledby="h-how">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow rv" data-i18n="how.eye">How ARCNAVE works</p>
+        <h2 class="lp-h2 rv" id="h-how" data-i18n="v5.how.h">Three steps from a place in the sky to an honest answer</h2>
+        <p class="lp-lead rv" data-i18n="how.lead">The same trick Clyde Tombaugh used to find Pluto in 1930: flip between pictures of one spot. Stars stay put. Anything that jumps is moving.</p>
+        <ol class="lp-steps s3">
+          <li class="lp-step rv"><span class="num">01</span><div class="vis" aria-hidden="true"><span class="vis-type">190 -4</span></div><h3 data-i18n="v5.how.s1h">Enter coordinates</h3><p data-i18n="how.s1p">A name like Barnard's Star or Andromeda, or a sky position (RA and Dec in degrees).</p></li>
+          <li class="lp-step rv d1"><span class="num">02</span><div class="vis" aria-hidden="true"><span class="vis-tm"><i></i><i></i><i></i><i></i></span></div><h3 data-i18n="v5.how.s2h">Watch the passes play</h3><p data-i18n="v5.how.s2p">ARCNAVE fetches every SPHEREx image of that spot, lines them up on the stars and plays the passes, six months apart, as a film.</p></li>
+          <li class="lp-step rv d2"><span class="num">03</span><div class="vis" aria-hidden="true"><span class="vis-blink"><i style="left:14px;top:14px"></i><i style="left:96px;top:20px"></i><i style="left:40px;top:62px"></i><i style="left:100px;top:60px"></i><i class="m"></i><b></b></span></div><h3 data-i18n="v5.how.s3h">Spot movers and changes, with honest checks</h3><p data-i18n="v5.how.s3p">Blink, subtract, stack and search. Every find is checked against Gaia, WISE and the asteroid catalogues and labelled known, candidate or predicted. Never a discovery.</p></li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="lp-targets" aria-labelledby="h-tg">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow rv" data-i18n="tg.eye">Tested on NASA's 5 targets</p>
+        <h2 class="lp-h2 rv" id="h-tg" data-i18n="v5.tg.h">NASA's five test targets, measured in real SPHEREx images</h2>
+        <p class="lp-lead rv" data-i18n="v5.tg.lead">The challenge asked teams to test on these five. Each card gives the real result ARCNAVE measured and opens the target live in the tool.</p>
+        <div class="tcards">
+          <button type="button" class="tc2 rv" data-launch-ct="barnard"><span class="tthumb"><img src="/img/targets/tc-barnard.jpg" width="300" height="300" loading="lazy" alt="Real SPHEREx image of the Barnard's Star field, as ARCNAVE shows it"><span class="treal" data-i18n="start.real">Real SPHEREx images</span></span>
+            <span class="tb2"><span class="tkind" data-i18n="tg.k.motion">Motion</span><span class="tname">Barnard's Star</span><span class="tco">RA 269.452° · Dec +4.693°</span><span class="tline" data-i18n="start.bar">A nearby star that creeps across the sky: about 10″ a year.</span>
+              <span class="tres" data-i18n="v5.r.bar">Measured 9.4″ north in 361 days; the catalogue predicts 10.3″.</span><span class="tnote" data-i18n="v5.r.bar2">The film's fit gives 13.0″: rough, because the star is saturated.</span>
+              <span class="tst">✓ <span data-i18n="tg.b.motion">Motion seen</span></span><span class="tgo"><span data-i18n="tg.open">Open in ARCNAVE</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></span></span></button>
+          <button type="button" class="tc2 rv d1" data-launch-ct="epsindb"><span class="tthumb"><img src="/img/targets/tc-epsindb.jpg" width="300" height="300" loading="lazy" alt="Real SPHEREx image of the Epsilon Indi B field, as ARCNAVE shows it"><span class="treal" data-i18n="start.real">Real SPHEREx images</span></span>
+            <span class="tb2"><span class="tkind" data-i18n="tg.k.motion">Motion</span><span class="tname">Epsilon Indi B</span><span class="tco">RA 331.044° · Dec −56.783°</span><span class="tline" data-i18n="start.eps">A brown dwarf pair drifting past the background stars.</span>
+              <span class="tres" data-i18n="v5.r.eps">Measured 5.9″ south-east in 515 days, over 4 passes; the catalogue predicts 6.6″.</span>
+              <span class="tst">✓ <span data-i18n="tg.b.motion">Motion seen</span></span><span class="tgo"><span data-i18n="tg.open">Open in ARCNAVE</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></span></span></button>
+          <button type="button" class="tc2 rv d2" data-launch-ct="wise0855"><span class="tthumb"><img src="/img/targets/tc-wise0855.jpg" width="300" height="300" loading="lazy" alt="Real SPHEREx image of the WISE 0855 field, as ARCNAVE shows it"><span class="treal" data-i18n="start.real">Real SPHEREx images</span></span>
+            <span class="tb2"><span class="tkind" data-i18n="tg.k.motion">Motion</span><span class="tname">WISE 0855</span><span class="tco">RA 133.795° · Dec −7.245°</span><span class="tline" data-i18n="start.wise">The coldest known brown dwarf: very faint, but detected at 4.5 µm.</span>
+              <span class="tres" data-i18n="v5.r.wise">Measured 8.82 ± 1.10″ a year toward the west, in every image; CatWISE2020 says 7.94″, which agrees.</span><span class="tnote" data-i18n="v5.r.wise2">Brightness AB 17.15, a signal of 11.8σ.</span>
+              <span class="tst">✓ <span data-i18n="tg.b.motion">Motion seen</span></span><span class="tgo"><span data-i18n="tg.open">Open in ARCNAVE</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></span></span></button>
+          <button type="button" class="tc2 rv d3" data-launch-ct="rwaur"><span class="tthumb"><img src="/img/targets/tc-rwaur.jpg" width="300" height="300" loading="lazy" alt="Real SPHEREx image of the RW Aurigae field, as ARCNAVE shows it"><span class="treal" data-i18n="start.real">Real SPHEREx images</span></span>
+            <span class="tb2"><span class="tkind" data-i18n="tg.k.var">Variable star</span><span class="tname">RW Aurigae</span><span class="tco">RA 76.956° · Dec +30.401°</span><span class="tline" data-i18n="start.rw">A young star that faded over one year, in all six colours measured.</span>
+              <span class="tres" data-i18n="v5.r.rw">Faded 0.74 mag from Sep 2025 to Sep 2026, in 6 of 6 colours; steady comparison stars scatter 0.13 mag.</span><span class="tnote" data-i18n="v5.corr">Measured from its outer glow: an earlier value from the saturated centre was withdrawn on 29 Oct 2026.</span>
+              <span class="tst">✓ <span data-i18n="tg.b.change">Change seen</span></span><span class="tgo"><span data-i18n="tg.open">Open in ARCNAVE</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></span></span></button>
+          <button type="button" class="tc2 rv d4" data-launch-ct="rdra"><span class="tthumb"><img src="/img/targets/tc-rdra.jpg" width="300" height="300" loading="lazy" alt="Real SPHEREx image of the R Draconis field, as ARCNAVE shows it"><span class="treal" data-i18n="start.real">Real SPHEREx images</span></span>
+            <span class="tb2"><span class="tkind" data-i18n="tg.k.var">Variable star</span><span class="tname">R Draconis</span><span class="tco">RA 248.167° · Dec +66.755°</span><span class="tline" data-i18n="start.rd">A pulsating giant that fades and brightens again within months.</span>
+              <span class="tres" data-i18n="v5.r.rd">Its brightness changed 1.24 mag at 0.85 µm, in 10 images; steady comparison stars 0.12 to 0.13 mag.</span><span class="tnote" data-i18n="v5.corr">Measured from its outer glow: an earlier value from the saturated centre was withdrawn on 29 Oct 2026.</span>
+              <span class="tst">✓ <span data-i18n="tg.b.change">Change seen</span></span><span class="tgo"><span data-i18n="tg.open">Open in ARCNAVE</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></span></span></button>
+        </div>
+        <p class="lp-fine rv" data-i18n="v5.tg.fine">Positions are J2000. Each card opens in about 10 to 30 seconds from images saved with ARCNAVE.</p>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="lp-feat" aria-labelledby="h-feat">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow rv" data-i18n="v5.nav.feat">Features</p>
+        <h2 class="lp-h2 rv" id="h-feat" data-i18n="v5.f.h">Everything in the tool, grouped the way you will use it</h2>
+        <div class="lp-grid lp-feat">
+          <article class="lp-card lp-fc rv"><span class="lp-ico"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></span><h3 data-i18n="v5.f1h">Watch it change</h3><p data-i18n="v5.f1p">Time machine, Blink, Difference and Changes: every image of a spot in time order, the stars lined up, changes sorted into plain kinds.</p><button type="button" class="try" data-try="watch" data-launch-ct="barnard" data-mode="beg"><span data-i18n="v5.try">Try it</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></article>
+          <article class="lp-card lp-fc rv d1"><span class="lp-ico"><svg class="ic" aria-hidden="true"><use href="#i-motion"/></svg></span><h3 data-i18n="v5.f2h">Find movers</h3><p data-i18n="v5.f2p">A film with a numbered circle for every pass, and four searches: bright stars, a deep stack, difference images and a motion scan for faint stars.</p><button type="button" class="try" data-try="film" data-launch-ct="epsindb" data-mode="adv"><span data-i18n="v5.try">Try it</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></article>
+          <article class="lp-card lp-fc rv d2"><span class="lp-ico"><svg class="ic" aria-hidden="true"><use href="#i-spectrum"/></svg></span><h3 data-i18n="v5.f3h">Measure</h3><p data-i18n="v5.f3p">A spectrum of about 100 colours on the fly, light curves next to steady comparison stars, and Deep view: SPHEREx's 6 detectors summed.</p><button type="button" class="try" data-try="measure" data-launch-ct="rdra" data-mode="adv"><span data-i18n="v5.try">Try it</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></article>
+          <article class="lp-card lp-fc rv"><span class="lp-ico"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></span><h3 data-i18n="v5.f4h">Overlays</h3><p data-i18n="v5.f4p">ESA Gaia DR3 and NASA WISE (CatWISE2020) at the date of each pass, known asteroids, contamination flags and Aladin.</p><button type="button" class="try" data-try="wise" data-launch-ct="wise0855" data-mode="adv"><span data-i18n="v5.try">Try it</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></article>
+          <article class="lp-card lp-fc rv d1"><span class="lp-ico warm"><svg class="ic" aria-hidden="true"><use href="#i-planet"/></svg></span><h3 data-i18n="v5.f5h">Planet X and the agents</h3><p data-i18n="v5.f5p">Five agents search, align, compare and report. Hide Planet X hides a fake planet to measure what SPHEREx could catch. Planet X is hypothetical.</p><button type="button" class="try" data-try="px" data-mode="adv"><span data-i18n="v5.try">Try it</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></article>
+          <article class="lp-card lp-fc rv d2"><span class="lp-ico"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg></span><h3 data-i18n="v5.f6h">Share and report</h3><p data-i18n="v5.f6p">A link for any view, an embed code, an animated discovery card, a report that always says "unconfirmed", and Python code for Astropy.</p><button type="button" class="try" data-try="share" data-launch-ct="barnard" data-mode="adv"><span data-i18n="v5.try">Try it</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></article>
+          <article class="lp-card lp-fc rv"><span class="lp-ico"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg></span><h3 data-i18n="v5.f7h">Learn and play</h3><p data-i18n="v5.f7p">A 90-second story and a guide to every tool, in English, Tamil, Hindi and Spanish, to read or to listen to, and a 60-second asteroid game.</p><button type="button" class="try" data-launch-tour="story"><span data-i18n="v5.try">Try it</span><svg class="ic" aria-hidden="true"><use href="#i-arrow"/></svg></button></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="lp-modes" aria-labelledby="h-modes">
+      <div class="lp-wrap">
+        <h2 class="lp-h2 rv" id="h-modes" data-i18n="v5.md.h">Two ways in</h2>
+        <div class="lp-grid lp-modes">
+          <article class="lp-card lp-mode rv"><span class="lp-mtag" data-i18n="v5.md.bt">Beginner</span><h3 data-i18n="v5.md.bh">Three steps, plain words</h3><p data-i18n="v5.md.bp">Pick a place, watch it change, read the result in plain words. The details stay one tap away.</p><button type="button" class="hbtn" data-mode="beg" data-launch><span data-i18n="v5.md.bgo">Start as a beginner</span></button></article>
+          <article class="lp-card lp-mode rv d1"><span class="lp-mtag at" data-i18n="v5.md.at">Advanced</span><h3 data-i18n="v5.md.ah">Every tool and setting</h3><p data-i18n="v5.md.ap">Images per epoch, colours and spectra, all four mover searches, overlays, Planet X tests and exports.</p><button type="button" data-mode="adv" data-launch><span data-i18n="v5.md.ago">Open every tool</span></button></article>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="lp-tested" aria-labelledby="h-tested">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow rv" data-i18n="v5.ts.eye">Tested in the open</p>
+        <h2 class="lp-h2 rv" id="h-tested" data-i18n="v5.ts.h">What we checked, and what ARCNAVE does not claim</h2>
+        <div class="lp-grid lp-stats">
+          <article class="lp-card lp-stat rv"><span class="big">18</span><h3 data-i18n="v5.ts.1h">sky fields</h3><p data-i18n="v5.ts.1p">Picked before the run, every result published, misses included: how faint a slow planet can be and still be found.</p></article>
+          <article class="lp-card lp-stat rv d1"><span class="big">0.7</span><h3 data-i18n="v5.ts.2h">false alarms per comparison</h3><p data-i18n="v5.ts.2p">On the same fields away from the Milky Way plane. Inside the plane there are many, and the tool warns there.</p></article>
+          <article class="lp-card lp-stat rv d2"><span class="big">0.000″</span><h3 data-i18n="v5.ts.3h">from Astropy</h3><p data-i18n="v5.ts.3p">ARCNAVE's sky maths matches astropy.wcs on real SPHEREx files.</p></article>
+        </div>
+        <div class="lp-limits rv">
+          <div><p class="lp-eyebrow" data-i18n="lim.eye">Honest limits</p><p class="gnote" data-i18n="lim.p">Trust comes from saying what a tool cannot do. Every test, misses included, is in the Tested drawer inside the tool.</p>
+            <p class="lp-links2"><a href="/about.html#tested" data-i18n="ft.tested">How we tested it</a> · <a href="/about.html#limits" data-i18n="ft.limits">Limits, honestly</a></p></div>
+          <ul>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n-html="lim.1"><b>No discoveries.</b> An unexplained change is a candidate for an astronomer to check, never a discovery.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n-html="lim.2"><b>Planet X is hypothetical.</b> "Hide Planet X" hides a fake planet to measure what SPHEREx could catch. It is not a search.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n-html="lim.4"><b>Unknown movers are not linked.</b> An asteroid seen in one pass is far away by the next, and ARCNAVE does not connect the two.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n-html="v5.lim.5"><b>Most stars move too little to see:</b> a typical star drifts 0.1 to 0.3″ a year, a few hundredths of a SPHEREx pixel (6.2″). Where nothing moves enough, the film says so and shows the catalogue's prediction, dashed.</span></li>
+            <li><svg class="ic" aria-hidden="true"><use href="#i-alert"/></svg><span data-i18n-html="lim.3"><b>Spectra are quick aperture photometry,</b> read in about a minute, not a full calibrated spectrum. Very bright stars (Barnard's Star is one) saturate, so their spectrum cannot be measured.</span></li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="lp-science" aria-labelledby="h-sx">
+      <div class="lp-wrap">
+        <p class="lp-eyebrow rv" data-i18n="sx.eye">The telescope</p>
+        <h2 class="lp-h2 rv" id="h-sx" data-i18n="sx.h">What is SPHEREx?</h2>
+        <div class="lp-grid lp-facts">
+          <article class="lp-card lp-stat rv"><span class="big">102</span><h3 data-i18n="sx.f2h">Near-infrared colours</h3></article>
+          <article class="lp-card lp-stat rv d1"><span class="big">0.75–5 µm</span><h3 data-i18n="v5.sx.rng">Light our eyes cannot see</h3></article>
+          <article class="lp-card lp-stat rv d2"><span class="big" data-i18n="sx.f1n">6 months</span><h3 data-i18n="v5.sx.all">For a map of the whole sky</h3></article>
+          <article class="lp-card lp-stat rv d3"><span class="big">2025</span><h3 data-i18n="v5.sx.lch">Launched in March</h3></article>
+        </div>
+        <p class="lp-fine rv"><span data-i18n="v5.sx.src">Sources:</span> <a href="https://science.nasa.gov/mission/spherex/" target="_blank" rel="noopener">NASA SPHEREx mission</a> · <a href="https://arxiv.org/abs/2511.02985" target="_blank" rel="noopener">Bock et al. 2025</a></p>
+      </div>
+    </section>
+
+    <section class="lp-sec" id="lp-learn" aria-labelledby="h-learn">
+      <div class="lp-wrap">
+        <h2 class="lp-h2 rv" id="h-learn" data-i18n="v5.lr.h">Learn and play</h2>
+        <div class="lp-grid lp-learn">
+          <button type="button" class="lp-tile rv" data-launch-tour="story"><svg class="ic" aria-hidden="true"><use href="#i-compass"/></svg><b data-i18n="cta.story">90-second story</b><span data-i18n="v5.lr.sp">From Tombaugh's Pluto to SPHEREx, narrated in 4 languages</span></button>
+          <button type="button" class="lp-tile rv d1" data-launch-tour="guide"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><b data-i18n="v5.lr.gh">A guide to every tool</b><span data-i18n="v5.lr.gp">Step by step, on the real sky</span></button>
+          <button type="button" class="lp-tile rv d2" data-try="game"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><b data-i18n="v5.lr.ah">Find the asteroid</b><span data-i18n="v5.lr.ap">A 60-second game on real images</span></button>
+          <button type="button" class="lp-tile rv d3" data-try="px" data-mode="adv"><svg class="ic" aria-hidden="true"><use href="#i-planet"/></svg><b data-i18n="sp.pxh">Hide Planet X</b><span data-i18n="sp.pxp">Hide a fake planet and see if ARCNAVE catches it. A sensitivity test, not a search.</span></button>
+        </div>
+      </div>
+    </section>
+
+    <footer class="lp-foot">
+      <div class="lp-wrap">
+        <div><a class="brand" href="#top" style="padding:0"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-logo"/></svg><span class="wm">ARCNAVE</span></a>
+          <p data-i18n="ft.about">Built by Team ARCNAVE for the NASA Space Apps Challenge 2026, "Planet X and SPHEREx" (Advanced).</p>
+          <p><a href="/about.html#credits" data-i18n="ft.ai">AI-use disclosure</a> · <a href="/about.html" data-i18n="ft.method">Method, data and limits</a></p></div>
+        <div><h3 data-i18n="ft.data">Data credits</h3><ul>
+          <li>NASA SPHEREx · NASA/IPAC IRSA</li><li>ESA Gaia DR3</li><li>NASA WISE · CatWISE2020 · AllWISE · 2MASS</li><li>IMCCE SkyBoT · Minor Planet Center</li><li>NASA JPL Horizons</li><li>CDS Aladin Lite, HiPS &amp; SIMBAD</li></ul></div>
+        <div><h3 data-i18n="ft.tool">The tool</h3><ul>
+          <li><a href="#" data-launch data-i18n="cta.launch">Launch ARCNAVE</a></li><li><a href="#lp-targets" data-i18n="nav.targets">Test targets</a></li><li><a href="/about.html#tested" data-i18n="ft.tested">How we tested it</a></li><li><a href="/about.html#limits" data-i18n="ft.limits">Limits, honestly</a></li><li><a href="#top" data-i18n="v5.top">Back to top</a></li></ul></div>
+        <p class="fine"><span data-i18n="ft.fine">Images are false-colour infrared. Planet X is hypothetical. No discovery is claimed.</span><span class="mono">v0.55.0</span></p>
+      </div>
+    </footer>
+  </div>
+</div>
+
+<!-- ===== The tool ===== -->
+<div id="aladin" tabindex="0" role="application" aria-roledescription="sky map" aria-label="Interactive sky. Drag to pan, scroll to zoom."></div>
+<canvas id="ov" aria-hidden="true"></canvas>
+
+<header class="top">
+  <button type="button" class="homeb" id="homeb" title="Back to the start page"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg>Home</button>
+  <button type="button" class="brand" id="brandb" aria-label="ARCNAVE: back to the start page" title="Back to the start page"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-logo"/></svg><span class="bt"><span class="wm">ARCNAVE</span><i class="spec" aria-hidden="true"></i></span><small>Real SPHEREx images, real known movers</small><span class="ver">v0.55.0</span></button>
+  <form id="sf" role="search"><span class="sfi" aria-hidden="true"><svg class="ic"><use href="#i-search"/></svg></span><input id="q" aria-label="Search object name or RA Dec coordinates" placeholder="Name, or RA Dec: 190 -4" autocomplete="off" spellcheck="false"><button>Fly to</button></form>
+  <div class="acts">
+      <span class="fld tfov"><label for="csize" class="help" data-tip="fov">FOV</label><select id="csize"><option value="0.25">0.25°</option><option value="0.5" selected>0.5°</option><option value="1">1°</option></select></span>
+    <div class="seg tseg" role="group" aria-label="How many controls to show"><button type="button" data-lvl="beg" aria-pressed="true" title="Only the main tools, as three steps">Beginner</button><button type="button" data-lvl="adv" aria-pressed="false" title="Every tool and setting, in sections">Advanced</button></div>
+    <button type="button" id="sharetop" aria-label="Share" title="Share: copy a link to exactly this view"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg><span class="lbl">Share</span></button>
+    <button id="playb" data-play aria-label="Find the asteroid" title="Find the asteroid: a 60-second game on real SPHEREx images"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><span class="lbl">Find the asteroid</span></button>
+    <button id="exb" aria-label="Examples" title="Examples: open a ready-made real example"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span class="lbl">Examples</span></button>
+    <span class="tmw"><button id="tourm" aria-haspopup="true" aria-expanded="false" aria-controls="tmenu" aria-label="Tour" title="Tour: the 90-second story, every tool, quick start"><svg class="ic" aria-hidden="true"><use href="#i-compass"/></svg><span class="lbl">Tour</span></button><span id="tmenu" class="tmenu glass" role="menu" hidden><button role="menuitem" data-tour><b>90-second story</b><small>Neptune, Pluto, Planet Nine, then a real asteroid</small></button><button role="menuitem" data-guide><b>Every tool, one by one</b><small>What each tool is and how to use it</small></button><button role="menuitem" data-coach><b>Quick start</b><small>Four tips in 30 seconds</small></button></span></span>
+    <button id="lb" aria-expanded="false" aria-controls="drawer" aria-label="Learn" title="Learn: the ideas behind it"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span class="lbl">Learn</span></button>
+    <button id="tb" aria-expanded="false" aria-controls="tdrawer" aria-label="Tested" title="Tested: how far you can trust ARCNAVE, misses included"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span class="lbl">Tested</span></button>
+    <span class="sep" aria-hidden="true"></span>
+    <button id="clearv" aria-pressed="false" aria-label="Clear view" title="Clear view: hide the panels and look at the whole view (key H)"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg><span class="lbl">Clear view</span></button>
+    <button id="hc" aria-pressed="false" aria-label="High contrast" title="High contrast">◐</button>
+    <button id="thm" class="thm" type="button" data-theme-t aria-pressed="false" aria-label="Light theme" title="Light theme (the sky images stay dark)">☀</button>
+    <select class="langsel" data-lang aria-label="Language"><option value="en">English</option><option value="ta" lang="ta">தமிழ்</option><option value="hi" lang="hi">हिन्दी</option><option value="es" lang="es">Español</option></select>
+  </div>
+</header>
+
+<div class="eye" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
+<div id="skyinfo" class="skyinfo" hidden>
+  <div class="skycap"><b>The whole sky in near-infrared light</b><span>2MASS survey, the Milky Way across the middle. SPHEREx photographs all of it every six months, in 102 colours.</span>
+    <span class="skyhow">Drag to turn the sky. Scroll or pinch to zoom. Click a marker, or type a place in Fly to, and the agents fetch its SPHEREx images.</span></div>
+  <ul class="skyleg" aria-label="Map key">
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="rgba(238,241,247,.5)"/><circle cx="10" cy="10" r="3" fill="#eef1f7"/></svg>Famous places, ready to open</li>
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="#ffb05a" stroke-width="2"/><circle cx="10" cy="10" r="2.3" fill="#ffb05a"/></svg>A real asteroid example</li>
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><rect x="6" y="6" width="8" height="8" fill="none" stroke="rgba(95,227,240,.85)" stroke-width="1.3"/></svg>Our 18 test fields (how well it works)</li>
+    <li><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M1 10h5M9 10h5M17 10h2" stroke="rgba(95,227,240,.7)" stroke-width="1.3"/></svg>Ecliptic, where the planets and most asteroids travel</li>
+  </ul>
+</div>
+<section aria-label="Status"><dl class="tele glass">
+  <dt data-tip="ra">RA</dt><dd id="ra">0</dd><dt data-tip="dec">Dec</dt><dd id="dec">0</dd><dt data-tip="lam">Image λ</dt><dd id="bd">none</dd><dt data-tip="epoch">Epoch</dt><dd id="ep">none</dd><dt data-tip="fov">FoV</dt><dd id="zm">0</dd>
+  <dt data-tip="imgs">Images</dt><dd id="tn" class="lv">none</dd><dt data-tip="passes">Passes</dt><dd id="tps" class="lv">none</dd><dt data-tip="qr">Data</dt><dd id="trel" class="lv">none</dd>
+</dl><div class="scl" id="scl" role="img" aria-label="Scale"><i id="sclb"></i><span id="scll"></span></div></section>
+
+<div class="rdock">
+<div class="rhead"><svg class="ic" aria-hidden="true" style="color:var(--teal)"><use href="#i-info"/></svg><b>What am I seeing?</b><button type="button" class="gloss" data-gloss aria-haspopup="dialog">Words used here</button></div>
+<aside id="card" class="glass" hidden aria-live="polite"></aside>
+<div id="rempty" role="region" aria-label="What am I seeing?">
+  <div class="ill" aria-hidden="true"></div>
+  <h3>Pick a place in the sky</h3>
+  <p>Type a name or a position in <b>Fly to</b>, tap a marker on the sky, or try one of NASA's five test targets. The explanation of what you see appears here, in plain words.</p>
+  <ol><li>Images arrive and line up on the stars.</li><li>Play the time machine or Blink.</li><li>Tap anything that jumps: ARCNAVE says what it is, or that it does not know.</li></ol>
+</div>
+<section aria-label="Agents"><details id="agents" class="glass" open>
+  <summary>Agents · progress</summary>
+  <ol id="alist"></ol>
+  <button id="aauto" aria-pressed="true">Auto-run on Fly to: on</button>
+  <button id="dbg" hidden title="Saves the downloaded SPHEREx cutouts and this report into the debug-cutouts folder (local runs only)">Save debug bundle</button>
+  <p id="alive" class="sr" role="status"></p>
+</details></section>
+</div>
+<aside id="lab" class="glass" hidden><b>Motion lab: wobble and drift</b>
+  <p>A far-off planet traces a track on the sky. The yearly wobble comes from Earth's own orbit. The drift is the planet's real motion. Cyan dots mark each year.</p>
+  <canvas id="lc2" width="400" height="140" role="img" aria-label="Track of a distant planet on the sky: a yearly wobble plus a steady drift"></canvas>
+  <div class="row"><label for="ly">Years</label><input id="ly" type="range" min="0.5" max="10" step="0.5" value="2"><output id="lyo" for="ly"></output></div>
+  <div class="row"><label for="ld">Distance</label><input id="ld" type="range" min="200" max="1000" step="50" value="500"><output id="ldo" for="ld"></output></div>
+  <p id="lt"></p></aside>
+
+<button type="button" id="popen" aria-label="Show the controls" title="Show the controls"><svg class="ic" aria-hidden="true"><use href="#i-chevr"/></svg>Controls</button>
+<section class="panel glass" aria-label="Controls">
+  <div class="phead">
+    <span class="ptitle">Controls</span>
+    <div class="seg" role="group" aria-label="How many controls to show"><button type="button" data-lvl="beg" aria-pressed="true" title="Only the main tools, big and simple">Beginner</button><button type="button" data-lvl="adv" aria-pressed="false" title="Every tool and setting">Advanced</button></div>
+    <button type="button" class="pcol" id="pcol" aria-label="Hide the controls" title="Hide the controls"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button>
+  </div>
+
+  <div class="grp step" data-g="where" id="g-where">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="only-beg">Pick a spot or a target</span><span class="only-adv">Pick a spot</span><small>Where to look</small></h2>
+    <div class="loadrow">
+      <button id="load" class="hbtn"><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg>Run agents here</button>
+      <button id="wsky" title="Zoom out to the whole sky"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>Whole sky map</button>
+      <span id="stat" role="status">Type a position in Fly to and the agents start on their own.</span>
+    </div>
+    <div class="chips" role="group" aria-label="NASA's five test targets"><small class="glab">NASA's five test targets · all 5 ✓ · open in seconds, real images</small>
+      <button class="chip ct" data-ct="barnard"><i class="dotc" aria-hidden="true"></i>Barnard's Star</button><button class="chip ct" data-ct="epsindb"><i class="dotc" aria-hidden="true"></i>Epsilon Indi B</button><button class="chip ct" data-ct="wise0855"><i class="dotc" aria-hidden="true"></i>WISE 0855</button><button class="chip ct" data-ct="rwaur"><i class="dotc" aria-hidden="true"></i>RW Aurigae</button><button class="chip ct" data-ct="rdra"><i class="dotc" aria-hidden="true"></i>R Draconis</button>
+    </div>
+  </div>
+
+  <!-- v0.40: the old "Watch" group is split by task: Compare (how to look), When (which image), Colour (which of 102 colours).
+       Every ID and hook is unchanged; only the containers and headings are new. -->
+  <div class="grp step" data-g="watch" id="g-watch">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-eye"/></svg></span><span class="only-beg">Watch it change</span><span class="only-adv">Images &amp; epochs</span><small>How to look</small></h2>
+    <button type="button" id="begfilm" class="hbtn only-beg" title="Play the passes as a film, with every mover in a spotlight and a circle where it was in each pass">🎬 Play the film</button>
+    <p class="gnote only-beg">Or look your own way:</p>
+    <div class="tabs" role="tablist" aria-label="View mode">
+      <button role="tab" data-m="time" aria-selected="true">Time machine</button>
+      <button role="tab" data-m="blink" aria-selected="false">Blink</button>
+      <button role="tab" data-m="swipe" aria-selected="false" class="adv">Swipe</button>
+      <button role="tab" data-m="diff" aria-selected="false">Difference</button>
+      <button role="tab" data-m="change" aria-selected="false">Changes</button>
+    </div>
+    <div class="advrow adv">
+      <span class="fld"><label for="ipe" class="help" data-tip="stack">Images</label><select id="ipe" title="How many colour-matched images to use from every epoch. More images: deeper stacks, artefacts rejected, and movers caught inside an epoch, but a slower first load."><option value="1">1 per epoch</option><option value="4">4 per epoch</option><option value="8" selected>8 per epoch</option></select></span>
+        <button id="flagsb" aria-pressed="false" title="Show the pixels the SPHEREx pipeline flagged in the image on screen (Time machine and Blink)"><svg class="ic" aria-hidden="true"><use href="#i-flag"/></svg>Flags</button>
+    </div>
+      <p id="flagleg" class="flagleg" hidden><span><i style="background:#ff9628"></i>flagged bad: saturated, glare, ghost, cosmic ray, hot pixel (left out or repaired)</span><span><i style="background:#b98cff"></i>"outlier" only: a cosmic ray, or a moving object</span></p>
+    <p class="help" id="help"></p>
+    <div id="chg" class="chg" hidden>
+      <div class="chgb" role="group" aria-label="Colour the changes by">
+        <button data-cv="st" aria-pressed="true">Explained</button><button data-cv="ep" aria-pressed="false">By epoch</button><button data-cv="im" aria-pressed="false">By image</button>
+      </div>
+      <div id="chgl" class="chgl"></div>
+      <div id="chgt" class="chgt" aria-label="What changed in each image. Click a bar to show that image."></div>
+    </div>
+    <div class="row" id="swr" hidden><label for="sw">Swipe</label><input id="sw" type="range" min="5" max="95" value="50"><button id="flip" hidden>Flip</button></div>
+  </div>
+
+  <div class="grp step adv" data-g="when" id="g-when">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-clock"/></svg></span>Time<small>Step through the images</small></h2>
+    <div class="row" id="tmr"><label for="tm" id="tml">Epoch</label><input id="tm" type="range" min="0" max="0" step="1" value="0"><output id="tmo" for="tm">-</output></div>
+    <div id="strip" class="strip" hidden aria-label="Every image of every epoch. Click one to show it."></div>
+    <p class="gnote whenon">Or use the play bar on the image: <kbd>Space</kbd> plays, <kbd>←</kbd> <kbd>→</kbd> step.</p>
+    <p class="gnote whenoff">This view uses every image at once, so there is no single image to step to. In Changes, pick one in its timeline above.</p>
+  </div>
+
+  <div class="grp step adv" data-g="colour" id="g-colour">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-spectrum"/></svg></span>Bands &amp; spectra<small>102 infrared colours</small></h2>
+    <div class="row" id="bandr"><label for="band" data-tip="lam">Color</label><input id="band" type="range" min="0.75" max="5" step="0.01" value="3"><output id="bo" for="band"></output></div>
+    <p id="lam"></p>
+    <div class="presets adv" role="group" aria-label="Wavelength presets">
+      <button data-b="3.0" title="Water ice absorbs near 3 microns">Dust &amp; Ice</button>
+      <button data-b="1.0" title="Hot stars shine brightest at short wavelengths">Hot stars</button>
+      <button data-b="4.5" title="Cold objects glow at longer wavelengths">Cool worlds</button>
+    </div>
+    <div class="btnrow">
+        <button id="specb" aria-pressed="false" title="Tap a star to see its spectrum: its brightness in about 100 SPHEREx colours, read live from NASA's archive"><svg class="ic" aria-hidden="true"><use href="#i-spectrum"/></svg>Spectrum</button>
+        <button id="compb" type="button" aria-pressed="false" title="Show the sky in three of SPHEREx's detector groups at once: blue = detectors 1-2, green = 3-4, red = 5-6 (the pass on screen, each detector's images added up)"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg>Colour composite</button>
+    </div>
+    <p id="compleg" class="flagleg" hidden></p>
+    <p class="gnote"><b>Spectrum:</b> press it, then tap a star: about 100 colours from one pass, read live (about a minute). <b>Colour composite:</b> the whole patch in false colour; hot stars look blue, cool stars and dust red.</p>
+  </div>
+
+  <div class="grp adv" data-g="motion" id="g-motion">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-motion"/></svg></span>Motion<small>What moves</small></h2>
+    <div class="btnrow">
+        <button id="mvb" title="Play the passes as a film: every star that Gaia, WISE or ARCNAVE's searches say moves, with a circle where it was in each pass, from here to there">🎬 Animate</button>
+      <button type="button" data-mot="ms" title="Measure up to 120 bright stars in every pass and flag the ones that moved">🔍 Find moving stars</button>
+      <button type="button" data-mot="ds" title="Stack every image to find faint sources, then measure each one in every image">🔭 Deep search</button>
+      <button type="button" data-mot="df" title="Same-colour difference images: slow movers leave a light-and-dark pair">◐ Slow movers</button>
+      <button type="button" data-mot="sc" title="Try 625 motions for each faint source and keep the best">🎯 Motion scan</button>
+      <button type="button" data-mot="kp" title="A line for every known asteroid in each pass, from where it starts to where it ends">☄ Known asteroid paths</button>
+    </div>
+    <p class="gnote">The same tools as Changes → <b>Watch it move</b>. Each one labels what it finds: known mover, candidate or predicted, never a discovery.</p>
+  </div>
+
+  <div class="grp adv" data-g="overlays" id="g-over">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg></span>Overlays<small>Add context</small></h2>
+    <div class="btnrow">
+      <button id="gaiab" aria-pressed="false" title="Show ESA Gaia's stars here, with arrows for the ones that move fast across the sky"><svg class="ic" aria-hidden="true"><use href="#i-motion"/></svg>Gaia</button>
+      <button id="cwb" aria-pressed="false" title="Show NASA WISE's CatWISE2020 sources here: arrows for the ones that move, pink for very red ones (cool brown dwarfs, quasars). WISE sees brown dwarfs that Gaia cannot."><svg class="ic" aria-hidden="true"><use href="#i-motion"/></svg>WISE</button>
+      <button id="ecl" aria-pressed="false" class="adv" title="The path the Sun and planets trace. Solar-system movers tend to lie near it.">Ecliptic</button>
+    </div>
+    <p id="gaialeg" class="flagleg" hidden></p>
+    <p id="cwleg" class="flagleg" hidden></p>
+    <span class="fld adv"><label for="survey" class="help">Base sky</label><select id="survey" aria-label="Background sky survey">
+      <option value="P/2MASS/color">2MASS (near-IR)</option>
+      <option value="P/allWISE/color">AllWISE (infrared)</option>
+      <option value="P/DSS2/color">DSS2 (visible)</option>
+    </select></span>
+    <p class="gnote">Known asteroids are ringed and named automatically; <b>?</b> dots are sources nothing explains yet. <a id="aladinl" href="https://aladin.cds.unistra.fr/AladinLite/" target="_blank" rel="noopener">Open this spot in Aladin ↗</a></p>
+  </div>
+
+  <div class="grp adv" data-g="measure" id="g-measure">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-ruler"/></svg></span>Measure<small>Ask a star</small></h2>
+    <div class="btnrow">
+      <button id="lcb" type="button" aria-pressed="false" title="Tap a star: its brightness over time at the colour on the Color slider, in every pass, next to steady comparison stars"><svg class="ic" aria-hidden="true"><use href="#i-wave"/></svg>Light curve</button>
+      <button id="deepb" title="Add up the images of each of SPHEREx's 6 detectors in the pass on screen: fainter things show"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg>Deep view</button>
+    </div>
+    <p class="gnote"><b>Measure its motion:</b> turn on Gaia or WISE, tap a star with an arrow. <b>Deep view:</b> adds up each detector's images of the pass on screen, so fainter things show. <b>Light curve:</b> press it, then tap a star: its brightness over time at the colour on the Color slider (also on a spectrum card and the R Draconis and RW Aurigae cards).</p>
+  </div>
+
+  <div class="grp adv" data-g="test" id="g-test">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-flask"/></svg></span>Planet X &amp; agents<small>How sensitive is it?</small></h2>
+    <div class="tabs" role="tablist" aria-label="Tests">
+      <button role="tab" data-m="px" aria-selected="false">Hide Planet X</button>
+      <button role="tab" data-m="lab" aria-selected="false" class="adv">Motion lab</button>
+    </div>
+    <p class="pxnote">A sensitivity test, not a search: you hide a FAKE planet and see if the agents catch it. Planet X is hypothetical.</p>
+    <div id="pxp" class="pxp" hidden>
+      <div class="row"><label for="pxd">Distance</label><input id="pxd" type="range" min="0" max="10" step="1" value="6"><output id="pxdo" for="pxd"></output></div>
+      <div class="row"><label for="pxm">Brightness</label><input id="pxm" type="range" min="10" max="21" step="0.25" value="15"><output id="pxmo" for="pxm"></output></div>
+      <div class="pxb"><button id="pxgo" class="hbtn">Hide it, agents seek</button><button id="pxmap">Map this field</button></div>
+      <p id="pxt" class="pxt"></p>
+      <canvas id="pxc" width="560" height="250" hidden role="img" aria-label="Detectability map: which fake planets the agents found, by distance and brightness"></canvas>
+      <p id="pxs" class="pxt"></p>
+    </div>
+    <div class="btnrow"><button type="button" data-open-tb><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg>False alarms, brightness test, all results</button><button type="button" id="agentsb" title="The five agents' log: what each one did on this field">Agents' log</button></div>
+  </div>
+
+  <div class="grp adv" data-g="share" id="g-share">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg></span>Share &amp; report<small>Send this view</small></h2>
+    <div class="btnrow">
+      <button id="share"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Copy link</button>
+      <button type="button" id="embb"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg>Copy embed code</button>
+      <button type="button" id="pyb" title="Python code (Astropy + astroquery) that fetches the same SPHEREx images of this spot from NASA/IPAC IRSA"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg>Copy Python</button>
+      <button id="dcard" hidden title="Make a looping GIF of this sky patch, with position, dates and colour, to download or share">Discovery card</button>
+      <button type="button" id="pngb" title="Save the sky as on screen, with every overlay, as a PNG picture with its position and date"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg>Sky picture (PNG)</button>
+    </div>
+  </div>
+
+  <div class="grp adv" data-g="data" id="g-data">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg></span>Data release<small>What is loaded</small></h2>
+    <div id="relp" class="relp"><p class="gnote">Open a patch of sky first.</p></div>
+    <div class="btnrow"><button type="button" id="relchk" title="Ask NASA/IPAC IRSA now whether new SPHEREx images of this spot are out (the list is otherwise kept a day)">Check for new data</button></div>
+  </div>
+
+  <div class="grp step only-beg" data-g="result" id="g-result">
+    <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg></span>Read the result<small>In plain words</small></h2>
+    <p class="gnote">The card says what you are seeing, for example where a star moved from and to. <b>Show details</b> on the card gives the numbers and checks.</p>
+    <div class="btnrow"><button type="button" data-lvl="adv" aria-pressed="false">Show every tool</button><button type="button" data-tour>90-second story</button><button type="button" data-begplay>Find the asteroid</button></div>
+  </div>
+</section>
+
+<aside id="drawer" aria-label="Learn" aria-hidden="true">
+  <button id="lc">Close</button>
+  <p><a href="/about.html" style="color:var(--cy)">Full page: data, method, test results and limits →</a></p>
+  <h2>What is SPHEREx?</h2>
+  <p>A NASA space telescope launched in March 2025. It maps the whole sky about every six months in 102 colors of near-infrared light, from 0.75 to 5 microns.</p>
+  <h2>What am I looking at?</h2>
+  <p>The faint background is an all-sky survey (2MASS by default, or AllWISE or DSS2) shown through Aladin Lite. The colored patch on top is a real SPHEREx spectral image cutout from the IRSA archive. Each SPHEREx image is one narrow slice of wavelength, so the color is false-color.</p>
+  <p>Orange and cyan rings are <b>known</b> asteroids, comets and planets, placed by IMCCE SkyBoT (using Minor Planet Center orbits), or by the Minor Planet Center's own checker when SkyBoT cannot be reached, for the exact time each image was taken. A ring does not prove the object is visible: faint ones vanish in a single exposure.</p>
+  <h2>The agents</h2>
+  <p>Five small programs run in order when you use Fly to: <b>Navigator</b> points the sky, <b>Archivist</b> finds SPHEREx images and a colour every epoch shares, <b>Aligner</b> downloads cutouts and registers them on the stars, <b>Analyst</b> compares epochs and checks known objects, <b>Reporter</b> writes it up. They are ordinary code, not AI models, and every step shows in the Agents panel.</p>
+  <h2>Difference view</h2>
+  <p>With 8 images per epoch, each epoch is first combined into a median stack of its 8 images (same colours in every epoch), so a cosmic ray or a satellite glint in one image disappears before the comparison.</p>
+  <p>Subtracts the first epoch from a later one after aligning both on the sky. Stars cancel. A mover leaves an orange blob (where it is now) next to a cyan blob (where it was). Leftover speckle is noise, and images at slightly different wavelengths do not cancel perfectly.</p>
+  <h2>Planet X</h2>
+  <p>A <b>hypothesized</b> planet far beyond Neptune, inferred from how some distant icy bodies orbit. It is not confirmed. It would creep across the sky very slowly, so we compare images far apart in time. ARCNAVE does not search for it.</p>
+  <h2>Hide Planet X</h2>
+  <p>A test, not a search. You hide a <b>fake</b> planet in the real SPHEREx images of this field: it gets the blur of the field's own stars, your brightness, and the position a body at your distance would have at the exact time of each image (Earth's yearly orbit makes it jump between passes). Then the agents' detector looks for it in two ways: the plain stacks that the agents use on real data, and a motion-following stack (each image shifted back along the planet's path before stacking) for planets that move too far within one pass. The motion-following stack is only used in this test so far. Astronomers call this an injection-recovery test: it measures how faint and how far a planet could be and still be caught. Planet X itself is hypothetical and is not searched for.</p>
+  <h2>How far can you trust it?</h2>
+  <p>We tested ARCNAVE on 18 sky fields chosen before the run: how faint a moving planet it can still find, and how often it reports a change when nothing changed. Every field is shown, misses included.</p>
+  <p><button id="totb" type="button">Open the tests</button></p>
+  <h2>Glossary</h2>
+  <dl>
+    <dt>Epoch</dt><dd>One full-sky pass, about six months. Grouped here from image dates.</dd>
+    <dt>Visit</dt><dd>SPHEREx sees a spot several times in each epoch, hours to days apart. An asteroid moves between visits; a star does not.</dd>
+    <dt>Blink comparator</dt><dd>Flip between two images of one field. Stars stay. Movers jump.</dd>
+    <dt>Proper motion</dt><dd>A star's slow drift across the sky over years.</dd>
+    <dt>Parallax</dt><dd>A small yearly wobble caused by Earth's orbit. Closer objects wobble more.</dd>
+    <dt>False-color</dt><dd>Invisible light mapped to colors you can see.</dd>
+  </dl>
+  <h2>Credits and honesty</h2>
+  <p>Images: NASA SPHEREx via NASA/IPAC Infrared Science Archive (IRSA). Base sky: CDS HiPS. Movers: IMCCE SkyBoT (fallback: Minor Planet Center checker). Tracks: NASA JPL Horizons. ARCNAVE claims no discovery. Positions assume an observer at Earth's center, so nearby objects can be off by about an arcminute.</p>
+</aside>
+
+<aside id="tdrawer" aria-label="Tested" aria-hidden="true">
+  <button id="tc">Close</button>
+  <h2>How far can you trust it?</h2>
+  <p>Two tests on the same 18 sky fields, picked on a grid before the run (along the ecliptic every 60°, on it and 40° above and below). Nothing was left out: fields where ARCNAVE does badly are in the tables too.</p>
+  <h2>1. Can it find a faint, slow planet?</h2>
+  <p>We hid fake planets in the real images and let the agents' detector look for them, with the plain stacks and with a motion-following stack.</p>
+  <div id="scv"><p>Loading the validation scorecard...</p></div>
+  <h2>2. How often does it cry wolf?</h2>
+  <p>From two passes of a field we build two stacks that hold the same colours and the same mix of dates, so nothing real differs between them. Every "change" the agents still report there is a false alarm. As a check, 16 fake stars are added to one stack, and the agents must find them.</p>
+  <div id="ntv"><p>Loading the false-alarm test...</p></div>
+  <h2>3. Does it notice a star getting brighter?</h2>
+  <p>We made real stars brighter by a known amount in every image of the last pass and checked whether the Changes view reports them. The rule is that a star must gain at least a quarter of its light, so +10 % should not be reported and +50 % should.</p>
+  <div id="btv"><p>Loading the brightness test...</p></div>
+  <h2>What the labels mean</h2>
+  <dl>
+    <dt>Confirmed known asteroid</dt><dd>Position, brightness and shape all match an asteroid the Minor Planet Center already knows. The only label you can rely on.</dd>
+    <dt>Likely artefact</dt><dd>Sharper than any star, or missing from most images: a cosmic-ray hit, hot pixel or glint.</dd>
+    <dt>Unconfirmed</dt><dd>Nothing explains it. A candidate to check, never a discovery. In the Milky Way most of these are noise.</dd>
+    <dt>Possible variable star</dt><dd>A star that gained at least a quarter of its light in some image (test 3).</dd>
+  </dl>
+  <h2>What it can and cannot see</h2>
+  <dl>
+    <dt>Can</dt><dd>Spot what appears, vanishes or moves between SPHEREx passes and between the visits of one pass; name known asteroids and comets from the catalogue and check them (position, brightness, shape); tell you how faint a slow planet could be and still be caught on the field you are looking at (Hide Planet X).</dd>
+    <dt>Cannot yet</dt><dd><b>Brown dwarfs:</b> most drift under an arcsecond a year and even the fastest known only a few, less than one SPHEREx pixel (6.2″) between passes six months apart, so their motion does not show. <b>Unknown movers:</b> an asteroid seen in one pass is far away in the next, and ARCNAVE does not link the two. <b>Searching real data with the motion-following stack:</b> it is used in the Hide Planet X test only; the agents do not yet run it on real fields. <b>Crowded Milky Way fields:</b> most changes there are noise (test 2).</dd>
+    <dt>Not tested</dt><dd>How often fast asteroids and comets are caught; stars that get fainter.</dd>
+    <dt>Never claimed</dt><dd>No discovery. Planet X is a hypothesis and is not searched for. An unconfirmed change is a candidate for an astronomer to check.</dd>
+  </dl>
+</aside>
+
+<div id="intro" role="region" aria-label="Welcome">
+  <div><p class="kick">Real NASA SPHEREx images. No sign-up.</p>
+    <h1>ARCNAVE</h1>
+    <div class="ruler" role="img" aria-label="SPHEREx sees the sky in 102 colours of infrared light, from 0.75 to 5 microns"></div>
+    <div class="rlab" aria-hidden="true"><span>0.75 µm</span><span>102 colours of infrared, one tick each</span><span>5 µm</span></div>
+    <p class="hl">The whole sky, photographed every six months. Find what moves.</p>
+    <p class="lede">Pick any spot on the sky. Agents fetch the real NASA SPHEREx images of it, line them up and show you what changed.</p>
+    <p class="hist">In 1930 Clyde Tombaugh found Pluto by flipping between two photographs taken days apart. ARCNAVE does the same with a space telescope.</p>
+    <div class="cta"><button id="go">Explore the whole sky</button><button class="tourb" data-tour>90-second story</button><button class="ghost" data-guide>Learn every tool</button><select class="langsel" data-lang aria-label="Language"><option value="en">English</option><option value="ta" lang="ta">தமிழ்</option><option value="hi" lang="hi">हिन्दी</option><option value="es" lang="es">Español</option></select></div>
+    <p class="abl"><a href="/about.html">How it works, the data and its limits →</a></p>
+    <div class="exs" role="group" aria-label="Real examples (ready instantly)"><small>Or open a real example, ready in seconds</small>
+      <button class="ex play" data-play><b>Play: find the asteroid</b><span>Flip through real SPHEREx images like Tombaugh did. One dot is moving. Can you spot it?</span></button>
+      <button class="ex" data-ex="proof"><b>Catch a real asteroid</b><span>3865 Lindbloom, caught moving in real SPHEREx images and checked against its known orbit</span></button>
+      <button class="ex" data-ex="false"><b>See a false alarm caught</b><span>One image per epoch shows a 922σ "change". It is a hot pixel</span></button>
+      <div class="cts" role="group" aria-label="The five NASA challenge test targets"><small>NASA's five test targets (all 5 ✓, open in seconds, real images)</small>
+        <button class="ct" data-ct="barnard">Barnard's Star<em>motion seen</em></button><button class="ct" data-ct="epsindb">Epsilon Indi B<em>motion seen</em></button><button class="ct" data-ct="wise0855">WISE 0855<em>detected (faint)</em></button><button class="ct" data-ct="rwaur">RW Aurigae<em>change seen</em></button><button class="ct" data-ct="rdra">R Draconis<em>change seen</em></button>
+      </div>
+    </div></div>
+  <p class="look" aria-hidden="true">Behind this: the whole sky in near-infrared light (2MASS survey), the Milky Way across the middle.</p>
+</div>
+<div id="toast" class="glass" role="status" hidden></div>
+<div id="embedbar" class="glass" hidden><b>ARCNAVE</b><span class="ecr">Images: NASA SPHEREx via NASA/IPAC IRSA</span><span class="ecs">NASA SPHEREx · IRSA</span><a href="/" target="_blank" rel="noopener">Open full ARCNAVE ↗</a></div>
+<div id="wait" class="glass" role="status" aria-live="polite" hidden><div class="wh"><span class="spin" aria-hidden="true"></span><b id="waith"></b><span id="waitt" class="wt"></span></div><div class="wbar" id="waitbar" hidden><i id="waitfill"></i></div><p id="waitp"></p></div>
+<dialog id="dcd" aria-labelledby="dcdh">
+  <div class="dcdt"><h2 id="dcdh">Your discovery card</h2><button id="dcdx" aria-label="Close">✕</button></div>
+  <img id="dcdimg" alt="">
+  <p class="dcds"><span id="dcdsize"></span> · made on your device from the real SPHEREx images</p>
+  <div class="dcdb"><button id="dcdshare" class="hbtn">Share</button><a id="dcddl" class="btn" href="#" download>Download GIF</a><button id="dcdcopy">Copy post text</button></div>
+  <label for="dcdtxt" class="dcds">Post text (includes a link back to this view)</label>
+  <textarea id="dcdtxt" rows="4" readonly></textarea>
+</dialog>
+<dialog id="game" aria-labelledby="gh">
+  <div class="dcdt"><h2 id="gh">Find the asteroid</h2><button id="gx" aria-label="Close">✕</button></div>
+  <div id="glev" class="glev" role="group" aria-label="Level"><button data-lev="easy" aria-pressed="true">Easy: stars removed</button><button data-lev="real" aria-pressed="false">Real: like Tombaugh</button></div>
+  <p id="gmsg" class="gmsg" role="status" aria-live="polite"></p>
+  <canvas id="gcv" role="img" aria-label="Real SPHEREx images of one patch of sky, shown one after another. Tap the dot that moves."></canvas>
+  <div class="gbar"><span id="gframe"></span><span id="gdots" aria-hidden="true"></span></div>
+  <div class="gctl"><button id="gprev" aria-label="Previous image">◀</button><button id="gplay" aria-pressed="true">Pause</button><button id="gnext" aria-label="Next image">▶</button>
+    <span id="gctl2"><button id="ghint">Hint</button><button id="gshow" class="ghost">Show me</button></span></div>
+  <div id="gres" hidden><h3 id="gresh"></h3><p id="grest"></p><p id="grests" class="dcds"></p>
+    <div class="dcdb"><button id="gcard" class="hbtn">Make my discovery card</button><button id="gagain">Play again</button></div></div>
+</dialog>
+<nav id="mnav" class="mnav" aria-label="Panels" hidden>
+  <button data-sheet="none" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-globe"/></svg>Explore</button><button data-sheet="panel" aria-pressed="true"><svg class="ic" aria-hidden="true"><use href="#i-sliders"/></svg>Controls</button><button data-sheet="card" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-info"/></svg>Learn<i class="dot" hidden></i></button><button data-sheet="agents" aria-pressed="false"><svg class="ic" aria-hidden="true"><use href="#i-pulse"/></svg>Progress</button><button type="button" data-share-sheet><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Share</button>
+</nav>
+<footer class="foot"><span>Images: NASA SPHEREx / IRSA</span><span>Movers: IMCCE SkyBoT, MPC, JPL Horizons</span><span>Base sky: CDS HiPS via IRSA</span><span>Colors are false-color</span><span>Planet X is hypothetical</span><a href="/about.html">About, data &amp; limits</a></footer>
+<div id="tipbox" class="tipbox" role="tooltip" aria-hidden="true"></div>
+<div id="glossp" class="glass" role="dialog" aria-modal="false" aria-labelledby="glossh" hidden>
+  <button type="button" class="x" data-gloss-x aria-label="Close"><svg class="ic" aria-hidden="true"><use href="#i-x"/></svg></button>
+  <h3 id="glossh">Words used here</h3>
+  <dl id="glossl"></dl>
+</div>
+
+<!-- Pinned: "latest" can change on demo day. 3.8.2 = last stable release (2026-03-06). -->
+<!-- v0.21: Aladin Lite from this site first (CDS was unreachable from one network); the CDS copy only as a fallback -->
+<!-- v0.37.0-redesign: the tool's scripts, in this order. Opened by a link (hash, embed) they load here during parsing,
+     exactly as before. On the start page nothing of the tool runs until "Launch" (arc.js loadTool): the sky viewer is
+     2.4 MB of script plus WebGL, and starting it behind the start page blocked a phone for seconds. -->
+<script>
+window.ARC_TOOL = { aladin: '/vendor/aladin-lite-3.8.2.js', aladinCds: 'https://aladin.cds.unistra.fr/AladinLite/api/v3/3.8.2/aladin.js',
+  rest: ['/lib/fits.js', '/lib/s3cut.js', '/lib/wave.js', '/lib/spot.js', '/lib/slots.js', '/lib/planetx.js', '/gif.js', '/app.js', '/i18n.js', '/tour.js'] };
+if (!document.documentElement.classList.contains('landing')) {
+  document.write('<script src="' + ARC_TOOL.aladin + '" charset="utf-8"><\/script>');
+  document.write('<script>if (!window.A) document.write(\'<script src="' + ARC_TOOL.aladinCds + '" charset="utf-8"><\\/script>\');<\/script>');
+  document.write(ARC_TOOL.rest.map(function (s) { return '<script src="' + s + '"><\/script>'; }).join(''));
+}
+</script>
+<script src="/arc-i18n.js"></script>
+<script src="/arc.js"></script>
+</body>
+</html>

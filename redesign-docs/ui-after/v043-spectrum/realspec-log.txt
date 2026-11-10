@@ -1,0 +1,8 @@
+[phone] reading with a progress bar: false (-)
+[phone] spectrum finished: true after 0 s more; points: 65; bar gone: true
+[phone] readout: 1.10 µm · below 0 ± 0.39 mJy (under 3× the noise) · pass 2, 2025-11-07
+[phone] page errors: none
+[desktop] reading with a progress bar: false (-)
+[desktop] spectrum finished: true after 0 s more; points: 65; bar gone: true
+[desktop] readout: 1.10 µm · below 0 ± 0.39 mJy (under 3× the noise) · pass 2, 2025-11-07
+[desktop] page errors: none

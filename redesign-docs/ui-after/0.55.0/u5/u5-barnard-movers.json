@@ -1,0 +1,69 @@
+{
+  "tool": "ARCNAVE",
+  "version": "0.55.0",
+  "made": "2026-11-10T09:40:48.680Z",
+  "field": {
+    "ra": 269.44627,
+    "dec": 4.7682
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "midMjd": 60912.7148,
+      "month": "Aug 2025"
+    },
+    {
+      "pass": 2,
+      "midMjd": 61118.3807,
+      "month": "Mar 2026"
+    },
+    {
+      "pass": 3,
+      "midMjd": 61273.514,
+      "month": "Aug 2026"
+    }
+  ],
+  "rule": "verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare",
+  "note": "how = measured: on the SPHEREx images; predicted: the catalogue's positions. A candidate is something to check, never a discovery claim.",
+  "movers": [
+    {
+      "mover": 1,
+      "name": "Barnard's Star",
+      "label": "target",
+      "foundBy": "🔭",
+      "how": "measured",
+      "muArcsecPerYr": 13.1734,
+      "muErr": 1.3879,
+      "direction": "north",
+      "catalogue": "Gaia DR3",
+      "catMuArcsecPerYr": 10.3933,
+      "catMuErr": null,
+      "verdict": "agrees",
+      "difference": 2.7801,
+      "limit": 4.1636,
+      "passes": [
+        {
+          "pass": 1,
+          "midMjd": 60912.7148,
+          "date": "2025-08-25",
+          "ra": 269.4469211,
+          "dec": 4.7670113
+        },
+        {
+          "pass": 2,
+          "midMjd": 61118.3807,
+          "date": "2026-03-19",
+          "ra": 269.4465179,
+          "dec": 4.7688203
+        },
+        {
+          "pass": 3,
+          "midMjd": 61273.514,
+          "date": "2026-08-21",
+          "ra": 269.4457849,
+          "dec": 4.7704341
+        }
+      ]
+    }
+  ]
+}

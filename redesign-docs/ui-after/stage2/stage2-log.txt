@@ -1,0 +1,19 @@
+[desktop] WISE 0855 result: true after 20.2 s
+[desktop] bar in Time machine: {"shown":true,"tm":"42","max":"42","date":"2026-05-11","sub":"Image 43 of 43 · pass 3","ticks":"May 2025||Apr 2026"}
+[desktop] after 2.1 s of Play: image 42 -> 2 (2025-05-05 · Image 3 of 43 · pass 1)
+[desktop] ArrowRight: 2 -> 3
+[desktop] Space played: 3 -> 5
+[desktop] bar in Difference: {"shown":true,"tm":"2","max":"2","date":"Apr 2026","sub":"Epoch 1, May 2025 vs Epoch 3, Apr 2026 (stacks of 2)","ticks":"Oct 2025|Apr 2026"}
+[desktop] Changes: bar shown false; When notes {"on":"none","off":"block"}
+[desktop] card section labels: ["NASA challenge target.","What SPHEREx shows:","Measured just now on these images:"]
+[desktop] sideways scroll: false
+[desktop] guide check: 30 steps, 29 fully on screen; problems: [[14,"Changes","100/59%","spot"]]
+[desktop] page errors: none
+[phone] WISE 0855 result: true after 14.6 s
+[phone] bar in Time machine: {"shown":true,"tm":"42","max":"42","date":"2026-05-11","sub":"Image 43 of 43 · pass 3","ticks":"May 2025||Apr 2026"}
+[phone] after 2.1 s of Play: image 42 -> 2 (2025-05-05 · Image 3 of 43 · pass 1)
+[phone] Changes: bar shown false; When notes {"on":"none","off":"block"}
+[phone] card section labels: ["NASA challenge target.","What SPHEREx shows:","Measured just now on these images:"]
+[phone] sideways scroll: false
+[phone] guide check: 30 steps, 30 fully on screen; problems: []
+[phone] page errors: none

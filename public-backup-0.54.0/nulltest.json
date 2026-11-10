@@ -1,0 +1,532 @@
+{
+ "built": "2026-10-25T12:05:07.736Z",
+ "summary": {
+  "fields": 18,
+  "measured": 16,
+  "comparisons": 45,
+  "falseAlarms": 494,
+  "plane": {
+   "fields": 4,
+   "comparisons": 13,
+   "falseAlarms": 472,
+   "zeroFields": 0,
+   "capped": true
+  },
+  "rest": {
+   "fields": 12,
+   "comparisons": 32,
+   "falseAlarms": 22,
+   "zeroFields": 7,
+   "capped": false
+  },
+  "planeDeg": 5,
+  "cap": 50,
+  "method": "two colour-matched stacks of the same two passes that differ in nothing real; every change reported between them is a false alarm"
+ },
+ "rows": [
+  {
+   "id": "L000B-40",
+   "ra": 18.4577,
+   "dec": -36.139,
+   "eclLon": 0,
+   "eclLat": -40,
+   "galLat": -79.8,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 2,
+   "capped": false,
+   "real": 2,
+   "control": {
+    "14": {
+     "found": 33,
+     "of": 48
+    },
+    "15": {
+     "found": 35,
+     "of": 48
+    },
+    "16": {
+     "found": 32,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:51:59.424Z"
+  },
+  {
+   "id": "L060B-40",
+   "ra": 66.1004,
+   "dec": -19.0174,
+   "eclLon": 60,
+   "eclLat": -40,
+   "galLat": -40.7,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 1,
+   "capped": false,
+   "real": 1,
+   "control": {
+    "14": {
+     "found": 36,
+     "of": 48
+    },
+    "15": {
+     "found": 28,
+     "of": 48
+    },
+    "16": {
+     "found": 35,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:56:44.023Z"
+  },
+  {
+   "id": "L120B-40",
+   "ra": 113.8996,
+   "dec": -19.0174,
+   "eclLon": 120,
+   "eclLat": -40,
+   "galLat": 0.7,
+   "status": "ok",
+   "comparisons": 1,
+   "falseAlarms": 50,
+   "capped": true,
+   "real": 47,
+   "control": {
+    "14": {
+     "found": 14,
+     "of": 16
+    },
+    "15": {
+     "found": 16,
+     "of": 16
+    },
+    "16": {
+     "found": 14,
+     "of": 16
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:57:37.073Z"
+  },
+  {
+   "id": "L180B-40",
+   "ra": 161.5423,
+   "dec": -36.139,
+   "eclLon": 180,
+   "eclLat": -40,
+   "galLat": 20.2,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 12,
+   "capped": false,
+   "real": 3,
+   "control": {
+    "14": {
+     "found": 39,
+     "of": 48
+    },
+    "15": {
+     "found": 35,
+     "of": 48
+    },
+    "16": {
+     "found": 42,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T11:06:56.184Z"
+  },
+  {
+   "id": "L240B-40",
+   "ra": 222.6629,
+   "dec": -58.6095,
+   "eclLon": 240,
+   "eclLat": -40,
+   "galLat": 0.7,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 144,
+   "capped": true,
+   "real": 50,
+   "control": {
+    "14": {
+     "found": 23,
+     "of": 48
+    },
+    "15": {
+     "found": 1,
+     "of": 48
+    },
+    "16": {
+     "found": 1,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T11:25:00.670Z"
+  },
+  {
+   "id": "L300B-40",
+   "ra": 317.3371,
+   "dec": -58.6095,
+   "eclLon": 300,
+   "eclLat": -40,
+   "galLat": -40.7,
+   "status": "no-split",
+   "comparisons": 0,
+   "falseAlarms": null,
+   "capped": false,
+   "real": 1,
+   "control": {
+    "14": null,
+    "15": null,
+    "16": null
+   },
+   "why": "fewer than 4 colours with an image in both passes",
+   "measuredAt": "2026-10-25T11:30:36.233Z"
+  },
+  {
+   "id": "L000B+00",
+   "ra": 0,
+   "dec": 0,
+   "eclLon": 0,
+   "eclLat": 0,
+   "galLat": -60.2,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 0,
+   "capped": false,
+   "real": 0,
+   "control": {
+    "14": {
+     "found": 39,
+     "of": 48
+    },
+    "15": {
+     "found": 41,
+     "of": 48
+    },
+    "16": {
+     "found": 46,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:10:10.015Z"
+  },
+  {
+   "id": "L060B+00",
+   "ra": 57.8187,
+   "dec": 20.1504,
+   "eclLon": 60,
+   "eclLat": 0,
+   "galLat": -25.7,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 0,
+   "capped": false,
+   "real": 0,
+   "control": {
+    "14": {
+     "found": 37,
+     "of": 48
+    },
+    "15": {
+     "found": 40,
+     "of": 48
+    },
+    "16": {
+     "found": 42,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:11:29.994Z"
+  },
+  {
+   "id": "L120B+00",
+   "ra": 122.1813,
+   "dec": 20.1504,
+   "eclLon": 120,
+   "eclLat": 0,
+   "galLat": 25.7,
+   "status": "ok",
+   "comparisons": 1,
+   "falseAlarms": 0,
+   "capped": false,
+   "real": 0,
+   "control": {
+    "14": {
+     "found": 15,
+     "of": 16
+    },
+    "15": {
+     "found": 14,
+     "of": 16
+    },
+    "16": {
+     "found": 12,
+     "of": 16
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:12:25.843Z"
+  },
+  {
+   "id": "L180B+00",
+   "ra": 180,
+   "dec": 0,
+   "eclLon": 180,
+   "eclLat": 0,
+   "galLat": 60.2,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 0,
+   "capped": false,
+   "real": 0,
+   "control": {
+    "14": {
+     "found": 42,
+     "of": 48
+    },
+    "15": {
+     "found": 40,
+     "of": 48
+    },
+    "16": {
+     "found": 37,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:12:46.979Z"
+  },
+  {
+   "id": "L240B+00",
+   "ra": 237.8187,
+   "dec": -20.1504,
+   "eclLon": 240,
+   "eclLat": 0,
+   "galLat": 25.7,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 0,
+   "capped": false,
+   "real": 0,
+   "control": {
+    "14": {
+     "found": 43,
+     "of": 48
+    },
+    "15": {
+     "found": 42,
+     "of": 48
+    },
+    "16": {
+     "found": 42,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:13:25.201Z"
+  },
+  {
+   "id": "L300B+00",
+   "ra": 302.1813,
+   "dec": -20.1504,
+   "eclLon": 300,
+   "eclLat": 0,
+   "galLat": -25.7,
+   "status": "no-split",
+   "comparisons": 0,
+   "falseAlarms": null,
+   "capped": false,
+   "real": 31,
+   "control": {
+    "14": null,
+    "15": null,
+    "16": null
+   },
+   "why": "fewer than 4 colours with an image in both passes",
+   "measuredAt": "2026-10-25T10:23:17.708Z"
+  },
+  {
+   "id": "L000B+40",
+   "ra": 341.5423,
+   "dec": 36.139,
+   "eclLon": 0,
+   "eclLat": 40,
+   "galLat": -20.2,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 0,
+   "capped": false,
+   "real": 0,
+   "control": {
+    "14": {
+     "found": 29,
+     "of": 48
+    },
+    "15": {
+     "found": 40,
+     "of": 48
+    },
+    "16": {
+     "found": 36,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:24:26.500Z"
+  },
+  {
+   "id": "L060B+40",
+   "ra": 42.6629,
+   "dec": 58.6095,
+   "eclLon": 60,
+   "eclLat": 40,
+   "galLat": -0.7,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 21,
+   "capped": false,
+   "real": 5,
+   "control": {
+    "14": {
+     "found": 43,
+     "of": 48
+    },
+    "15": {
+     "found": 36,
+     "of": 48
+    },
+    "16": {
+     "found": 32,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:24:58.245Z"
+  },
+  {
+   "id": "L120B+40",
+   "ra": 137.3371,
+   "dec": 58.6095,
+   "eclLon": 120,
+   "eclLat": 40,
+   "galLat": 40.7,
+   "status": "ok",
+   "comparisons": 1,
+   "falseAlarms": 0,
+   "capped": false,
+   "real": 0,
+   "control": {
+    "14": {
+     "found": 11,
+     "of": 16
+    },
+    "15": {
+     "found": 13,
+     "of": 16
+    },
+    "16": {
+     "found": 13,
+     "of": 16
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:25:23.602Z"
+  },
+  {
+   "id": "L180B+40",
+   "ra": 198.4577,
+   "dec": 36.139,
+   "eclLon": 180,
+   "eclLat": 40,
+   "galLat": 79.8,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 4,
+   "capped": false,
+   "real": 6,
+   "control": {
+    "14": {
+     "found": 24,
+     "of": 48
+    },
+    "15": {
+     "found": 33,
+     "of": 48
+    },
+    "16": {
+     "found": 32,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:25:51.500Z"
+  },
+  {
+   "id": "L240B+40",
+   "ra": 246.1004,
+   "dec": 19.0174,
+   "eclLon": 240,
+   "eclLat": 40,
+   "galLat": 40.7,
+   "status": "ok",
+   "comparisons": 3,
+   "falseAlarms": 3,
+   "capped": false,
+   "real": 10,
+   "control": {
+    "14": {
+     "found": 44,
+     "of": 48
+    },
+    "15": {
+     "found": 48,
+     "of": 48
+    },
+    "16": {
+     "found": 48,
+     "of": 48
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T10:26:24.396Z"
+  },
+  {
+   "id": "L300B+40",
+   "ra": 293.8996,
+   "dec": 19.0174,
+   "eclLon": 300,
+   "eclLat": 40,
+   "galLat": -0.7,
+   "status": "ok",
+   "comparisons": 6,
+   "falseAlarms": 257,
+   "capped": true,
+   "real": 42,
+   "control": {
+    "14": {
+     "found": 73,
+     "of": 96
+    },
+    "15": {
+     "found": 44,
+     "of": 96
+    },
+    "16": {
+     "found": 1,
+     "of": 96
+    }
+   },
+   "why": null,
+   "measuredAt": "2026-10-25T11:53:31.168Z"
+  }
+ ]
+}

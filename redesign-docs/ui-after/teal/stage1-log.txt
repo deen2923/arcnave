@@ -1,0 +1,13 @@
+[desktop] en sideways scroll: {"side":false,"doc":false}
+[desktop] thumbnails loaded (natural widths): 300,300,300,300,300
+[desktop] ta: {"side":false,"doc":false} start.h="நாசாவின் ஐந்து சோதனை இலக்குகளில் ஒன்றைத்" kick="நாசா ஸ்பேஸ் ஆப்ஸ் சவால் 2026 ·"
+[desktop] hi: {"side":false,"doc":false} start.h="नासा के पाँच परीक्षण लक्ष्यों में से एक " kick="नासा स्पेस ऐप्स चैलेंज 2026 · "
+[desktop] es: {"side":false,"doc":false} start.h="Abre uno de los cinco objetivos de prueb" kick="NASA Space Apps Challenge 2026"
+[desktop] errors on landing: none
+[desktop] card "WISE 0855" opened the result: true after 30.6 s; errors: none
+[phone] en sideways scroll: {"side":false,"doc":false}
+[phone] thumbnails loaded (natural widths): 300,300,300,300,300
+[phone] ta: {"side":false,"doc":false} start.h="நாசாவின் ஐந்து சோதனை இலக்குகளில் ஒன்றைத்" kick="நாசா ஸ்பேஸ் ஆப்ஸ் சவால் 2026 ·"
+[phone] hi: {"side":false,"doc":false} start.h="नासा के पाँच परीक्षण लक्ष्यों में से एक " kick="नासा स्पेस ऐप्स चैलेंज 2026 · "
+[phone] es: {"side":false,"doc":false} start.h="Abre uno de los cinco objetivos de prueb" kick="NASA Space Apps Challenge 2026"
+[phone] errors on landing: none

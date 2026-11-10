@@ -1,0 +1,69 @@
+{
+  "tool": "ARCNAVE",
+  "version": "0.55.0",
+  "made": "2026-11-10T09:41:45.116Z",
+  "field": {
+    "ra": 133.79513,
+    "dec": -7.24515
+  },
+  "passes": [
+    {
+      "pass": 1,
+      "midMjd": 60800.7022,
+      "month": "May 2025"
+    },
+    {
+      "pass": 2,
+      "midMjd": 60993.5088,
+      "month": "Oct 2025"
+    },
+    {
+      "pass": 3,
+      "midMjd": 61156.0862,
+      "month": "Apr 2026"
+    }
+  ],
+  "rule": "verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare",
+  "note": "how = measured: on the SPHEREx images; predicted: the catalogue's positions. A candidate is something to check, never a discovery claim.",
+  "movers": [
+    {
+      "mover": 1,
+      "name": "WISE 0855−0714 (CatWISE J085506.91-071437.5)",
+      "label": "known",
+      "foundBy": "◆ WISE",
+      "how": "measured",
+      "muArcsecPerYr": 8.8176,
+      "muErr": 1.0959,
+      "direction": "west",
+      "catalogue": "CatWISE2020",
+      "catMuArcsecPerYr": 7.9353,
+      "catMuErr": 0.1524,
+      "verdict": "agrees",
+      "difference": 0.8823,
+      "limit": 3.3193,
+      "passes": [
+        {
+          "pass": 1,
+          "midMjd": 60800.7022,
+          "date": "2025-05-05",
+          "ra": 133.7612278,
+          "dec": -7.2423402
+        },
+        {
+          "pass": 2,
+          "midMjd": 60993.5088,
+          "date": "2025-11-14",
+          "ra": 133.7597165,
+          "dec": -7.2421134
+        },
+        {
+          "pass": 3,
+          "midMjd": 61156.0862,
+          "date": "2026-04-26",
+          "ra": 133.7587367,
+          "dec": -7.2419516
+        }
+      ]
+    }
+  ]
+}

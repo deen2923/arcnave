@@ -1,0 +1,17 @@
+[desktop] saved desktop-landing.png
+[desktop] WISE 0855 result shown after 29.8 s
+[desktop] saved desktop-result-wise0855.png
+[desktop] saved desktop-changes.png
+[desktop] saved desktop-spectrum-loading.png
+[desktop] spectrum shown after 48.6 s
+[desktop] saved desktop-spectrum.png
+[phone] saved phone-landing.png
+[phone] WISE 0855 result shown after 34.0 s
+[phone] saved phone-result-wise0855.png
+[phone] saved phone-changes.png
+[phone] saved phone-sheet-controls-half.png
+[phone] saved phone-sheet-peek.png
+[phone] saved phone-sheet-full.png
+[phone] saved phone-spectrum-loading.png
+[phone] spectrum shown after 52.6 s
+[phone] saved phone-spectrum.png

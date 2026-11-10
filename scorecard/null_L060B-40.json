@@ -1,0 +1,123 @@
+{
+ "id": "null_L060B-40",
+ "eclLon": 60,
+ "eclLat": -40,
+ "ra": 66.1004,
+ "dec": -19.0174,
+ "galLat": -40.7,
+ "field": "L060B-40",
+ "version": "0.29",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-10-25T10:56:44.023Z",
+ "real": {
+  "epochs": 3,
+  "changes": 1,
+  "artefacts": 1,
+  "confirmed": 0,
+  "unconfirmed": 0
+ },
+ "splits": [
+  {
+   "pair": [
+    1,
+    2
+   ],
+   "colours": 8,
+   "matched": 419,
+   "nearMiss": 0,
+   "misaligned": false,
+   "raw": 0,
+   "artefacts": 0,
+   "shown": 0,
+   "snr": [],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 11
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 9
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 9
+    }
+   ]
+  },
+  {
+   "pair": [
+    1,
+    3
+   ],
+   "colours": 8,
+   "matched": 396,
+   "nearMiss": 5,
+   "misaligned": false,
+   "raw": 1,
+   "artefacts": 1,
+   "shown": 0,
+   "snr": [],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 15
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 12
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 13
+    }
+   ]
+  },
+  {
+   "pair": [
+    2,
+    3
+   ],
+   "colours": 8,
+   "matched": 417,
+   "nearMiss": 0,
+   "misaligned": false,
+   "raw": 1,
+   "artefacts": 0,
+   "shown": 1,
+   "snr": [
+    9.8
+   ],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 10
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 7
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 13
+    }
+   ]
+  }
+ ],
+ "comparisons": 3,
+ "falseAlarms": 1,
+ "rawFlags": 2,
+ "status": "ok",
+ "totalSecs": 53,
+ "savedAt": "2026-10-25T10:57:37.069Z"
+}

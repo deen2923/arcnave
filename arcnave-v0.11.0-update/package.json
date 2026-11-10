@@ -1,0 +1,19 @@
+{
+  "name": "arcnave",
+  "version": "0.11.0",
+  "description": "ARCNAVE: browse real SPHEREx images and spot what moves",
+  "private": true,
+  "main": "server.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node test/test.js && node test/wave.test.js && node test/real.test.js && node test/stack.test.js && node test/change.test.js && node test/psfzone.test.js && node test/planetx.test.js",
+    "test:replay": "node test/replay.e2e.js",
+    "test:multi": "node test/multi.e2e.js",
+    "test:examples": "node test/examples.e2e.js",
+    "test:psf": "node test/psf.test.js && node test/psf.official.test.js",
+    "test:px": "node test/px.e2e.js"
+  }
+}

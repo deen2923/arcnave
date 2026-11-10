@@ -1,0 +1,4 @@
+v0.40.0 final verification, 2026-11-05T09:05:07.873Z
+EMBED 640x420: result true in 45.1 s; {"w":640,"h":420,"embed":true,"bar":true,"hud":false,"landing":false,"side":false}
+EMBED 390x300: result true in 0.0 s; {"w":390,"h":300,"embed":true,"bar":true,"hud":false,"landing":false,"side":false}
+DONE

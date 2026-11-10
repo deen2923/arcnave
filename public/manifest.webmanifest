@@ -1,0 +1,14 @@
+{
+  "name": "ARCNAVE: watch the sky change, find what moves",
+  "short_name": "ARCNAVE",
+  "description": "Type any place in the sky and watch real NASA SPHEREx images play like a short video. Spot what moves.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#050913",
+  "theme_color": "#050913",
+  "icons": [
+    { "src": "/icon-180.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}

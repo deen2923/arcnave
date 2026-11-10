@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARCNAVE: spot what moves in SPHEREx's sky</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+/* ARCNAVE design tokens (v0.11). The sky is the hero; the interface is a quiet instrument around it.
+   One bold element: the 102-tick spectral ruler (SPHEREx's 102 colours, 0.75 to 5 um), drawn in the same false-colour
+   scale as the images (hue 190 -> 40, see app.js). It is the brand mark, the intro moment and the Color slider. */
+:root{color-scheme:dark;
+--void:#05070f;--ink:#0a0e1a;--glass:rgba(9,13,24,.84);--raise:rgba(255,255,255,.04);--line:#222b40;--line2:#323d57;
+--text:#eef1f7;--dust:#8e98ae;--ir:#ffb05a;--cy:#5fe3f0;--vi:#9b8cff;--ok:#5ff0a0;--bad:#ff7a7a;--focus:#ffc46b;
+--spec:linear-gradient(90deg,hsl(190 85% 58%),hsl(115 85% 58%),hsl(40 85% 58%));
+--disp:'Archivo',system-ui,sans-serif;--ui:'Archivo',system-ui,sans-serif;--mono:'Archivo',system-ui,sans-serif;
+--r1:6px;--r2:10px;--r3:14px;box-sizing:border-box}
+:root[data-hc="1"]{--glass:rgba(0,0,0,.95);--line:#fff;--line2:#fff;--dust:#fff}
+*{box-sizing:inherit}
+html,body{height:100%;margin:0;background:var(--void);color:var(--text);font:400 15px/1.5 var(--ui);font-variation-settings:'wdth' 100;overflow:hidden;font-variant-numeric:tabular-nums}
+#aladin{position:fixed;inset:0;z-index:0}
+#ov{position:fixed;inset:0;width:100%;height:100%;z-index:1;pointer-events:none}
+button,input,select{font:inherit;color:inherit}
+button{background:var(--raise);border:1px solid var(--line2);border-radius:var(--r1);padding:.42rem .85rem;cursor:pointer;transition:border-color .15s,background .15s,color .15s}
+button:hover{border-color:#5a6886;background:rgba(255,255,255,.07)}
+button:disabled{opacity:.45;cursor:default}
+/* primary action: solid starlight, dark text (an instrument switch, not a gradient) */
+.hbtn,#intro #go{background:var(--text);color:#070a12;border-color:var(--text);font-weight:650}
+.hbtn:hover,#intro #go:hover{background:#fff;border-color:#fff}
+button[aria-pressed=true]{background:rgba(255,196,107,.12);border-color:rgba(255,196,107,.55);color:#ffe2b0}
+select{background:var(--raise);border:1px solid var(--line2);border-radius:var(--r1);padding:.38rem .6rem}
+select option{background:var(--ink)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(18px) saturate(120%);-webkit-backdrop-filter:blur(18px) saturate(120%);box-shadow:0 12px 40px -18px rgba(0,0,0,.9)}
+.top,.tele,.panel,#card,#lab,#drawer,#intro,#toast,.foot{z-index:5}
+/* header: one slim bar */
+.top{z-index:20;position:fixed;top:max(env(safe-area-inset-top,0px),10px);left:12px;right:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;justify-content:space-between;pointer-events:none}
+.top>*{pointer-events:auto}
+.brand{display:grid;gap:3px;padding:.15rem .1rem;color:var(--text)}
+.wm{font:800 1.3rem/1 var(--disp);font-variation-settings:'wdth' 125;letter-spacing:.06em}
+.spec{display:block;height:5px;width:100%;background:var(--spec);-webkit-mask:repeating-linear-gradient(90deg,#000 0 1px,transparent 1px 2px);mask:repeating-linear-gradient(90deg,#000 0 1px,transparent 1px 2px);opacity:.9}
+.brand small{display:block;font:400 .72rem var(--ui);color:var(--dust)}
+.aladin-location,.aladin-location-copy,.aladin-fov,.aladin-status-bar{display:none!important} /* Aladin's coordinate box sat on top of the title; our own RA/Dec panel shows the same numbers */
+#sf{display:flex;flex:1 1 240px;max-width:420px;background:var(--glass);border:1px solid var(--line2);border-radius:var(--r2);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);overflow:hidden}
+#sf:focus-within{border-color:#5a6886}
+#q{flex:1;min-width:0;background:transparent;border:0;padding:.5rem .85rem;outline:none}
+#q::placeholder{color:#69738a}
+#sf button{border:0;border-left:1px solid var(--line2);border-radius:0;background:rgba(255,255,255,.06);font-weight:600;padding:.5rem 1rem}
+.acts{display:flex;gap:4px;flex-wrap:wrap;align-items:center;padding:3px;border-radius:var(--r2)}
+.acts>button,.acts>select{background:var(--glass);border-color:var(--line);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}
+.acts>button[aria-pressed=true]{background:rgba(255,196,107,.14);border-color:rgba(255,196,107,.55)}
+/* telemetry: an instrument readout */
+.tele{position:fixed;top:84px;left:12px;margin:0;padding:.55rem .8rem;border-radius:var(--r2);font:500 .78rem/1.6 var(--mono);display:grid;grid-template-columns:auto auto;gap:0 1rem;min-width:170px}
+.tele dt{color:var(--dust)}.tele dd{margin:0;color:var(--text);text-align:right;font-weight:600}
+/* control deck */
+.panel{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(40px + env(safe-area-inset-bottom,0px));width:min(760px,calc(100% - 20px));padding:0 1rem .85rem;border-radius:var(--r3);display:grid;gap:.55rem}
+.tabs{display:flex;gap:0;flex-wrap:wrap;margin:0 -1rem;padding:0 .6rem;border-bottom:1px solid var(--line)}
+.tabs [role=tab]{background:none;border:0;border-radius:0;padding:.7rem .7rem .6rem;color:var(--dust);font-weight:550;position:relative}
+.tabs [role=tab]:hover{color:var(--text);background:none}
+.tabs [role=tab][aria-selected=true]{color:var(--text);background:none}
+.tabs [role=tab][aria-selected=true]::after{content:"";position:absolute;left:.7rem;right:.7rem;bottom:-1px;height:2px;background:var(--spec);border-radius:2px}
+.tabs [data-m=px]{color:#ffd9a1}
+.presets,.loadrow{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.loadrow{padding-top:.15rem}
+.help{margin:0;color:var(--dust);font-size:.87rem;max-width:72ch}
+#stat{font:500 .8rem var(--mono);color:var(--cy);flex:1 1 100%}#stat.err{color:var(--bad)}
+.row{display:flex;gap:.8rem;align-items:center}
+.row label{min-width:4.6rem;font-weight:600;font-size:.88rem}
+input[type=range]{flex:1;accent-color:var(--ir);height:26px}
+output{font:600 .8rem var(--mono);color:var(--ir);min-width:9.5rem;text-align:right}
+/* the Color slider is the spectral ruler */
+#band{-webkit-appearance:none;appearance:none;height:16px;border-radius:2px;background:var(--spec);-webkit-mask:none}
+#band{background:repeating-linear-gradient(90deg,rgba(5,7,15,.85) 0 1px,transparent 1px calc(100%/102)),var(--spec)}
+#band::-webkit-slider-thumb{-webkit-appearance:none;width:4px;height:24px;border-radius:2px;background:#fff;box-shadow:0 0 0 2px #05070f}
+#band::-moz-range-thumb{width:4px;height:24px;border:0;border-radius:2px;background:#fff;box-shadow:0 0 0 2px #05070f}
+#lam{font:400 .78rem var(--mono);color:var(--dust);margin:0}
+.presets button{font-size:.8rem;padding:.3rem .7rem}
+.foot{position:fixed;left:0;right:0;bottom:0;padding:.45rem 12px calc(.45rem + env(safe-area-inset-bottom,0px));font-size:.7rem;color:var(--dust);display:flex;gap:1.2rem;flex-wrap:wrap;justify-content:center;background:linear-gradient(transparent,rgba(5,7,15,.92));pointer-events:none}
+/* result card */
+#card{position:fixed;right:12px;top:84px;width:min(300px,calc(100% - 24px));max-height:calc(100% - 330px);overflow:auto;padding:1rem 1.05rem;border-radius:var(--r3)}
+#card h3{margin:0 0 .25rem;font:700 1.05rem/1.25 var(--disp);font-variation-settings:'wdth' 112}#card p{margin:.3rem 0;font-size:.88rem;line-height:1.45}
+#card{z-index:6}#card a{color:var(--cy)}
+#card>.x{float:right;margin:-.35rem -.4rem .3rem .6rem;width:30px;height:30px;padding:0;line-height:1;font-size:1.1rem;color:var(--dust)}
+.tag{display:inline-block;font:600 .7rem var(--mono);color:var(--ir);border:1px solid rgba(255,176,90,.5);border-radius:4px;padding:0 .4rem}
+#card .mv{display:block;width:100%;text-align:left;border-radius:var(--r2);margin:.3rem 0;padding:.45rem .7rem}
+#card .mv small{display:block;color:var(--dust)}
+#card .badge{display:inline-block;margin:.15rem 0 .5rem;padding:.15rem .55rem;border-radius:4px;font-size:.78rem;font-weight:650}
+#card .badge.ok{background:rgba(95,240,160,.12);color:var(--ok);border:1px solid rgba(95,240,160,.45)}
+#card .badge.near{background:rgba(255,176,90,.1);color:var(--ir);border:1px solid rgba(255,176,90,.45)}
+#card .badge.unc{background:rgba(160,170,200,.1);color:var(--dust);border:1px solid rgba(160,170,200,.35)}
+#card .proof{display:flex;gap:8px;margin:.3rem 0}
+#card .proof figure{margin:0;flex:1;min-width:0}
+#card .proof canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;border-radius:var(--r1);border:1px solid var(--line2);display:block}
+#card .proof figcaption{font-size:.72rem;margin-top:.25rem}#card .proof figcaption small{display:block;color:var(--dust)}
+#card .legend{font-size:.72rem;color:var(--dust)}
+#card .checks{list-style:none;padding:0;margin:.4rem 0;font-size:.8rem}#card .checks li{margin:0;padding:.3rem 0 .3rem .1rem;border-top:1px solid var(--line)}
+#card .checks li.pass b{color:var(--ok)}#card .checks li.fail b{color:var(--ir)}
+#card .proof.four{flex-wrap:wrap}#card .proof.four figure{flex:1 1 calc(50% - 8px)}
+.strip{display:flex;gap:10px;overflow-x:auto;padding:2px 0 4px;scrollbar-width:thin}
+.sg{display:flex;gap:3px;align-items:center;flex:none}
+.sgl{font:600 .7rem var(--mono);color:var(--dust);margin-right:2px}
+.th{padding:0;border-radius:4px;border:1px solid var(--line2);width:34px;height:34px;overflow:hidden;background:#03050b;flex:none}
+.th canvas{width:100%;height:100%;display:block}
+.pxp{margin:.1rem 0 .2rem}.pxb{display:flex;gap:8px;flex-wrap:wrap;margin:.4rem 0}.pxt{font-size:.8rem;color:var(--dust);margin:.25rem 0}
+.pxt b{color:var(--text)}#pxc{width:100%;max-width:560px;height:auto;display:block;margin-top:.3rem;border-radius:var(--r1);background:rgba(0,0,0,.3);border:1px solid var(--line)}
+.pxbig{font:750 1.35rem/1.2 var(--disp);font-variation-settings:'wdth' 115;margin:.1rem 0 .4rem}.pxbig.ok{color:var(--ok)}.pxbig.no{color:var(--bad)}
+.chg{margin:.2rem 0 .3rem}.chgb{display:flex;gap:6px;margin-bottom:.35rem}.chgb button{padding:.25rem .75rem;font-size:.8rem}
+.chgl{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;font-size:.78rem;color:var(--dust)}
+.chgl i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:4px;vertical-align:-2px}
+.chgl .grad{display:inline-block;width:140px;height:10px;border-radius:2px;vertical-align:-1px;margin:0 6px;background:linear-gradient(90deg,hsl(275,100%,55%),hsl(200,100%,55%),hsl(120,100%,55%),hsl(55,100%,55%),hsl(0,100%,55%))}
+.chgt{display:flex;align-items:flex-end;gap:2px;height:46px;margin-top:.35rem;padding-bottom:12px;position:relative;overflow-x:auto}
+.chgt button{flex:1 0 9px;min-width:9px;max-width:22px;padding:0;border:0;border-radius:2px 2px 0 0;position:relative;background:none;height:100%;display:flex;flex-direction:column;justify-content:flex-end}
+.chgt button span{display:block;width:100%;border-radius:2px 2px 0 0}.chgt button span.sh{opacity:.3}
+.chgt button.on{outline:2px solid var(--focus);outline-offset:1px}.chgt .sep{flex:none;width:1px;height:100%;background:var(--line);margin:0 3px}
+.chgt .el{position:absolute;bottom:-1px;font-size:.62rem;color:var(--dust)}
+.th.wait{opacity:.35;border-style:dashed}.th.on{outline:2px solid var(--focus);outline-offset:1px}.th.ast{border-color:var(--ok);box-shadow:0 0 0 1px var(--ok) inset}
+/* Learn drawer */
+#drawer{position:fixed;top:0;right:0;bottom:0;width:min(400px,100%);padding:1.2rem 1.4rem 4rem;overflow:auto;transform:translateX(105%);transition:transform .35s cubic-bezier(.2,.8,.2,1);background:rgba(7,10,19,.97);border-left:1px solid var(--line)}
+#drawer.open{transform:none}
+#drawer h2{font:700 1.02rem var(--disp);font-variation-settings:'wdth' 112;margin:1.4rem 0 .35rem}#drawer p,#drawer dd{margin:.25rem 0;color:#c9d0de;font-size:.92rem;line-height:1.55}#drawer dt{font-weight:650;color:var(--text);margin-top:.7rem}
+/* intro: the opening moment. The ruler draws in, one tick per SPHEREx colour, then the words */
+#intro{position:fixed;inset:0;display:grid;place-items:center;padding:1.5rem;background:radial-gradient(ellipse 80% 70% at 50% 40%,rgba(5,7,15,.93),rgba(5,7,15,.985));overflow:auto;transition:opacity .9s}
+#intro>div{width:min(640px,100%)}
+#intro h1{font:800 clamp(2.6rem,10vw,5.6rem)/.95 var(--disp);font-variation-settings:'wdth' 125;letter-spacing:.04em;margin:0}
+.ruler{margin:1rem 0 .35rem;height:22px;background:var(--spec);-webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102));mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px calc(100%/102));animation:draw 1.6s steps(102,end) .2s both}
+.rlab{display:flex;justify-content:space-between;font-size:.75rem;color:var(--dust);margin-bottom:1.6rem}
+@keyframes draw{from{clip-path:inset(0 100% 0 0)}to{clip-path:inset(0 0 0 0)}}
+#intro .lede{font-size:1.15rem;line-height:1.5;max-width:46ch;margin:0 0 .6rem}
+#intro .hist{font-size:.92rem;color:var(--dust);max-width:56ch;margin:0 0 1.4rem}
+#intro #go{padding:.7rem 1.5rem;font-size:1rem}
+#intro .exs{margin-top:1.6rem;display:grid;grid-template-columns:1fr 1fr;gap:.6rem}
+#intro .exs small{grid-column:1/-1;color:var(--dust)}
+#intro button.ex{display:block;width:100%;text-align:left;background:rgba(255,255,255,.03);color:var(--text);border:1px solid var(--line2);border-radius:var(--r2);padding:.8rem 1rem;font-weight:400}
+#intro button.ex b{display:block;font-weight:650;margin-bottom:.15rem}#intro button.ex span{font-size:.84rem;color:var(--dust)}
+#intro button.ex:hover,#intro button.ex:focus-visible{border-color:#7a88a8;background:rgba(255,255,255,.06)}
+#toast{position:fixed;left:50%;top:64px;transform:translateX(-50%);padding:.35rem .9rem;border-radius:var(--r1);font-size:.85rem}
+#lab{position:fixed;left:50%;top:100px;transform:translateX(-50%);width:min(440px,calc(100% - 24px));padding:.9rem 1rem;border-radius:var(--r3)}
+#lab p{margin:.3rem 0;font-size:.9rem}#lab output{min-width:5.5rem}
+#lab canvas{width:100%;height:auto;background:rgba(0,0,0,.3);border-radius:var(--r1)}
+/* the agents are a pipeline, so they are numbered */
+#agents{position:fixed;left:12px;top:232px;width:min(280px,calc(100% - 24px));padding:.6rem .85rem;border-radius:var(--r3);z-index:5}
+#agents summary{cursor:pointer;font:700 .9rem var(--disp);font-variation-settings:'wdth' 112}
+#alist{list-style:none;margin:.45rem 0;padding:0;counter-reset:ag}
+.ag{display:grid;grid-template-columns:1.3rem 1fr;gap:.45rem;padding:.4rem 0;border-top:1px solid var(--line);counter-increment:ag}
+.ag b{font-size:.86rem}.ag b::before{content:counter(ag) "  ";color:var(--dust);font-weight:500}
+.ag small{display:block;color:var(--dust);font-size:.74rem;line-height:1.35;overflow-wrap:anywhere}
+.ai{font:700 .95rem var(--mono);text-align:center}
+.ag.run .ai{color:var(--cy);animation:pulse 1s infinite}.ag.done .ai{color:var(--ok)}.ag.warn .ai{color:var(--ir)}.ag.err .ai{color:var(--bad)}.ag.skip{opacity:.5}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@keyframes pulse{50%{opacity:.35}}
+#aauto,#dbg{font-size:.76rem;padding:.3rem .65rem}
+#dbg{margin-left:.3rem}
+.warnbox{border-left:3px solid var(--ir);padding:.35rem .6rem;background:rgba(255,176,90,.08);border-radius:0 var(--r1) var(--r1) 0}
+[hidden]{display:none!important}
+/* Phone and narrow panes (v0.8): two-row header (title + search, then one scrolling row of buttons), controls as a
+   scrolling bottom sheet, cards between them. Seen live: at 646 px the header buttons sat on top of the controls. */
+@media(max-width:700px){
+  .top{gap:6px;left:8px;right:8px}
+  .wm{font-size:1rem}.brand small{display:none}.brand{gap:2px}
+  #sf{flex:1;min-width:0}#q{font-size:.9rem;padding:.45rem .7rem}#sf button{padding:.45rem .8rem}
+  .acts{width:100%;display:flex;flex-wrap:nowrap;gap:6px;overflow-x:auto;scrollbar-width:none;padding:0 0 2px}
+  .acts>*{flex:none;font-size:.78rem;padding:.32rem .65rem}
+  .tele{display:none}
+  #agents{top:104px;left:8px;width:calc(100% - 16px);max-height:34vh;overflow:auto}
+  #lab{top:104px}
+  .panel{width:calc(100% - 12px);overflow-y:auto;padding:0 .7rem .6rem;gap:.45rem;border-radius:var(--r3);bottom:calc(40px + env(safe-area-inset-bottom,0px));max-height:44vh}
+  .tabs{flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;margin:0 -.7rem;padding:0 .3rem;position:sticky;top:0;background:var(--glass);z-index:1}.tabs>*{flex:none}
+  .tabs [role=tab]{padding:.65rem .55rem .55rem;font-size:.88rem}
+  #lam,.presets{font-size:.75rem}
+  output{min-width:auto}
+  .pxp .row{flex-wrap:wrap;row-gap:0}.pxp .row output{flex:0 0 100%;text-align:right;margin-top:-.15rem;font-size:.78rem}
+  .pxb button{flex:1}
+  #card{top:auto;left:6px;right:6px;width:auto;bottom:calc(44vh + 48px + env(safe-area-inset-bottom,0px));max-height:calc(54vh - 150px)}
+  .foot{font-size:.58rem;gap:.15rem .6rem;padding-top:.15rem;line-height:1.25}
+  #intro .exs{grid-template-columns:1fr}
+  #intro .lede{font-size:1.02rem}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div id="aladin" tabindex="0" aria-label="Interactive sky. Drag to pan, scroll to zoom."></div>
+<canvas id="ov" aria-hidden="true"></canvas>
+
+<header class="top">
+  <div class="brand" aria-label="ARCNAVE"><span class="wm">ARCNAVE</span><i class="spec" aria-hidden="true"></i><small>Real SPHEREx images, real known movers</small></div>
+  <form id="sf" role="search"><input id="q" aria-label="Search object name or RA Dec coordinates" placeholder="Name, or RA Dec: 190 -4"><button>Fly to</button></form>
+  <div class="acts">
+    <select id="survey" aria-label="Background sky survey">
+      <option value="P/allWISE/color">Base: AllWISE (infrared)</option>
+      <option value="P/2MASS/color">Base: 2MASS (near-IR)</option>
+      <option value="P/DSS2/color">Base: DSS2 (visible)</option>
+    </select>
+    <button id="ecl" aria-pressed="false" title="The path the Sun and planets trace. Solar-system movers tend to lie near it.">Ecliptic</button>
+    <button id="exb" title="Open a ready-made real example">Examples</button><button id="share">Share</button><button id="lb" aria-expanded="false" aria-controls="drawer">Learn</button><button id="hc" aria-pressed="false">High contrast</button>
+  </div>
+</header>
+
+<dl class="tele glass" aria-label="Telemetry">
+  <dt>RA</dt><dd id="ra">0</dd><dt>Dec</dt><dd id="dec">0</dd><dt>Image λ</dt><dd id="bd">none</dd><dt>Epoch</dt><dd id="ep">none</dd><dt>FoV</dt><dd id="zm">0</dd>
+</dl>
+
+<details id="agents" class="glass" open>
+  <summary>Agents</summary>
+  <ol id="alist"></ol>
+  <button id="aauto" aria-pressed="true">Auto-run on Fly to: on</button>
+  <button id="dbg" hidden title="Saves the downloaded SPHEREx cutouts and this report into the debug-cutouts folder (local runs only)">Save debug bundle</button>
+  <p id="alive" class="sr" role="status"></p>
+</details>
+<aside id="card" class="glass" hidden aria-live="polite"></aside>
+<aside id="lab" class="glass" hidden><b>Motion lab: wobble and drift</b>
+  <p>A far-off planet traces a track on the sky. The yearly wobble comes from Earth's own orbit. The drift is the planet's real motion. Cyan dots mark each year.</p>
+  <canvas id="lc2" width="400" height="140" role="img" aria-label="Track of a distant planet on the sky: a yearly wobble plus a steady drift"></canvas>
+  <div class="row"><label for="ly">Years</label><input id="ly" type="range" min="0.5" max="10" step="0.5" value="2"><output id="lyo" for="ly"></output></div>
+  <div class="row"><label for="ld">Distance</label><input id="ld" type="range" min="200" max="1000" step="50" value="500"><output id="ldo" for="ld"></output></div>
+  <p id="lt"></p></aside>
+
+<section class="panel glass" aria-label="Controls">
+  <div class="tabs" role="tablist" aria-label="View mode">
+    <button role="tab" data-m="time" aria-selected="true">Time machine</button>
+    <button role="tab" data-m="blink" aria-selected="false">Blink</button>
+    <button role="tab" data-m="swipe" aria-selected="false">Swipe</button>
+    <button role="tab" data-m="diff" aria-selected="false">Difference</button>
+    <button role="tab" data-m="change" aria-selected="false">Changes</button>
+    <button role="tab" data-m="px" aria-selected="false">Hide Planet X</button>
+    <button role="tab" data-m="lab" aria-selected="false">Motion lab</button>
+  </div>
+  <div class="loadrow">
+    <button id="load" class="hbtn">Run agents here</button>
+    <label for="csize" class="help">Field</label>
+    <select id="csize"><option value="0.25">0.25°</option><option value="0.5" selected>0.5°</option><option value="1">1°</option></select>
+    <label for="ipe" class="help">Images</label>
+    <select id="ipe" title="How many colour-matched images to use from every epoch. More images: deeper stacks, artefacts rejected, and movers caught inside an epoch, but a slower first load."><option value="1">1 per epoch</option><option value="4">4 per epoch</option><option value="8" selected>8 per epoch</option></select>
+    <span id="stat" role="status">Type a position in Fly to and the agents start on their own.</span>
+  </div>
+  <p class="help" id="help"></p>
+  <div class="row" id="tmr"><label for="tm" id="tml">Epoch</label><input id="tm" type="range" min="0" max="0" step="1" value="0"><output id="tmo" for="tm">-</output></div>
+  <div id="strip" class="strip" hidden aria-label="Every image of every epoch. Click one to show it."></div>
+  <div id="chg" class="chg" hidden>
+    <div class="chgb" role="group" aria-label="Colour the changes by">
+      <button data-cv="ep" aria-pressed="true">By epoch</button><button data-cv="im" aria-pressed="false">By image</button>
+    </div>
+    <div id="chgl" class="chgl"></div>
+    <div id="chgt" class="chgt" aria-label="What changed in each image. Click a bar to show that image."></div>
+  </div>
+  <div id="pxp" class="pxp" hidden>
+    <div class="row"><label for="pxd">Distance</label><input id="pxd" type="range" min="0" max="10" step="1" value="6"><output id="pxdo" for="pxd"></output></div>
+    <div class="row"><label for="pxm">Brightness</label><input id="pxm" type="range" min="10" max="21" step="0.25" value="15"><output id="pxmo" for="pxm"></output></div>
+    <div class="pxb"><button id="pxgo" class="hbtn">Hide it, agents seek</button><button id="pxmap">Map this field</button></div>
+    <p id="pxt" class="pxt"></p>
+    <canvas id="pxc" width="560" height="250" hidden role="img" aria-label="Detectability map: which fake planets the agents found, by distance and brightness"></canvas>
+    <p id="pxs" class="pxt"></p>
+  </div>
+  <div class="row" id="swr" hidden><label for="sw">Swipe</label><input id="sw" type="range" min="5" max="95" value="50"><button id="flip" hidden>Flip</button></div>
+  <div class="row" id="bandr"><label for="band">Color</label><input id="band" type="range" min="0.75" max="5" step="0.01" value="3"><output id="bo" for="band"></output></div>
+  <p id="lam"></p>
+  <div class="presets" role="group" aria-label="Wavelength presets">
+    <button data-b="3.0" title="Water ice absorbs near 3 microns">Dust &amp; Ice</button>
+    <button data-b="1.0" title="Hot stars shine brightest at short wavelengths">Hot stars</button>
+    <button data-b="4.5" title="Cold objects glow at longer wavelengths">Cool worlds</button>
+  </div>
+</section>
+
+<aside id="drawer" aria-label="Learn" aria-hidden="true">
+  <button id="lc">Close</button>
+  <h2>What is SPHEREx?</h2>
+  <p>A NASA space telescope launched in March 2025. It maps the whole sky about every six months in 102 colors of near-infrared light, from 0.75 to 5 microns.</p>
+  <h2>What am I looking at?</h2>
+  <p>The faint background is an all-sky survey (AllWISE, 2MASS or DSS2) shown through Aladin Lite. The colored patch on top is a real SPHEREx spectral image cutout from the IRSA archive. Each SPHEREx image is one narrow slice of wavelength, so the color is false-color.</p>
+  <p>Orange and cyan rings are <b>known</b> asteroids, comets and planets, placed by IMCCE SkyBoT (using Minor Planet Center orbits) for the exact time each image was taken. A ring does not prove the object is visible: faint ones vanish in a single exposure.</p>
+  <h2>The agents</h2>
+  <p>Five small programs run in order when you use Fly to: <b>Navigator</b> points the sky, <b>Archivist</b> finds SPHEREx images and a colour every epoch shares, <b>Aligner</b> downloads cutouts and registers them on the stars, <b>Analyst</b> compares epochs and checks known objects, <b>Reporter</b> writes it up. They are ordinary code, not AI models, and every step shows in the Agents panel.</p>
+  <h2>Difference view</h2>
+  <p>With 8 images per epoch, each epoch is first combined into a median stack of its 8 images (same colours in every epoch), so a cosmic ray or a satellite glint in one image disappears before the comparison.</p>
+  <p>Subtracts the first epoch from a later one after aligning both on the sky. Stars cancel. A mover leaves an orange blob (where it is now) next to a cyan blob (where it was). Leftover speckle is noise, and images at slightly different wavelengths do not cancel perfectly.</p>
+  <h2>Planet X</h2>
+  <p>A <b>hypothesized</b> planet far beyond Neptune, inferred from how some distant icy bodies orbit. It is not confirmed. It would creep across the sky very slowly, so we compare images far apart in time. ARCNAVE does not search for it.</p>
+  <h2>Hide Planet X</h2>
+  <p>A test, not a search. You hide a <b>fake</b> planet in the real SPHEREx images of this field: it gets the blur of the field's own stars, your brightness, and the position a body at your distance would have at the exact time of each image (Earth's yearly orbit makes it jump between passes). Then the same agents that look for real changes try to find it. Astronomers call this an injection-recovery test: it measures how faint and how far a planet could be and still be caught. Planet X itself is hypothetical and is not searched for.</p>
+  <h2>Glossary</h2>
+  <dl>
+    <dt>Epoch</dt><dd>One full-sky pass, about six months. Grouped here from image dates.</dd>
+    <dt>Visit</dt><dd>SPHEREx sees a spot several times in each epoch, hours to days apart. An asteroid moves between visits; a star does not.</dd>
+    <dt>Blink comparator</dt><dd>Flip between two images of one field. Stars stay. Movers jump.</dd>
+    <dt>Proper motion</dt><dd>A star's slow drift across the sky over years.</dd>
+    <dt>Parallax</dt><dd>A small yearly wobble caused by Earth's orbit. Closer objects wobble more.</dd>
+    <dt>False-color</dt><dd>Invisible light mapped to colors you can see.</dd>
+  </dl>
+  <h2>Credits and honesty</h2>
+  <p>Images: NASA SPHEREx via NASA/IPAC Infrared Science Archive (IRSA). Base sky: CDS HiPS. Movers: IMCCE SkyBoT. Tracks: NASA JPL Horizons. ARCNAVE claims no discovery. Positions assume an observer at Earth's center, so nearby objects can be off by about an arcminute.</p>
+</aside>
+
+<div id="intro">
+  <div><h1>ARCNAVE</h1>
+    <div class="ruler" role="img" aria-label="SPHEREx sees the sky in 102 colours of infrared light, from 0.75 to 5 microns"></div>
+    <div class="rlab" aria-hidden="true"><span>0.75 µm</span><span>102 colours of infrared, one tick each</span><span>5 µm</span></div>
+    <p class="lede">Type a position. Agents fetch real NASA SPHEREx images of that patch of sky, align them and show you what moved.</p>
+    <p class="hist">In 1930 Clyde Tombaugh found Pluto by flipping between two photographic plates taken days apart. ARCNAVE does the same with a space telescope that maps the whole sky every six months.</p>
+    <button id="go">Start exploring</button>
+    <div class="exs" role="group" aria-label="Real examples (ready instantly)"><small>Or open a real example, ready in seconds</small>
+      <button class="ex" data-ex="proof"><b>Catch a real asteroid</b><span>3865 Lindbloom, found in 24 SPHEREx images and checked against NASA's orbit</span></button>
+      <button class="ex" data-ex="false"><b>See a false alarm caught</b><span>One image per epoch shows a 922σ "change". It is a hot pixel</span></button>
+    </div></div>
+</div>
+<div id="toast" class="glass" role="status" hidden></div>
+<footer class="foot"><span>Images: NASA SPHEREx / IRSA</span><span>Movers: IMCCE SkyBoT, JPL Horizons</span><span>Base sky: CDS HiPS</span><span>Colors are false-color</span><span>Planet X is hypothetical</span></footer>
+
+<!-- Pinned: "latest" can change on demo day. 3.8.2 = last stable release (2026-03-06). -->
+<script src="https://aladin.cds.unistra.fr/AladinLite/api/v3/3.8.2/aladin.js" charset="utf-8"></script>
+<script src="/lib/fits.js"></script>
+<script src="/lib/wave.js"></script>
+<script src="/lib/slots.js"></script>
+<script src="/lib/planetx.js"></script>
+<script src="/app.js"></script>
+</body>
+</html>

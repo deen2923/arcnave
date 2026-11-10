@@ -1,0 +1,9 @@
+mover,name,label,found_by,how,mu_arcsec_yr,mu_err,direction,catalogue,cat_mu_arcsec_yr,cat_mu_err,verdict,pass,pass_mid_mjd,date,ra_deg,dec_deg
+1,Epsilon Indi B,target,🔭,measured,4.2198,0.1819,south-east,published value,4.6842,,agrees,1,60795.0863,2025-04-30,331.0956174,-56.8003933
+1,Epsilon Indi B,target,🔭,measured,4.2198,0.1819,south-east,published value,4.6842,,agrees,2,60948.9999,2025-09-30,331.0964639,-56.8007531
+1,Epsilon Indi B,target,🔭,measured,4.2198,0.1819,south-east,published value,4.6842,,agrees,3,61159.504,2026-04-29,331.0977447,-56.8011523
+1,Epsilon Indi B,target,🔭,measured,4.2198,0.1819,south-east,published value,4.6842,,agrees,4,61310.318,2026-09-27,331.0980295,-56.8013753
+2,Gaia DR3 6412595290592307840,known,🔍,measured,3.1439,,south-east,Gaia DR3,4.7081,,differs,1,60795.0863,2025-04-30,330.8911745,-56.8038253
+2,Gaia DR3 6412595290592307840,known,🔍,measured,3.1439,,south-east,Gaia DR3,4.7081,,differs,2,60948.9999,2025-09-30,330.8905476,-56.8043368
+2,Gaia DR3 6412595290592307840,known,🔍,measured,3.1439,,south-east,Gaia DR3,4.7081,,differs,3,61159.504,2026-04-29,330.893354,-56.804683
+2,Gaia DR3 6412595290592307840,known,🔍,measured,3.1439,,south-east,Gaia DR3,4.7081,,differs,4,61310.318,2026-09-27,330.8930429,-56.8045117
