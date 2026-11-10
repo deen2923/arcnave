@@ -1641,3 +1641,9 @@ html.landing,html.landing body,#landing{background:#000}
 /* v0.55 fit quality line (RUWE-like) */
 #card .fitq{font-size:.8rem;line-height:1.5;color:var(--fg-2)}
 #card .fitq.warn{color:#ffb05a}
+/* v0.55 Phase 2: mover test tables */
+#card .mttab caption{caption-side:top;text-align:left;font-weight:600;font-size:.8rem;margin:.6rem 0 .25rem;color:var(--fg)}
+#card .mttab td{text-align:center}
+#card .mttab td.mtok{background:rgba(74,222,128,.16)}
+#card .mttab td.mtpart{background:rgba(251,191,36,.14)}
+#card .mttab td.mtno{background:rgba(148,163,184,.08);color:var(--fg-3)}

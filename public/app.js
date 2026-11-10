@@ -4267,7 +4267,7 @@ function drawMotionSearch() {
       weights, and their scatter gives an honest error. One straight line (start + motion x time) is fitted through the
       passes, after taking off Gaia's parallax when it is known. Motion, its error and a chi-square test. "Motion measured"
       only at 5 sigma; with two passes no straight-line test is possible, and the card says so. Never a discovery claim. */
-const FT = { reg: new Map() };
+const FT = { reg: new Map(), fitter: 'hybrid' };   // v0.55 Phase 2: fitter 'hybrid' (default), 'gauss' or 'epsf' (fitStar)
 function erf(x) { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; }
 function solveN(A, b) {
   const n = b.length, M = A.map((r, i) => [...r, b[i]]);
@@ -4326,10 +4326,65 @@ function psfFit(a, n, gx, gy, H = 4, search = 2) {
   const ex = Math.sqrt(Math.max(0, c0[0] * v)), ey = Math.sqrt(Math.max(0, c1[1] * v)), ef = Math.sqrt(Math.max(0, c2[2] * v));
   return { x: X + p[0], y: Y + p[1], flux: p[2], sig: p[3], ex, ey, snr: ef > 0 ? p[2] / ef : 0, sat, m };
 }
+/* v0.55 Phase 2: effective-PSF astrometry (Anderson & King). SPHEREx's 6.2″ pixels undersample a ~2″ star, so a Gaussian's
+   centre shifts a little with where the star falls inside a pixel ("pixel-phase bias"). The ePSF is measured on each image's
+   own bright isolated stars (F.epsfGrid: every star sits at another sub-pixel place, so together they sample the pixel-
+   integrated PSF on a 4x finer grid; checked against the official SPHEREx PSF in test/psf.official.test.js), and a star is
+   fitted with it: position by least squares, flux and background solved at each trial position. Pixels that are blank
+   (a saturated core, a flag) are simply left out, so a saturated star is fitted on its wings with the true wing shape. */
+function epsfOf(fr) {
+  if (fr.epsf !== undefined) return fr.epsf; let P = null;
+  try { const st = fr.st0 || (fr.st0 = F.robustStats(fr.flat0)); P = F.epsfGrid(fr.flat0, S.field.n, st, { half: 5, os: 4, minSnr: 25 }); } catch { P = null; }
+  fr.epsf = P && P.nStars >= 8 ? P : null; return fr.epsf;
+}
+function epsfFit(a, n, gx, gy, P, H = 4, search = 2) {
+  if (!Number.isFinite(gx) || !Number.isFinite(gy) || !P) return null;
+  const inside = (x, y, h) => x >= h + 1 && y >= h + 1 && x <= n - h - 2 && y <= n - h - 2;
+  const cx = Math.round(gx), cy = Math.round(gy); if (!inside(cx, cy, 7)) return null;
+  let bx = 0, by = 0, nb = 0;
+  for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (!Number.isFinite(a[(cy + j) * n + cx + i])) { bx += i; by += j; nb++; }
+  const sat = nb >= 2; let x0 = cx, y0 = cy;
+  if (sat) { x0 = cx + bx / nb; y0 = cy + by / nb; H = Math.max(H, 6); }
+  else { let best = -Infinity; for (let j = -search; j <= search; j++) for (let i = -search; i <= search; i++) { const v = a[(cy + j) * n + cx + i]; if (v > best) { best = v; x0 = cx + i; y0 = cy + j; } } }
+  const X = Math.round(x0), Y = Math.round(y0); if (!inside(X, Y, H)) return null;
+  const px = [], py = [], pv = [];
+  for (let j = -H; j <= H; j++) for (let i = -H; i <= H; i++) { const v = a[(Y + j) * n + X + i]; if (Number.isFinite(v)) { px.push(X + i); py.push(Y + j); pv.push(v); } }
+  const m = pv.length; if (m < 12) return null;
+  // for a trial centre: the model column, then flux and background by linear least squares, and the residual sum
+  const lin = (x, y) => { let s11 = 0, s1 = 0, sy1 = 0, sy = 0; const mod = new Float64Array(m);
+    for (let t = 0; t < m; t++) { const v = P.at(px[t] - x, py[t] - y); mod[t] = v; s11 += v * v; s1 += v; sy1 += v * pv[t]; sy += pv[t]; }
+    const D = s11 * m - s1 * s1; if (!(D > 0)) return null; const Fx = (sy1 * m - s1 * sy) / D, b = (s11 * sy - s1 * sy1) / D;
+    let r = 0; for (let t = 0; t < m; t++) { const d = pv[t] - Fx * mod[t] - b; r += d * d; } return { F: Fx, b, r, mod }; };
+  // coarse 0.1 px grid over ±0.7 px (±1.2 for a saturated centre, which is only roughly known), then two finer rounds
+  let best = null, bxp = x0, byp = y0; const span = sat ? 1.2 : 0.7;
+  for (const [st_, sp] of [[0.1, span], [0.025, 0.12], [0.005, 0.03]]) { const ax = bxp, ay = byp;
+    for (let oy = -sp; oy <= sp + 1e-9; oy += st_) for (let ox = -sp; ox <= sp + 1e-9; ox += st_) { const q = lin(ax + ox, ay + oy); if (q && q.F > 0 && (!best || q.r < best.r)) { best = q; bxp = ax + ox; byp = ay + oy; } } }
+  if (!best || Math.hypot(bxp - x0, byp - y0) > 2.5) return null;
+  // errors: the covariance of (x, y, flux, background) from the model's derivatives, scaled by the residual variance
+  const hh = 0.01, J = Array.from({ length: 4 }, () => new Float64Array(m));
+  for (let t = 0; t < m; t++) { const dx = px[t] - bxp, dy = py[t] - byp;
+    J[0][t] = -best.F * (P.at(dx + hh, dy) - P.at(dx - hh, dy)) / (2 * hh); J[1][t] = -best.F * (P.at(dx, dy + hh) - P.at(dx, dy - hh)) / (2 * hh); J[2][t] = best.mod[t]; J[3][t] = 1; }
+  const A = Array.from({ length: 4 }, (_, k) => Array.from({ length: 4 }, (_, l) => { let s = 0; for (let t = 0; t < m; t++) s += J[k][t] * J[l][t]; return s; }));
+  const v = best.r / Math.max(1, m - 4), col = k => solveN(A, [0, 1, 2, 3].map(i => i === k ? 1 : 0)), c0 = col(0), c1 = col(1), c2 = col(2); if (!c0 || !c1 || !c2) return null;
+  const ex = Math.sqrt(Math.max(0, c0[0] * v)), ey = Math.sqrt(Math.max(0, c1[1] * v)), ef = Math.sqrt(Math.max(0, c2[2] * v));
+  return { x: bxp, y: byp, flux: best.F, ex, ey, snr: ef > 0 ? best.F / ef : 0, sat, m, fitter: 'epsf' };
+}
+// The fitter for astrometry. Tested on real fields (Gaussian vs ePSF on the same images): for a SATURATED star the ePSF's true
+// wing shape wins clearly (Barnard's Star 10.21 ± 2.34″/yr against Gaia's 10.39, the Gaussian 12.68; Epsilon Indi A 5.04 ±
+// 1.87 against 4.71, the Gaussian 2.45 toward the wrong side), but for ordinary stars an ePSF built from the ~12 bright stars of
+// one image is too noisy at 4x oversampling (Gaia registration scatter 0.42″ → 0.91″, Epsilon Indi B χ² 5.7 → 9.3). So
+// 'hybrid' (the default): the Gaussian, and the ePSF where the centre is blank. 'gauss' and 'epsf' remain for tests.
+function fitStar(fr, gx, gy, H, search) {
+  const n = S.field.n; if (FT.fitter === 'gauss') return psfFit(fr.flat0, n, gx, gy, H, search);
+  const g = FT.fitter === 'hybrid' ? psfFit(fr.flat0, n, gx, gy, H, search) : null;
+  if (g && !g.sat) return g;
+  const P = epsfOf(fr); if (P) { const r = epsfFit(fr.flat0, n, gx, gy, P, H, search); if (r) return r; }
+  return g || (FT.fitter === 'epsf' ? psfFit(fr.flat0, n, gx, gy, H, search) : null);
+}
 // Rank 1: one image lined up on Gaia DR3 by itself (on its own grid, before ARCNAVE's star alignment). Cached per image.
 function gaiaReg(fr) {
   if (!GAIA.data || !fr || !fr.flat0 || !S.field) return null;
-  const key = fr.im.url + '|' + GAIA.key; if (FT.reg.has(key)) return FT.reg.get(key);
+  const key = fr.im.url + '|' + GAIA.key + '|' + FT.fitter; if (FT.reg.has(key)) return FT.reg.get(key);
   const f = S.field, n = f.n, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n }, arc = PX * 3600, mjd = fr.im.mjd, c = (n - 1) / 2, pairs = [];
   const cand = GAIA.data.stars.filter(s => s.pmra != null && s.g >= 10.5 && s.g <= 17).sort((p, q) => p.g - q.g);
   for (const s of cand) {
@@ -4339,7 +4394,7 @@ function gaiaReg(fr) {
     const X = Math.round(g[0]), Y = Math.round(g[1]); let hi = -Infinity, blank = false;
     for (let j = -1; j <= 1; j++) for (let i = -1; i <= 1; i++) { const v = fr.flat0[(Y + j) * n + X + i]; if (!Number.isFinite(v)) blank = true; else if (v > hi) hi = v; }
     if (blank || !(hi > fr.st.med + 10 * fr.st.sigma)) continue;
-    const m = psfFit(fr.flat0, n, g[0], g[1], 3, 1); if (!m || m.sat || !(m.snr >= 20) || Math.hypot(m.x - g[0], m.y - g[1]) > 1.5) continue;
+    const m = fitStar(fr, g[0], g[1], 3, 1); if (!m || m.sat || !(m.snr >= 20) || Math.hypot(m.x - g[0], m.y - g[1]) > 1.5) continue;   // v0.55: the same fitter as the target
     pairs.push({ mx: m.x - c, my: m.y - c, tx: g[0] - c, ty: g[1] - c });
   }
   const affine = P => { const A = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], bx = [0, 0, 0], by = [0, 0, 0];
@@ -4388,7 +4443,7 @@ const CHI99 = { 2: 9.21, 4: 13.28, 6: 16.81, 8: 20.09 };
 const FLOOR = { key: null, res: null, busy: false };
 function fieldFloor() {
   if (!GAIA.data || !S.field || S.eps.length < 2) return null;
-  const key = S.run + ':' + S.frames.size; if (FLOOR.key === key) return FLOOR.res; if (FLOOR.busy) return null;
+  const key = S.run + ':' + S.frames.size + ':' + FT.fitter; if (FLOOR.key === key) return FLOOR.res; if (FLOOR.busy) return null;
   FLOOR.busy = true; let res = null;
   try {
     const f = S.field, n = f.n, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n };
@@ -4437,7 +4492,7 @@ function ffCore(guess, opt = {}) {
       const fr = S.frames.get(im.url); if (!fr || !fr.flat0) continue; tried++;
       const g0 = guess(e, fr, im); if (!g0) continue; const [gx, gy] = g0;
       const reg = gaiaReg(fr); if (!reg || !reg.ok) continue; regs.push(reg);
-      const m = psfFit(fr.flat0, n, gx, gy, opt.H || 4, 2); if (!m || (opt.minSnr && !(m.snr >= opt.minSnr))) continue;
+      const m = fitStar(fr, gx, gy, opt.H || 4, 2); if (!m || (opt.minSnr && !(m.snr >= opt.minSnr))) continue;   // v0.55: ePSF or Gaussian
       const c = reg.map(m.x, m.y), sky = F.gridToSky(c[0], c[1], grid), k = m.sat ? 2 : 1;
       frames.push({ e, mjd: im.mjd, lam: im.lam, ra: sky[0], dec: sky[1], sE: k * Math.hypot(m.ex * arc, reg.rms), sN: k * Math.hypot(m.ey * arc, reg.rms), sat: m.sat });
     }
@@ -4635,6 +4690,101 @@ async function deepSearch() {
   } finally { DS.busy = false; srchDone(DS); }   // v0.55 U9
 }
 // v0.55: was a second "function showDeep", which silently replaced the Deep view's card (v0.37). Renamed only.
+/* ---------- v0.55 Phase 2: mover injection test ----------
+   How well does ARCNAVE find and measure moving stars in THIS field? Fake moving point sources, of known speed, direction
+   and brightness, are added to the real images (every image, at the place each one has reached by that image's date, with
+   that image's own ePSF, or a 2″ Gaussian where it has too few stars), on empty sky. Then:
+   (a) measurement: each fake is measured frame by frame at its known place: is the motion right, and are the errors honest
+       (the "pull", error-scaled miss, should scatter by about 1)?
+   (b) null: the same at empty places with nothing added: how often does pure noise look like a 5σ motion?
+   (c) blind: the deep search runs as it always does: which fakes does it find on its own, and does it flag anything new
+       that is neither a fake nor in its own result without fakes?
+   The images are put back exactly as they were afterwards. Nothing here is a real object. */
+const MT = { busy: false, stop: false, res: null };
+async function moverTest() {
+  if (!S.field || S.eps.length < 3) { toast('The mover test needs a field with at least three passes.', 5000); return; }
+  if (MT.busy || DS.busy) return; MT.busy = true; MT.stop = false;
+  const run = S.run, f = S.field, n = f.n, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n }, arc = PX * 3600, t0p = performance.now();
+  const say = (txt, i, m) => { if (run !== S.run || MT.stop) return; srchSay(MT, '🧪 Mover test: working', txt, m ? `${i} of ${m}` : null, moverTest); if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card'); };
+  const frames = [...S.frames.values()].filter(fr => fr.flat0 && fr.flat && fr.st && fr.im); const backup = frames.map(fr => ({ fr, flat0: fr.flat0, flat: fr.flat }));
+  const savedDS = DS.res; let restored = false;
+  const restore = () => { if (restored) return; restored = true; for (const b of backup) { b.fr.flat0 = b.flat0; b.fr.flat = b.flat; } DS.res = savedDS; refreshSoon(); };
+  try {
+    say('Choosing empty places for the fakes...'); await sleep(30);
+    if (!GAIA.data) { try { await gaiaLoad(); } catch { /* registration needs Gaia; checked by the fits */ } }
+    const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Run the agents first (Images per epoch: 4 or more).'); return; }
+    const pk = F.detectPeaks(D.flat, n, D.st, 4, 4000);
+    let sd = 7; const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
+    const free = (x, y, list) => x > 26 && y > 26 && x < n - 27 && y < n - 27 && !pk.some(p => Math.hypot(p.x - x, p.y - y) < 8) && !list.some(q => Math.hypot(q.x - x, q.y - y) < 14) && D.flat[Math.round(y) * n + Math.round(x)] === D.flat[Math.round(y) * n + Math.round(x)];
+    const pick = (k, list = []) => { for (let t = 0; t < 4000 && list.length < k; t++) { const x = 26 + rnd() * (n - 53), y = 26 + rnd() * (n - 53); if (free(x, y, list)) list.push({ x, y }); } return list; };
+    const t0 = epMid(0), SNR = [3, 6, 12, 25], MU = [1, 2, 4, 8];
+    const spots = pick(SNR.length * MU.length * 2); if (spots.length < 8) { say('This field is too crowded to place fakes on empty sky.'); return; }
+    const fakes = spots.map((p, i) => { const snr = SNR[i % 4], mu = MU[Math.floor(i / 4) % 4], pa = rnd() * 2 * Math.PI, sky = F.gridToSky(p.x, p.y, grid);
+      return { i, snr, mu, muE: mu * Math.sin(pa), muN: mu * Math.cos(pa), obj: { ra0: sky[0], dec0: sky[1], ep: t0, pmra: mu * Math.sin(pa) * 1000, pmdec: mu * Math.cos(pa) * 1000 } }; });
+    const empty = pick(spots.length + fakes.length, spots.slice()).slice(spots.length);   // as many empty places, away from the fakes too
+    // the PSF to add: the image's ePSF, or a pixel-integrated Gaussian of 2″ FWHM
+    const gs = 2 / 2.355 / arc, gauss = { half: 5, at: (dx, dy) => { const s = Math.SQRT2 * gs; return 0.25 * (erf((dx + .5) / s) - erf((dx - .5) / s)) * (erf((dy + .5) / s) - erf((dy - .5) / s)); } };
+    say(`Adding ${fakes.length} fake moving stars to ${frames.length} real images...`); await sleep(30);
+    for (const fr of frames) { const P = epsfOf(fr) || gauss; let w2 = 0; for (let j = -5; j <= 5; j++) for (let i = -5; i <= 5; i++) { const v = Math.max(0, P.at(i, j)); w2 += v * v; }
+      let a0 = fr.flat0, a1 = fr.flat;
+      for (const fk of fakes) { const q = ctAt(fk.obj, fr.im.mjd), g = F.skyToGrid(q[0], q[1], grid); if (!g) continue; const r = toRaw(fr, g[0], g[1]), flux = fk.snr * fr.st.sigma / Math.sqrt(w2 || 0.1);
+        a0 = F.injectPSF(a0, n, P, r[0], r[1], flux); a1 = F.injectPSF(a1, n, P, g[0], g[1], flux); }
+      fr.flat0 = a0; fr.flat = a1; }
+    if (run !== S.run || MT.stop) return;
+    // (a) measurement at the known place, (b) the same at empty places
+    const meas = [], nul = [];
+    for (let k = 0; k < fakes.length; k++) { const fk = fakes[k];
+      if (k % 4 === 0) { say('Measuring every fake frame by frame, at its known place...', k, fakes.length); await sleep(0); if (run !== S.run || MT.stop) return; }
+      const ff = ffCore((e, fr, im) => { const q = ctAt(fk.obj, im.mjd), g = F.skyToGrid(q[0], q[1], grid); return g && toRaw(fr, g[0], g[1]); }, { H: 3, minSnr: 3 }), t = ff && !ff.fail && ff.fit;
+      const pE = t ? (t.muE - fk.muE) / Math.max(t.sE, 1e-3) : null, pN = t ? (t.muN - fk.muN) / Math.max(t.sN, 1e-3) : null;
+      meas.push({ fk, ok: !!t && t.sig >= 5 && Math.abs(pE) < 3 && Math.abs(pN) < 3, sig: t ? t.sig : 0, mu: t ? t.mu : null, smu: t ? t.smu : null, pE, pN }); }
+    for (let k = 0; k < empty.length; k++) { const p = empty[k], sky = F.gridToSky(p.x, p.y, grid), o = { ra0: sky[0], dec0: sky[1], ep: t0, pmra: 0, pmdec: 0 };
+      const ff = ffCore((e, fr, im) => { const g = F.skyToGrid(sky[0], sky[1], grid); return g && toRaw(fr, g[0], g[1]); }, { H: 3, minSnr: 3 }), t = ff && !ff.fail && ff.fit;
+      // counts as a false motion only if, like a real source, it stays on this place in every pass (an empty-sky fit that
+      // wanders onto a different noise bump in each image is not something the deep search would ever measure: it only
+      // measures sources its stack detects)
+      const stays = t && ff.passes.every(q => q.nUsed >= 2 && Math.hypot((q.ra - sky[0]) * Math.cos(sky[1] * Math.PI / 180), q.dec - sky[1]) * 3600 <= 1.5 * arc);
+      nul.push({ fit: !!t, sig: t ? t.sig : 0, stays: !!stays, wander: !!t && !stays && t.sig >= 5 }); }
+    // (c) the deep search, blind, exactly as the button runs it
+    say('Running the deep search on the images with the fakes, as it always runs (it does not know where they are)...'); await sleep(30);
+    DS.res = null; await deepSearch(); if (run !== S.run || MT.stop) return;
+    const found = DS.res ? DS.res.flagged : [], used = new Set();
+    for (const m of meas) { const fk = m.fk, hit = found.find(fl => { const q0 = fl.ff.passes[0], q = ctAt(fk.obj, q0.mjd), d = Math.hypot((q0.ra - q[0]) * Math.cos(q[1] * Math.PI / 180), q0.dec - q[1]) * 3600;
+        return d < 2 * arc && Math.hypot(fl.ff.fit.muE - fk.muE, fl.ff.fit.muN - fk.muN) < Math.max(3 * fl.ff.fit.smu, 0.3 * fk.mu, 0.5); });
+      m.blind = !!hit; if (hit) used.add(hit); }
+    const before = savedDS && savedDS.run === run ? savedDS.flagged : null;
+    const extra = found.filter(fl => !used.has(fl) && !(before || []).some(o => Math.hypot((o.ra - fl.ra) * Math.cos(fl.dec * Math.PI / 180), o.dec - fl.dec) * 3600 < 2 * arc));
+    restore();
+    MT.res = { run, n: fakes.length, meas, nul, extra: extra.length, extraList: extra.map(fl => ({ ra: fl.ra, dec: fl.dec, mu: fl.ff.fit.mu, label: fl.label })), hadBefore: !!before,
+      nImg: frames.length, secs: (performance.now() - t0p) / 1000, SNR, MU, days: epMid(S.eps.length - 1) - t0 };
+    showMoverTest();
+  } finally { restore(); MT.busy = false; srchDone(MT); }
+}
+function showMoverTest() {
+  const r = MT.res; if (!r || r.run !== S.run) return;
+  S.sel = { mtest: true }; const c = $('card'); c.replaceChildren(); c.hidden = false;
+  const cell = (list, key) => { const k = list.filter(m => m[key]).length; return `${k}/${list.length}`; };
+  const tab = (key, title) => h('table', { class: 'fftab mttab' }, h('caption', {}, title),
+    h('thead', {}, h('tr', {}, h('th', {}, 'S/N per image ↓ · speed →'), ...r.MU.map(u => h('th', {}, `${u}″/yr`)))),
+    h('tbody', {}, ...r.SNR.map(s => h('tr', {}, h('td', {}, String(s)), ...r.MU.map(u => { const l = r.meas.filter(m => m.fk.snr === s && m.fk.mu === u); return h('td', { class: l.length && l.every(m => m[key]) ? 'mtok' : l.some(m => m[key]) ? 'mtpart' : 'mtno' }, l.length ? cell(l, key) : '–'); })))));
+  const pulls = r.meas.filter(m => m.pE != null && m.fk.snr >= 6).flatMap(m => [m.pE, m.pN]), prms = pulls.length ? Math.sqrt(pulls.reduce((a, v) => a + v * v, 0) / pulls.length) : null;
+  const fa = r.nul.filter(x => x.stays && x.sig >= 5).length, wan = r.nul.filter(x => x.wander).length;
+  c.append(h('h3', {}, '🧪 Mover test: fake movers in the real images'),
+    h('p', {}, `${r.n} fake moving stars were added to the ${r.nImg} real images of this field (S/N per image ${r.SNR.join(', ')}; speeds ${r.MU.join(', ')}″ per year, ${Math.round(r.days)} days from the first pass to the last), measured, searched for, and taken out again (${Math.round(r.secs)} s). None of them is real.`),
+    tab('ok', 'Measured at its known place: motion found at 5σ or more, and right within 3σ'),
+    h('p', { class: 'fitq' + (prms != null && (prms > 1.5 || prms < 0.6) ? ' warn' : '') }, h('b', {}, 'Are the errors honest? '), prms == null ? 'Too few fakes measured to tell.' :
+      `The misses of the fakes of S/N 6 and up, divided by their own errors ("pulls"), scatter by ${prms.toFixed(2)} (1 = the errors are just right; above 1.5 they are too small, under 0.6 too large).`),
+    h('p', { class: fa ? 'fitq warn' : '' }, h('b', {}, 'Noise alone: '), !r.nul.length ? 'no empty place was left for this check (a crowded field).' :
+      `at ${r.nul.length} empty places with nothing added, ${fa} showed a "motion" of 5σ or more while staying on the place in every pass.` +
+      (wan ? ` ${wan} more fits wandered onto a different noise bump in each image (which also reads as a "motion"): that is why ARCNAVE measures only sources its stacked image detects, never an empty spot.` : '')),
+    tab('blind', 'Found by the deep search on its own (blind)'),
+    h('p', { class: r.extra ? 'fitq warn' : '' }, h('b', {}, 'Side effects: '), r.hadBefore ? (r.extra ? `${r.extra} other source${r.extra === 1 ? ' was' : 's were'} flagged that the deep search did not flag without the fakes (a fake next to a star can pull it along).` : 'nothing else was flagged that the deep search did not already flag without the fakes.')
+      : `${r.extra} flagged source${r.extra === 1 ? '' : 's'} that are not fakes (the deep search had not been run on this field before, so these may also be what it finds anyway).`),
+    h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'How: each fake is added to every image at the place its motion has taken it by that image\'s date, with that image\'s own effective PSF (or a 2″ Gaussian where the image has too few bright stars), on sky at least 8 pixels from any source; S/N per image is for an optimal fit. The images are restored exactly afterwards. A green cell: every fake of that kind passed; amber: some; grey: none.'),
+    h('p', {}, h('button', { type: 'button', class: 'hbtn', onclick: () => moverTest() }, 'Run again'), ' ', h('button', { type: 'button', onclick: () => { S.sel = null; S.report ? showReport() : (c.hidden = true); } }, 'Close')));
+  if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card');
+}
+if ($('mtb')) $('mtb').onclick = () => moverTest();
 function showDS() {
   const r = DS.res; if (!r || r.run !== S.run) return;
   S.sel = { deep: true }; const c = $('card'); c.replaceChildren(); c.hidden = false;
