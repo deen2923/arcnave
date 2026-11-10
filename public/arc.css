@@ -1633,3 +1633,8 @@ html.landing,html.landing body,#landing{background:#000}
 #landing .lp-foot ul{justify-items:center}
 #landing .lp-foot .fine{justify-content:center;text-align:center;gap:.5rem 2.5rem}
 @media(min-width:901px){#landing .lp-foot .lp-wrap{grid-template-columns:repeat(3,auto);justify-content:center;column-gap:clamp(3rem,7vw,7rem)}}
+/* v0.55 film: the line of epochs under each mover */
+#card .epline{margin:.45rem 0 .2rem}
+#card .epline .epc{display:block;width:100%;max-width:340px;height:auto;border-radius:8px;background:rgba(4,6,12,.55)}
+#card .epline .epc circle{transition:r .25s,stroke-width .25s}
+#card .epnote{margin:.25rem 0 0;font-size:.74rem;line-height:1.45;color:var(--fg-3)}

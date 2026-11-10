@@ -5073,7 +5073,8 @@ function drawScan() {
    Gaia), not catalogue predictions. Motions of a few ″ are under a screen pixel when zoomed out, so the sky paths are then
    drawn longer by a stated factor; the cut-outs are always true scale. Never a discovery claim: the labels are the
    searches' own (known mover / unconfirmed candidate). */
-const MOVIE = { on: false, timer: 0, e: 0, t0: 0, step: 1400, movers: [], run: -1, prevMode: null, tiles: [], spot: true, off: null };
+const MOVIE = { on: false, timer: 0, e: 0, t0: 0, step: 1400, movers: [], run: -1, prevMode: null, tiles: [], spot: true, off: null,
+  mo: false, follow: false, fi: 0 };   // v0.55: mo = motion only (the sky hidden, the measured tracks alone); follow = the view goes mover by mover
 function movieMovers() {
   const f = S.field, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n: f.n }, arc = PX * 3600, list = [];
   const nameOf = fl => fl.label === 'target' ? fl.target : fl.gaia && fl.label === 'known' ? 'Gaia DR3 ' + fl.gaia.id : fl.cw && fl.label === 'known' ? 'CatWISE ' + fl.cw.name : null;
@@ -5083,7 +5084,9 @@ function movieMovers() {
     list.push({ name: name || `Moving star ${list.length + 1}`, label, src, mu, dir, cw: fl && fl.cw, cwNear: fl && fl.cwNear, pm: fl && fl.pm, how: (fl && fl.how) || 'measured', catPm: fl && fl.catPm, slow: fl && fl.slow,
       // v0.55 U4: a search's own error (its frame-by-frame fit) and its Gaia match, for the SPHEREx vs catalogue row
       smu: fl ? (fl.smu ?? (fl.ff && fl.ff.fit ? fl.ff.fit.smu : fl.fff && fl.fff.fit ? fl.fff.fit.smu : fl.smu)) : undefined, gaia: fl && fl.gaia,
-      passes: passes.map(q => ({ e: q.e, ra: q.ra, dec: q.dec, g: F.skyToGrid(q.ra, q.dec, grid) })) });
+      // v0.55: a frame-by-frame pass keeps its measured offsets (E, N), their errors and the parallax shift, for the epochs chart
+      passes: passes.map(q => ({ e: q.e, ra: q.ra, dec: q.dec, g: F.skyToGrid(q.ra, q.dec, grid), mjd: q.mjd ?? null,
+        E: q.E ?? null, N: q.N ?? null, sE: q.sE ?? null, sN: q.sN ?? null, pE: q.pE || 0, pN: q.pN || 0 })) });
   };
   const okFF = ff => ff && !ff.fail && ff.fit && ff.passes && ff.passes.length >= 2;
   if (DS.res && DS.res.run === S.run) DS.res.flagged.forEach(fl => okFF(fl.ff) && add(nameOf(fl), fl.label, '🔭', fl.ff.passes, fl.ff.fit.mu, fl.ff.fit.dir, fl));
@@ -5142,8 +5145,24 @@ function movieShowPass(e) {
   S.ei = e; updateLabels(); markStrip(); refreshSoon();
 }
 function movieStep(d) {
-  const P = S.eps.length; MOVIE.e = ((MOVIE.e + d) % P + P) % P; MOVIE.t0 = performance.now();
-  movieShowPass(MOVIE.e); movieTiles();
+  const P = S.eps.length, was = MOVIE.e; MOVIE.e = ((MOVIE.e + d) % P + P) % P; MOVIE.t0 = performance.now();
+  if (MOVIE.follow && d > 0 && MOVIE.e < was) MOVIE.fi++;   // v0.55: after a full run through the passes, the next mover
+  movieShowPass(MOVIE.e); movieTiles(); if (MOVIE.follow) movieFollow();
+}
+// v0.55 follow: the view centres on one mover, zoomed so its whole track fills about a third of the screen
+function movieFollow(first) {
+  const ms = MOVIE.movers.filter(m => m.passes.length >= 2); if (!ms.length || !S.al) return;
+  const m = ms[MOVIE.fi % ms.length], ra = m.passes.map(q => q.ra), de = m.passes.map(q => q.dec), cd = Math.cos(de[0] * Math.PI / 180);
+  const span = Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de));
+  try { S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2, (Math.max(...de) + Math.min(...de)) / 2); S.al.setFov(Math.max(0.025, Math.min(0.2, span * 3))); } catch { /* keep the view */ }
+  const lab = document.getElementById('mvlab'); if (lab && first !== undefined) lab.dataset.follow = m.name;
+  refreshSoon();
+}
+// back to the view that shows every mover (as when the film started)
+function movieFrame() {
+  const ms = MOVIE.movers; if (!ms.length || !S.al) return; const ra = ms.map(m => m.passes[0].ra), de = ms.map(m => m.passes[0].dec), cd = Math.cos(S.field.dec * Math.PI / 180);
+  try { S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2, (Math.max(...de) + Math.min(...de)) / 2); S.al.setFov(Math.min(S.field.size * 1.1, Math.max(0.08, 3.2 * Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de))))); } catch { /* keep */ }
+  refreshSoon();
 }
 function moviePlay(on) {
   clearInterval(MOVIE.timer); MOVIE.timer = 0;
@@ -5179,6 +5198,43 @@ async function movieStart() {
   movieCard(); movieShowPass(0); movieTiles();
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) moviePlay(true);
 }
+/* v0.55 line of epochs: for one mover, how far it is along its direction of motion in each pass (″, against the date),
+   with each pass's error, and the straight line through them (weighted least squares). Dots on the line = steady motion.
+   Frame-by-frame passes use their measured offsets with the parallax taken off (as the motion fit does); other tracks use
+   their sky positions, without errors. Returns null when fewer than two passes are known. */
+function epochLine(m) {
+  const ps = m.passes.filter(q => q.ra != null); if (ps.length < 2) return null;
+  const q0 = ps[0], cd = Math.cos(q0.dec * Math.PI / 180), t = q => (q.mjd ?? epMid(q.e)), T0 = t(q0);
+  const pts = ps.map(q => { const ff = q.E != null && q0.E != null;
+    const dE = ff ? (q.E - q.pE) - (q0.E - q0.pE) : (q.ra - q0.ra) * cd * 3600, dN = ff ? (q.N - q.pN) - (q0.N - q0.pN) : (q.dec - q0.dec) * 3600;
+    return { q, yr: (t(q) - T0) / 365.25, dE, dN }; });
+  const L = pts.at(-1), len = Math.hypot(L.dE, L.dN) || 1, uE = L.dE / len, uN = L.dN / len;
+  pts.forEach(p => { p.s = p.dE * uE + p.dN * uN; p.err = p.q.sE != null ? Math.hypot(uE * p.q.sE, uN * p.q.sN) : null; });
+  const w = pts.map(p => p.err ? 1 / (p.err * p.err) : 1), S0 = w.reduce((a, b) => a + b, 0), St = pts.reduce((a, p, i) => a + w[i] * p.yr, 0), Ss = pts.reduce((a, p, i) => a + w[i] * p.s, 0);
+  const Stt = pts.reduce((a, p, i) => a + w[i] * p.yr * p.yr, 0), Sts = pts.reduce((a, p, i) => a + w[i] * p.yr * p.s, 0), D = S0 * Stt - St * St;
+  const mu = D ? (S0 * Sts - St * Ss) / D : 0, b = D ? (Stt * Ss - St * Sts) / D : 0, hasErr = pts.every(p => p.err);
+  const chi = hasErr && pts.length > 2 ? pts.reduce((a, p) => a + ((p.s - b - mu * p.yr) / p.err) ** 2, 0) : null;
+  // the chart
+  const W_ = 300, H_ = 128, Lm = 40, R = 26, T = 10, B = 26, ns = 'http://www.w3.org/2000/svg', el = (tg, a) => { const e = document.createElementNS(ns, tg); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  const yrMax = Math.max(...pts.map(p => p.yr)) || 1, lo = Math.min(0, ...pts.map(p => p.s - (p.err || 0))), hi = Math.max(...pts.map(p => p.s + (p.err || 0))), pad = (hi - lo) * .12 || .5;
+  const X = yr => Lm + yr / yrMax * (W_ - Lm - R), Y = s => T + (1 - (s - lo + pad) / (hi - lo + 2 * pad)) * (H_ - T - B);
+  const svg = el('svg', { viewBox: `0 0 ${W_} ${H_}`, class: 'specsvg epc', role: 'img', 'aria-label': `${m.name}: distance moved along its direction in each pass, against the date, with a straight-line fit of ${mu.toFixed(2)}″ per year` });
+  const ax = 'rgba(200,210,230,.35)', tx = { fill: 'rgba(220,228,240,.8)', 'font-size': 9.5, 'font-family': 'Inter,sans-serif' };
+  svg.append(el('rect', { x: Lm, y: T, width: W_ - Lm - R, height: H_ - T - B, fill: 'none', stroke: ax }));
+  const step = (hi - lo) > 8 ? 4 : (hi - lo) > 3 ? 1 : (hi - lo) > 1.2 ? .5 : .2;
+  for (let v = Math.ceil((lo - pad) / step) * step; v <= hi + pad; v += step) { if (Y(v) < T || Y(v) > H_ - B) continue; const s_ = el('text', { x: Lm - 4, y: Y(v) + 3, 'text-anchor': 'end', ...tx }); s_.textContent = (Math.abs(v) < 1e-6 ? 0 : +v.toFixed(1)) + '″'; svg.append(s_); }
+  const col = movieCol(m);
+  svg.append(el('line', { x1: X(0), x2: X(yrMax), y1: Y(b), y2: Y(b + mu * yrMax), stroke: col, 'stroke-width': 1.6, 'stroke-dasharray': m.how === 'predicted' ? '5 4' : 'none', opacity: .9 }));
+  for (const p of pts) { const x = X(p.yr);
+    if (p.err) svg.append(el('line', { x1: x, x2: x, y1: Y(p.s - p.err), y2: Y(p.s + p.err), stroke: col, 'stroke-opacity': .6 }));
+    const c = el('circle', { cx: x, cy: Y(p.s), r: 3.6, fill: col, 'data-e': p.q.e, stroke: 'rgba(2,4,10,.9)', 'stroke-width': 1 }); const ti = el('title', {}); ti.textContent = `Pass ${p.q.e + 1} · ${fmtMonth(S.eps[p.q.e].t0)} · ${p.s.toFixed(2)}″` + (p.err ? ` ± ${p.err.toFixed(2)}″` : ''); c.append(ti); svg.append(c);
+    const lb = el('text', { x, y: H_ - B + 13, 'text-anchor': 'middle', ...tx }); lb.textContent = 'P' + (p.q.e + 1); svg.append(lb);
+    const dt = el('text', { x, y: H_ - B + 23, 'text-anchor': 'middle', ...tx, 'font-size': 8, fill: 'rgba(200,210,230,.6)' }); dt.textContent = fmtMonth(S.eps[p.q.e].t0); svg.append(dt); }
+  const note = `Each dot: how far it had gone along its path (toward the ${m.dir}) by that pass` + (hasErr ? ', with its measured error' : '') + `. The line through them: ${mu.toFixed(2)}″ per year.` +
+    (chi != null ? ` The dots ${chi <= ({ 1: 6.63, 2: 9.21, 3: 11.34, 4: 13.28, 5: 15.09, 6: 16.81 }[pts.length - 2] || pts.length + 8) ? 'sit on a straight line' : 'scatter more than their errors allow: check it by eye'} (χ² ${chi.toFixed(1)} for ${pts.length - 2} degrees of freedom).` : pts.length === 2 ? ' Two passes only: a straight line always fits; a third pass would test it.' : '') +
+    (pts.some(p => p.q.pE) ? ' Parallax taken off.' : '') + (m.how === 'predicted' ? ' These are the catalogue\'s predicted places, not measurements.' : '');
+  return h('div', { class: 'epline' }, svg, h('p', { class: 'epnote' }, note));
+}
 function movieCard() {
   const c = $('card'), ms = MOVIE.movers; S.sel = { movie: true }; c.replaceChildren(); c.hidden = false;
   MOVIE.tiles = ms.slice(0, 6).map(m => {
@@ -5200,14 +5256,18 @@ function movieCard() {
       h('button', { class: 'hbtn rpplay', id: 'mvplay', 'aria-pressed': 'false', onclick: () => moviePlay(!MOVIE.timer) }, 'Play'),
       h('button', { 'aria-label': 'Next pass', onclick: () => { moviePlay(false); movieStep(1); } }, '▶'),
       h('button', { onclick: () => movieStop() }, 'Stop'),
-      h('button', { id: 'mvspot', 'aria-pressed': String(MOVIE.spot), onclick: ev => { MOVIE.spot = !MOVIE.spot; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.spot)); ev.currentTarget.textContent = MOVIE.spot ? '🔦 Spotlight on' : '🔦 Spotlight off'; } }, MOVIE.spot ? '🔦 Spotlight on' : '🔦 Spotlight off')),
+      h('button', { id: 'mvspot', 'aria-pressed': String(MOVIE.spot), onclick: ev => { MOVIE.spot = !MOVIE.spot; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.spot)); ev.currentTarget.textContent = MOVIE.spot ? '🔦 Spotlight on' : '🔦 Spotlight off'; } }, MOVIE.spot ? '🔦 Spotlight on' : '🔦 Spotlight off'),
+      // v0.55: motion only (the sky hidden: only the measured places, errors and tracks) and follow (the view goes mover by mover)
+      h('button', { id: 'mvmo', 'aria-pressed': String(MOVIE.mo), title: 'Hide the sky and show only what moved: the place measured in each pass, its error and the track', onclick: ev => { MOVIE.mo = !MOVIE.mo; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.mo)); refreshSoon(); } }, '✦ Motion only'),
+      ms.length ? h('button', { id: 'mvfol', 'aria-pressed': String(MOVIE.follow), title: 'Zoom to one mover at a time; the next one after each full run through the passes', onclick: ev => { MOVIE.follow = !MOVIE.follow; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.follow)); if (MOVIE.follow) movieFollow(true); else movieFrame(); movieTiles(); } }, '🎯 Follow') : null),
     ms.length ? h('div', { class: 'mvgrid' }, ...MOVIE.tiles.map(t => t.el)) : null,
     ms.length > 6 ? h('p', { style: 'font-size:.8rem' }, `The first 6 are shown as cut-outs; all ${ms.length} are animated on the sky.`) : null,
     ms.length ? h('ul', { class: 'mslist' }, ...ms.map((m, i) => h('li', {}, h('b', { style: `color:${movieCol(m)}` }, `${i + 1}. ${m.name}`), ` ${m.mu.toFixed(2)}″ per year toward the ${m.dir} (found by ${m.src}); `,
       h('span', { class: 'badge ' + (m.label === 'target' ? 'ok' : m.label === 'predicted' ? 'near' : msLabel(m)[0]) }, m.label === 'target' ? '✓ Known mover: the NASA target' : m.label === 'predicted' ? `Predicted by ${m.src.replace(/^\S+ /, '')} (${m.catPm.toFixed(2)}″/yr): ${m.slow ? 'too small' : 'too faint or too small'} for SPHEREx to measure here` : m.how === 'measured' && m.catPm != null ? `✓ Measured here${m.smu ? ` (${m.mu.toFixed(2)} ± ${m.smu.toFixed(2)}″/yr, every image)` : ''}; ${m.src.replace(/^\S+ /, '')} agrees (${m.catPm.toFixed(2)}″/yr)` : msLabel(m)[1]),
       h('div', { style: 'font-size:.82rem;margin-top:2px' }, (m.how === 'predicted' ? 'Predicted ' : 'Moved ') + movieFromTo(m) + '.'),
       movieCat(m) ? catRow(movieCat(m)) : null,   // v0.55 U4
-      flagRow(m.passes.filter(q => q.g).map(q => ({ e: q.e, x: q.g[0], y: q.g[1] })))))) : null,   // v0.55 U6
+      flagRow(m.passes.filter(q => q.g).map(q => ({ e: q.e, x: q.g[0], y: q.g[1] }))),   // v0.55 U6
+      epochLine(m)))) : null,   // v0.55: the line of epochs
     h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'Solid track: measured on the SPHEREx images (each image lined up on Gaia, the star fitted in it). Dashed track: where Gaia or WISE (CatWISE2020) predicts it, because it is too small or too faint to measure here. A circle per pass, P1, P2…: where it was in that pass. Cut-outs: true scale, 6.2″ pixels, the same window and brightness in every pass; dots = its measured place in each pass, ring = this pass. On the sky the paths are drawn longer when zoomed out (it says how much), because a few ″ is less than a screen pixel there. Spotlight: the rest of the sky is dimmed so the movers and their glowing tracks stand out (the arrow shows the direction of motion; nothing in the images is changed). A candidate is something to check, never a discovery claim.'),
     h('p', {}, h('button', { onclick: movieStart }, '↻ Find again and replay')));
   if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card');
@@ -5320,7 +5380,10 @@ async function skyPng() {
 if ($('pngb')) $('pngb').onclick = () => skyPng();
 function movieTiles() {
   const lab = document.getElementById('mvlab'), e = MOVIE.e, P = S.eps.length;
-  if (lab) lab.textContent = `Pass ${e + 1} of ${P} · ${fmtMonth(S.eps[e].t0)}` + (e ? ` · ${Math.round(epMid(e) - epMid(0))} days after the first` : ' · the start');
+  if (lab) lab.textContent = `Pass ${e + 1} of ${P} · ${fmtMonth(S.eps[e].t0)}` + (e ? ` · ${Math.round(epMid(e) - epMid(0))} days after the first` : ' · the start') +
+    (MOVIE.follow ? (() => { const fl = MOVIE.movers.filter(m => m.passes.length >= 2); return fl.length ? ` · following ${fl[MOVIE.fi % fl.length].name}` : ''; })() : '');
+  // v0.55: the line of epochs marks the pass on screen
+  document.querySelectorAll('#card .epc circle[data-e]').forEach(c => { const on = +c.dataset.e === e; c.setAttribute('r', on ? 5.6 : 3.6); c.setAttribute('stroke', on ? '#ffffff' : 'rgba(2,4,10,.9)'); c.setAttribute('stroke-width', on ? 2 : 1); });
   const fr = frameOf(e), n = S.field.n; if (!fr) return;
   for (const t of MOVIE.tiles) {
     const g = t.cv.getContext('2d'), SZ = t.cv.width, W = 21, pts = t.m.passes.filter(q => q.g), cx = pts.reduce((s, q) => s + q.g[0], 0) / pts.length, cy = pts.reduce((s, q) => s + q.g[1], 0) / pts.length;
@@ -5356,8 +5419,12 @@ function drawMovie() {
     const upto = qs.filter((_, j) => es[j] < e); if (head) upto.push(head);
     return { m, i, col: movieCol(m), qs, es, head, upto };
   }).filter(Boolean);
+  // v0.55 motion only: the sky is hidden, so what is left is what moved: the measured places, their errors and the tracks
+  if (MOVIE.mo) { const dp = window.devicePixelRatio || 1; ctx.fillStyle = 'rgba(1,2,6,.94)'; ctx.fillRect(0, 0, ctx.canvas.width / dp, ctx.canvas.height / dp); }
+  // one ″ on screen (for the error circles, which are drawn Fx larger like the paths, so they stay true to them)
+  const ppa = (() => { const q = ms[0] && ms[0].passes[0], a = q && proj(q.ra, q.dec), b = q && proj(q.ra, q.dec + 1 / 3600); return a && b ? Math.hypot(b[0] - a[0], b[1] - a[1]) : 0; })();
   // v0.51 spotlight: the sky dims except soft pools of light along each mover's track so far and around where it is now
-  if (MOVIE.spot && geo.length) {
+  if (MOVIE.spot && !MOVIE.mo && geo.length) {
     const dpr = window.devicePixelRatio || 1, cw = ctx.canvas.width / dpr, ch = ctx.canvas.height / dpr, R = 46;
     const off = MOVIE.off || (MOVIE.off = document.createElement('canvas')); if (off.width !== Math.ceil(cw) || off.height !== Math.ceil(ch)) { off.width = Math.ceil(cw); off.height = Math.ceil(ch); }
     const o = off.getContext('2d'); o.globalCompositeOperation = 'source-over'; o.clearRect(0, 0, off.width, off.height); o.fillStyle = 'rgba(2,4,10,.62)'; o.fillRect(0, 0, off.width, off.height);
@@ -5386,6 +5453,9 @@ function drawMovie() {
     // the numbers sit beside the path, alternating sides, so close circles do not cover each other's labels
     const sx = L > 0.5 ? -d[1] / L : 1, sy = L > 0.5 ? d[0] / L : 0;
     ctx.font = '700 10px Inter,system-ui,sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    // v0.55: the measured error of each pass (one σ), as a soft disc, drawn to the same scale as the path
+    if (ppa) qs.forEach((p, j) => { const q = m.passes[j]; if (q.sE == null || es[j] > e) return; const r = Math.hypot(q.sE, q.sN) * ppa * Fx; if (r < 3) return;
+      ctx.fillStyle = col; ctx.globalAlpha = MOVIE.mo ? .16 : .1; ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 7); ctx.fill(); ctx.globalAlpha = MOVIE.mo ? .55 : .35; ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.setLineDash([2, 3]); ctx.stroke(); ctx.setLineDash([]); ctx.globalAlpha = 1; });
     qs.forEach((p, j) => { const on = es[j] <= e, r = on ? 7 : 5;
       if (pred) ctx.setLineDash([3, 3]); ctx.lineWidth = on ? 2 : 1.2; ctx.strokeStyle = !on ? 'rgba(255,255,255,.4)' : j === 0 ? '#ffffff' : col;
       ctx.beginPath(); ctx.arc(p[0], p[1], r, 0, 7); ctx.stroke(); ctx.setLineDash([]);
@@ -5401,7 +5471,7 @@ function drawMovie() {
       ctx.font = '700 12px Inter,system-ui,sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.85)'; ctx.strokeText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); ctx.fillStyle = col; ctx.fillText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); }
   }
   // caption
-  let txt = `🎬 Pass ${e + 1} of ${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (Fx > 1 ? ` · paths drawn ${Fx}x longer to be seen (zoom in for true scale)` : '');
+  let txt = `🎬 Pass ${e + 1} of ${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (MOVIE.mo ? ' · motion only (sky hidden)' : '') + (Fx > 1 ? ` · paths drawn ${Fx}x longer to be seen (zoom in for true scale)` : '');
   ctx.font = '600 12px Inter,system-ui,sans-serif'; const cw = ctx.canvas.width / (window.devicePixelRatio || 1);
   if (ctx.measureText(txt).width + 34 > cw) txt = `🎬 Pass ${e + 1}/${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (Fx > 1 ? ` · paths ${Fx}x longer` : '');   // phones: the short form
   const w = ctx.measureText(txt).width + 18;
