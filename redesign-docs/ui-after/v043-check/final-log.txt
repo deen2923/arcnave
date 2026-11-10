@@ -1,0 +1,36 @@
+v0.40.0 final verification, 2026-11-05T09:29:14.900Z
+SMOKE (desktop 1440x830): 29 of 29 pass; page errors (416 / failed-resource excluded, as smoke.js does): 0
+   ok   RA/Dec box "189.957 -4.182" (Virgo field, cached) (58.5 s) - 348 images, 24 frames
+   ok   View tab: time (0.8 s) - ok
+   ok   View tab: blink (0.8 s) - ok
+   ok   View tab: swipe (0.7 s) - ok
+   ok   View tab: diff (0.7 s) - ok
+   ok   View tab: change (7.1 s) - ok
+   ok   View tab: lab (0.7 s) - mode is change
+   ok   View tab: px (0.8 s) - ok
+   ok   Time machine slider (0.5 s) - epochs 0..23, label "24 of 24 · E3 #8"
+   ok   Color slider (0.8 s) - band 2.2 µm, "2.20 µm"
+   ok   Images per epoch (stacks) select present (0 s) - 3 options: 1,4,8
+   ok   Field size options (0 s) - 0.25, 0.5, 1
+   ok   Flags overlay (0.8 s) - flagged bad: saturated, glare, ghost, cosmic ray, hot pixel (left out or repaire
+   ok   Known asteroids named (SkyBoT/MPC) (0 s) - 2614 object sightings, source undefined
+   ok   Gaia overlay (0.6 s) - 442 Gaia stars via IRSA
+   ok   Hide Planet X (2.6 s) - ×✓ Found by the agentsFake planet: 500 AU away, AB 15.00 (3.6 mJy) at 4.46 µm.Seen in epoch 1 (34σ) and then o
+   ok   Tested drawer opens/closes (0.5 s) - ok
+   ok   Discovery card GIF (7.3 s) - GIF 540x790 3 frames · 399 kB · GIF
+   ok   Barnard target card (from seed) (66.1 s) - card: ×✓ Found by the agentsFake planet: 500 AU away, AB 15.00 (3.6 mJy) at 4.46 µm.Seen in epoch 1 (34σ) and 
+   ok   Spectrum of Barnard's Star (S3 reads) (238.8 s) - pass {"n":0,"done":119}
+   ok   Light curve (R Draconis 0.80 µm) (52.1 s) - 7 points, mode wing, 3 comparison stars
+   ok   Deep view (Barnard field) (457.1 s) - card: Barnard's Star✓ Motion seenHow sure are we?Strong. It matches a known value or a known object and passes
+   ok   Whole-sky map (2.5 s) - fov 360°
+   ok   Game opens (1.9 s) -  Find the asteroid✕ Easy: stars removedReal: like Tombaugh ◀Pause▶ HintShow me M
+   ok   Languages (Tamil then English) (2.4 s) - ta: ARCNAVE-இல் திற
+   ok   Share link (1.5 s) - http://localhost:8083/#ra=189.9570&dec=-4.1820&fov=1.000&b=4.45&m=change&e=2&sz=0.5&ipe=8&
+   ok   Embed 640x420 loads (111.7 s) - embed ok, 359 images
+   ok   Copy Python snippet (v0.39) (0 s) - 50 lines
+   ok   Check-and-report box (v0.39) (0.1 s) - box ok, kind lone
+GUIDE (desktop): 30 steps; tool on screen in 30; fully (>=90 %) in 30; partial: []; page errors: none
+GUIDE (phone): 30 steps; tool on screen in 30; fully (>=90 %) in 30; partial: []; page errors: none
+EMBED 640x420: result true in 37.6 s; {"w":640,"h":420,"embed":true,"bar":true,"hud":false,"landing":false,"side":false}
+EMBED 390x300: result true in 0.1 s; {"w":390,"h":300,"embed":true,"bar":true,"hud":false,"landing":false,"side":false}
+DONE

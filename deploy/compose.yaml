@@ -1,0 +1,39 @@
+# ARCNAVE + Caddy (automatic HTTPS from Let's Encrypt). Run from the deploy folder:
+#   docker compose --env-file .env up -d --build
+# See DEPLOY.md.
+name: arcnave
+services:
+  arcnave:
+    build: ..
+    restart: unless-stopped
+    environment:
+      PUBLIC_URL: https://${DOMAIN}
+    volumes:
+      - arcnave-data:/data          # SPHEREx/Gaia/CatWISE cache: survives restarts and updates
+    expose:
+      - "8080"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on: [arcnave]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data            # HTTPS certificates (renewed by Caddy itself)
+      - caddy-config:/config
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  arcnave-data:
+  caddy-data:
+  caddy-config:

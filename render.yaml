@@ -1,0 +1,19 @@
+# One-click deploy on Render (render.com): New + > Blueprint > pick this repository.
+# Check the plan's current free-tier limits yourself before relying on it for the demo.
+services:
+  - type: web
+    name: arcnave
+    runtime: node
+    plan: free
+    buildCommand: echo "nothing to build"
+    startCommand: node server.js
+    healthCheckPath: /api/health
+    envVars:
+      - key: SKYSHIFT_PUBLIC
+        value: "1"
+      - key: SKYSHIFT_S3
+        value: "1"
+      - key: SKYSHIFT_S3_PARALLEL
+        value: "8"
+      - key: NODE_VERSION
+        value: "20"

@@ -1,0 +1,15 @@
+[desktop] skeleton while agents work: true (Navigator · Pointing the sky...)
+[desktop] R Draconis result: false after 150.2 s; skeleton gone: false
+[desktop] progress bar under "Reading …": false (-)
+[desktop] spectrum finished: false after 420.2 s; points with values: 0; bar removed: true
+[desktop] readout: none
+[desktop] light curve: false; readout: none
+[desktop] sideways scroll: false; page errors: none
+[phone] skeleton while agents work: true (Navigator · Pointing the sky...)
+[phone] R Draconis result: true after 51.2 s; skeleton gone: true
+[phone] progress bar under "Reading …": true (3%)
+[phone] spectrum finished: false after 420.1 s; points with values: 0; bar removed: false
+[phone] readout: none
+[phone] sideways scroll: false; page errors: console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: the server responded with a status of 404 (Not Found) | console: Failed to load resource: net::ERR_SOCKET_NOT_CONNECTED | console: Failed to load resource: net::ERR_TIMED_OUT
+
+[exited with code 0]

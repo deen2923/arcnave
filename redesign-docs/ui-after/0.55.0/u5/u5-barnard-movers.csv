@@ -1,0 +1,4 @@
+mover,name,label,found_by,how,mu_arcsec_yr,mu_err,direction,catalogue,cat_mu_arcsec_yr,cat_mu_err,verdict,pass,pass_mid_mjd,date,ra_deg,dec_deg
+1,Barnard's Star,target,🔭,measured,13.1734,1.3879,north,Gaia DR3,10.3933,,agrees,1,60912.7148,2025-08-25,269.4469211,4.7670113
+1,Barnard's Star,target,🔭,measured,13.1734,1.3879,north,Gaia DR3,10.3933,,agrees,2,61118.3807,2026-03-19,269.4465179,4.7688203
+1,Barnard's Star,target,🔭,measured,13.1734,1.3879,north,Gaia DR3,10.3933,,agrees,3,61273.514,2026-08-21,269.4457849,4.7704341

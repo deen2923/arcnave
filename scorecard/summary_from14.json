@@ -1,0 +1,34 @@
+{
+ "id": "summary_from14",
+ "fields": [
+  {
+   "id": "L120B-40",
+   "status": "ok",
+   "limitAB300plus": 14.5,
+   "noiseLimitAB": 17.1,
+   "error": null
+  },
+  {
+   "id": "L180B-40",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.89,
+   "error": null
+  },
+  {
+   "id": "L240B-40",
+   "status": "ok",
+   "limitAB300plus": 13,
+   "noiseLimitAB": 15.16,
+   "error": null
+  },
+  {
+   "id": "L300B-40",
+   "status": "ok",
+   "limitAB300plus": 16,
+   "noiseLimitAB": 17.64,
+   "error": null
+  }
+ ],
+ "savedAt": "2026-10-22T09:47:39.904Z"
+}

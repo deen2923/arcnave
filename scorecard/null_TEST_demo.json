@@ -1,0 +1,121 @@
+{
+ "id": "null_TEST_demo",
+ "eclLon": null,
+ "eclLat": null,
+ "ra": 189.957,
+ "dec": -4.182,
+ "galLat": 58.6,
+ "field": "TEST_demo",
+ "version": "0.29",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-10-25T10:06:52.524Z",
+ "real": {
+  "epochs": 3,
+  "changes": 0,
+  "artefacts": 0,
+  "confirmed": 0,
+  "unconfirmed": 0
+ },
+ "splits": [
+  {
+   "pair": [
+    1,
+    2
+   ],
+   "colours": 8,
+   "matched": 171,
+   "nearMiss": 0,
+   "misaligned": false,
+   "raw": 0,
+   "artefacts": 0,
+   "shown": 0,
+   "snr": [],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 15
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 8
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 14
+    }
+   ]
+  },
+  {
+   "pair": [
+    1,
+    3
+   ],
+   "colours": 8,
+   "matched": 190,
+   "nearMiss": 0,
+   "misaligned": false,
+   "raw": 0,
+   "artefacts": 0,
+   "shown": 0,
+   "snr": [],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 15
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 12
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 13
+    }
+   ]
+  },
+  {
+   "pair": [
+    2,
+    3
+   ],
+   "colours": 8,
+   "matched": 175,
+   "nearMiss": 0,
+   "misaligned": false,
+   "raw": 0,
+   "artefacts": 0,
+   "shown": 0,
+   "snr": [],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 15
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 11
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 15
+    }
+   ]
+  }
+ ],
+ "comparisons": 3,
+ "falseAlarms": 0,
+ "rawFlags": 0,
+ "status": "ok",
+ "totalSecs": 9,
+ "savedAt": "2026-10-25T10:07:01.076Z"
+}

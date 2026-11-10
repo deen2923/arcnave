@@ -1,0 +1,110 @@
+{
+ "id": "null_L120B-40",
+ "eclLon": 120,
+ "eclLat": -40,
+ "ra": 113.8996,
+ "dec": -19.0174,
+ "galLat": 0.7,
+ "field": "L120B-40",
+ "version": "0.29",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-10-25T10:57:37.073Z",
+ "real": {
+  "epochs": 2,
+  "changes": 47,
+  "artefacts": 3,
+  "confirmed": 0,
+  "unconfirmed": 44
+ },
+ "splits": [
+  {
+   "pair": [
+    1,
+    2
+   ],
+   "colours": 8,
+   "matched": 560,
+   "nearMiss": 4,
+   "misaligned": false,
+   "raw": 50,
+   "artefacts": 0,
+   "shown": 50,
+   "snr": [
+    14.2,
+    13.1,
+    12.6,
+    12.5,
+    12,
+    11.8,
+    11.7,
+    11.1,
+    10.9,
+    10.9,
+    10.7,
+    10.7,
+    10.3,
+    10.1,
+    10,
+    10,
+    10,
+    9.9,
+    9.9,
+    9.9,
+    9.7,
+    9.5,
+    9.4,
+    9.1,
+    9,
+    9,
+    9,
+    8.7,
+    8.5,
+    8.5,
+    8.4,
+    8.1,
+    8.1,
+    8.1,
+    8.1,
+    8.1,
+    8.1,
+    8,
+    8,
+    7.9,
+    7.8,
+    7.8,
+    7.8,
+    7.7,
+    7.6,
+    7.6,
+    7.6,
+    7.5,
+    7.4,
+    7.4
+   ],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 14
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 16
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 14
+    }
+   ]
+  }
+ ],
+ "comparisons": 1,
+ "falseAlarms": 50,
+ "rawFlags": 50,
+ "status": "ok",
+ "totalSecs": 559,
+ "savedAt": "2026-10-25T11:06:56.179Z"
+}

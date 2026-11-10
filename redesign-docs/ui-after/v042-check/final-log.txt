@@ -1,0 +1,34 @@
+v0.40.0 final verification, 2026-11-05T08:45:35.039Z
+SMOKE (desktop 1440x830): 28 of 29 pass; page errors (416 / failed-resource excluded, as smoke.js does): 0
+   ok   RA/Dec box "189.957 -4.182" (Virgo field, cached) (40.9 s) - 348 images, 24 frames
+   ok   View tab: time (0.7 s) - ok
+   ok   View tab: blink (0.7 s) - ok
+   ok   View tab: swipe (0.7 s) - ok
+   ok   View tab: diff (0.7 s) - ok
+   ok   View tab: change (0.7 s) - ok
+   ok   View tab: lab (0.9 s) - mode is change
+   ok   View tab: px (0.8 s) - ok
+   ok   Time machine slider (0.5 s) - epochs 0..23, label "24 of 24 · E3 #8"
+   ok   Color slider (0.8 s) - band 2.2 µm, "2.20 µm"
+   ok   Images per epoch (stacks) select present (0 s) - 3 options: 1,4,8
+   ok   Field size options (0 s) - 0.25, 0.5, 1
+   ok   Flags overlay (0.8 s) - flagged bad: saturated, glare, ghost, cosmic ray, hot pixel (left out or repaire
+   ok   Known asteroids named (SkyBoT/MPC) (0 s) - 2614 object sightings, source undefined
+   ok   Gaia overlay (0.3 s) - 442 Gaia stars via IRSA
+   ok   Hide Planet X (1.5 s) - ×✓ Found by the agentsFake planet: 500 AU away, AB 15.00 (3.6 mJy) at 4.46 µm.Seen in epoch 1 (35σ) and then o
+   ok   Tested drawer opens/closes (0.5 s) - ok
+   ok   Discovery card GIF (4.5 s) - GIF 540x790 3 frames · 399 kB · GIF
+   ok   Barnard target card (from seed) (61.1 s) - card: Barnard's Star✓ Motion seenHow sure are we?Strong. It matches a known value or a known object and passes
+   ok   Spectrum of Barnard's Star (S3 reads) (198.3 s) - pass {"n":0,"done":119}
+   ok   Light curve (R Draconis 0.80 µm) (58.6 s) - 7 points, mode wing, 3 comparison stars
+   ok   Deep view (Barnard field) (437.8 s) - card: Barnard's Star✓ Motion seenHow sure are we?Strong. It matches a known value or a known object and passes
+   ok   Whole-sky map (2.5 s) - fov 360°
+   ok   Game opens (1.5 s) -  Find the asteroid✕ Easy: stars removedReal: like Tombaugh ◀Pause▶ HintShow me M
+   ok   Languages (Tamil then English) (1.5 s) - ta: ARCNAVE-இல் திற
+   ok   Share link (1.5 s) - http://localhost:8083/#ra=189.9570&dec=-4.1820&fov=35.114&b=4.45&m=change&e=2&sz=0.5&ipe=8
+   FAIL Embed 640x420 loads (121.4 s) 
+   ok   Copy Python snippet (v0.39) (0 s) - 50 lines
+   ok   Check-and-report box (v0.39) (0.2 s) - box ok, kind lone
+GUIDE (desktop): 30 steps; tool on screen in 30; fully (>=90 %) in 29; partial: [[14,"Changes","100/59%","spot"]]; page errors: none
+GUIDE (phone): 30 steps; tool on screen in 30; fully (>=90 %) in 30; partial: []; page errors: none
+DONE

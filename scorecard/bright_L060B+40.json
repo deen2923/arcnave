@@ -1,0 +1,577 @@
+{
+ "id": "bright_L060B+40",
+ "eclLon": 60,
+ "eclLat": 40,
+ "ra": 42.6629,
+ "dec": 58.6095,
+ "galLat": -0.7,
+ "field": "L060B+40",
+ "version": "0.31",
+ "depth": 8,
+ "startedAt": "2026-10-26T07:56:40.096Z",
+ "gains": [
+  1,
+  1.1,
+  1.25,
+  1.5,
+  2,
+  3
+ ],
+ "stars": [
+  {
+   "x": 155,
+   "y": 132,
+   "snr": 2175,
+   "caught": [
+    false,
+    false,
+    false,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 38,
+   "y": 199,
+   "snr": 945,
+   "caught": [
+    true,
+    true,
+    false,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 31,
+   "y": 79,
+   "snr": 513,
+   "caught": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 220,
+   "y": 76,
+   "snr": 381,
+   "caught": [
+    false,
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 138,
+   "y": 210,
+   "snr": 317,
+   "caught": [
+    true,
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 144,
+   "y": 275,
+   "snr": 253,
+   "caught": [
+    false,
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 251,
+   "y": 231,
+   "snr": 228,
+   "caught": [
+    false,
+    false,
+    false,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 241,
+   "y": 255,
+   "snr": 176,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 75,
+   "y": 62,
+   "snr": 167,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 189,
+   "y": 231,
+   "snr": 154,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 254,
+   "y": 84,
+   "snr": 141,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 35,
+   "y": 39,
+   "snr": 123,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 114,
+   "y": 109,
+   "snr": 114,
+   "caught": [
+    false,
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 158,
+   "y": 36,
+   "snr": 103,
+   "caught": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "x": 212,
+   "y": 248,
+   "snr": 100,
+   "caught": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "x": 106,
+   "y": 24,
+   "snr": 91,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 49,
+   "y": 75,
+   "snr": 86,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 169,
+   "y": 42,
+   "snr": 79,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 34,
+   "y": 107,
+   "snr": 70,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 64,
+   "y": 29,
+   "snr": 63,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 192,
+   "y": 128,
+   "snr": 60,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 155,
+   "y": 147,
+   "snr": 52,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 186,
+   "y": 217,
+   "snr": 50,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 112,
+   "y": 279,
+   "snr": 49,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 48,
+   "y": 242,
+   "snr": 45,
+   "caught": [
+    false,
+    false,
+    false,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 84,
+   "y": 272,
+   "snr": 44,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 189,
+   "y": 192,
+   "snr": 43,
+   "caught": [
+    false,
+    false,
+    false,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 246,
+   "y": 64,
+   "snr": 39,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 60,
+   "y": 235,
+   "snr": 37,
+   "caught": [
+    false,
+    false,
+    false,
+    false,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 80,
+   "y": 244,
+   "snr": 36,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 28,
+   "y": 47,
+   "snr": 35,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 115,
+   "y": 55,
+   "snr": 33,
+   "caught": [
+    true,
+    true,
+    true,
+    true,
+    false,
+    false
+   ]
+  },
+  {
+   "x": 105,
+   "y": 230,
+   "snr": 32,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 213,
+   "y": 33,
+   "snr": 31,
+   "caught": [
+    false,
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 106,
+   "y": 67,
+   "snr": 30,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 18,
+   "y": 168,
+   "snr": 29,
+   "caught": [
+    false,
+    false,
+    false,
+    false,
+    false,
+    false
+   ]
+  },
+  {
+   "x": 145,
+   "y": 23,
+   "snr": 28,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 52,
+   "y": 43,
+   "snr": 27,
+   "caught": [
+    false,
+    true,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 272,
+   "y": 210,
+   "snr": 26,
+   "caught": [
+    false,
+    false,
+    true,
+    true,
+    true,
+    true
+   ]
+  },
+  {
+   "x": 225,
+   "y": 267,
+   "snr": 25,
+   "caught": [
+    false,
+    false,
+    false,
+    true,
+    true,
+    true
+   ]
+  }
+ ],
+ "byGain": [
+  {
+   "gain": 1,
+   "caught": 4,
+   "of": 40
+  },
+  {
+   "gain": 1.1,
+   "caught": 9,
+   "of": 40
+  },
+  {
+   "gain": 1.25,
+   "caught": 30,
+   "of": 40
+  },
+  {
+   "gain": 1.5,
+   "caught": 36,
+   "of": 40
+  },
+  {
+   "gain": 2,
+   "caught": 36,
+   "of": 40
+  },
+  {
+   "gain": 3,
+   "caught": 36,
+   "of": 40
+  }
+ ],
+ "status": "ok",
+ "totalSecs": 15,
+ "savedAt": "2026-10-26T07:56:55.474Z"
+}

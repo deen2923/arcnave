@@ -1,0 +1,132 @@
+{
+ "id": "summary",
+ "fields": [
+  {
+   "id": "L000B+00",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.42,
+   "error": null
+  },
+  {
+   "id": "L060B+00",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.44,
+   "error": null
+  },
+  {
+   "id": "L120B+00",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.8,
+   "error": null
+  },
+  {
+   "id": "L180B+00",
+   "status": "ok",
+   "limitAB300plus": 16.5,
+   "noiseLimitAB": 17.66,
+   "error": null
+  },
+  {
+   "id": "L240B+00",
+   "status": "ok",
+   "limitAB300plus": 16,
+   "noiseLimitAB": 17.67,
+   "error": null
+  },
+  {
+   "id": "L300B+00",
+   "status": "ok",
+   "limitAB300plus": 15,
+   "noiseLimitAB": 16.62,
+   "error": null
+  },
+  {
+   "id": "L000B+40",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.36,
+   "error": null
+  },
+  {
+   "id": "L060B+40",
+   "status": "ok",
+   "limitAB300plus": 16,
+   "noiseLimitAB": 16.78,
+   "error": null
+  },
+  {
+   "id": "L120B+40",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.51,
+   "error": null
+  },
+  {
+   "id": "L180B+40",
+   "status": "ok",
+   "limitAB300plus": 15.5,
+   "noiseLimitAB": 17.64,
+   "error": null
+  },
+  {
+   "id": "L240B+40",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.54,
+   "error": null
+  },
+  {
+   "id": "L300B+40",
+   "status": "ok",
+   "limitAB300plus": 14.5,
+   "noiseLimitAB": 16.07,
+   "error": null
+  },
+  {
+   "id": "L000B-40",
+   "status": "ok",
+   "limitAB300plus": 17.5,
+   "noiseLimitAB": 17.67,
+   "error": null
+  },
+  {
+   "id": "L060B-40",
+   "status": "ok",
+   "limitAB300plus": 15.5,
+   "noiseLimitAB": 17.93,
+   "error": null
+  },
+  {
+   "id": "L120B-40",
+   "status": "ok",
+   "limitAB300plus": 15.5,
+   "noiseLimitAB": 17.1,
+   "error": null
+  },
+  {
+   "id": "L180B-40",
+   "status": "ok",
+   "limitAB300plus": 17,
+   "noiseLimitAB": 17.89,
+   "error": null
+  },
+  {
+   "id": "L240B-40",
+   "status": "ok",
+   "limitAB300plus": 12.5,
+   "noiseLimitAB": 15.16,
+   "error": null
+  },
+  {
+   "id": "L300B-40",
+   "status": "ok",
+   "limitAB300plus": 15.5,
+   "noiseLimitAB": 16.46,
+   "error": null
+  }
+ ],
+ "savedAt": "2026-10-26T06:35:55.950Z"
+}

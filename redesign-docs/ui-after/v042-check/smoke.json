@@ -1,0 +1,209 @@
+{
+ "done": true,
+ "steps": [
+  {
+   "name": "RA/Dec box \"189.957 -4.182\" (Virgo field, cached)",
+   "ok": true,
+   "info": "348 images, 24 frames",
+   "secs": 40.9,
+   "errs": []
+  },
+  {
+   "name": "View tab: time",
+   "ok": true,
+   "info": "ok",
+   "secs": 0.7,
+   "errs": []
+  },
+  {
+   "name": "View tab: blink",
+   "ok": true,
+   "info": "ok",
+   "secs": 0.7,
+   "errs": []
+  },
+  {
+   "name": "View tab: swipe",
+   "ok": true,
+   "info": "ok",
+   "secs": 0.7,
+   "errs": []
+  },
+  {
+   "name": "View tab: diff",
+   "ok": true,
+   "info": "ok",
+   "secs": 0.7,
+   "errs": []
+  },
+  {
+   "name": "View tab: change",
+   "ok": true,
+   "info": "ok",
+   "secs": 0.7,
+   "errs": []
+  },
+  {
+   "name": "View tab: lab",
+   "ok": true,
+   "info": "mode is change",
+   "secs": 0.9,
+   "errs": []
+  },
+  {
+   "name": "View tab: px",
+   "ok": true,
+   "info": "ok",
+   "secs": 0.8,
+   "errs": []
+  },
+  {
+   "name": "Time machine slider",
+   "ok": true,
+   "info": "epochs 0..23, label \"24 of 24 · E3 #8\"",
+   "secs": 0.5,
+   "errs": []
+  },
+  {
+   "name": "Color slider",
+   "ok": true,
+   "info": "band 2.2 µm, \"2.20 µm\"",
+   "secs": 0.8,
+   "errs": []
+  },
+  {
+   "name": "Images per epoch (stacks) select present",
+   "ok": true,
+   "info": "3 options: 1,4,8",
+   "secs": 0,
+   "errs": []
+  },
+  {
+   "name": "Field size options",
+   "ok": true,
+   "info": "0.25, 0.5, 1",
+   "secs": 0,
+   "errs": []
+  },
+  {
+   "name": "Flags overlay",
+   "ok": true,
+   "info": "flagged bad: saturated, glare, ghost, cosmic ray, hot pixel (left out or repaire",
+   "secs": 0.8,
+   "errs": []
+  },
+  {
+   "name": "Known asteroids named (SkyBoT/MPC)",
+   "ok": true,
+   "info": "2614 object sightings, source undefined",
+   "secs": 0,
+   "errs": []
+  },
+  {
+   "name": "Gaia overlay",
+   "ok": true,
+   "info": "442 Gaia stars via IRSA",
+   "secs": 0.3,
+   "errs": []
+  },
+  {
+   "name": "Hide Planet X",
+   "ok": true,
+   "info": "×✓ Found by the agentsFake planet: 500 AU away, AB 15.00 (3.6 mJy) at 4.46 µm.Seen in epoch 1 (35σ) and then out of this patch.Between the p",
+   "secs": 1.5,
+   "errs": []
+  },
+  {
+   "name": "Tested drawer opens/closes",
+   "ok": true,
+   "info": "ok",
+   "secs": 0.5,
+   "errs": []
+  },
+  {
+   "name": "Discovery card GIF",
+   "ok": true,
+   "info": "GIF 540x790 3 frames · 399 kB · GIF",
+   "secs": 4.5,
+   "errs": []
+  },
+  {
+   "name": "Barnard target card (from seed)",
+   "ok": true,
+   "info": "card: Barnard's Star✓ Motion seenHow sure are we?Strong. It matches a known value or a known object and passes ARCNAVE's check",
+   "secs": 61.1,
+   "errs": []
+  },
+  {
+   "name": "Spectrum of Barnard's Star (S3 reads)",
+   "ok": true,
+   "info": "pass {\"n\":0,\"done\":119}",
+   "secs": 198.3,
+   "errs": []
+  },
+  {
+   "name": "Light curve (R Draconis 0.80 µm)",
+   "ok": true,
+   "info": "7 points, mode wing, 3 comparison stars",
+   "secs": 58.6,
+   "errs": []
+  },
+  {
+   "name": "Deep view (Barnard field)",
+   "ok": true,
+   "info": "card: Barnard's Star✓ Motion seenHow sure are we?Strong. It matches a known value or a known object and passes ARCNAVE's checks. It is a measureme",
+   "secs": 437.8,
+   "errs": []
+  },
+  {
+   "name": "Whole-sky map",
+   "ok": true,
+   "info": "fov 360°",
+   "secs": 2.5,
+   "errs": []
+  },
+  {
+   "name": "Game opens",
+   "ok": true,
+   "info": " Find the asteroid✕ Easy: stars removedReal: like Tombaugh ◀Pause▶ HintShow me M",
+   "secs": 1.5,
+   "errs": []
+  },
+  {
+   "name": "Languages (Tamil then English)",
+   "ok": true,
+   "info": "ta: ARCNAVE-இல் திற",
+   "secs": 1.5,
+   "errs": []
+  },
+  {
+   "name": "Share link",
+   "ok": true,
+   "info": "http://localhost:8083/#ra=189.9570&dec=-4.1820&fov=35.114&b=4.45&m=change&e=2&sz=0.5&ipe=8",
+   "secs": 1.5,
+   "errs": []
+  },
+  {
+   "name": "Embed 640x420 loads",
+   "ok": false,
+   "info": "",
+   "secs": 121.4,
+   "errs": []
+  },
+  {
+   "name": "Copy Python snippet (v0.39)",
+   "ok": true,
+   "info": "50 lines",
+   "secs": 0,
+   "errs": []
+  },
+  {
+   "name": "Check-and-report box (v0.39)",
+   "ok": true,
+   "info": "box ok, kind lone",
+   "secs": 0.2,
+   "errs": []
+  }
+ ],
+ "errors": []
+}

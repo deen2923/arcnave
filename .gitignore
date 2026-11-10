@@ -1,0 +1,20 @@
+# runtime cache: the server fills it again on its own (the shipped examples live in demo-cache/, which is kept)
+cache/
+debug-cutouts/
+replay*
+# dependencies and build output (deploy/pack.ps1 makes the .tgz again)
+node_modules/
+deploy/out/
+*.tgz
+*.zip
+# secrets and logs
+.env
+deploy/.env
+*.log
+npm-debug.log*
+# editor and OS files
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/

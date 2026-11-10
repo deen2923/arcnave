@@ -1,0 +1,56 @@
+{
+ "source": "IRSA SPHEREx QR2 cutout service, saved by SkyShift Live debug bundle 2026-10-15",
+ "field": {
+  "ra": 189.9303487837977,
+  "dec": 4.860401932304993,
+  "size": 0.5
+ },
+ "files": {
+  "A": "spherex_2025W22_2B_0360_1_D4_cut.fits",
+  "B": "spherex_2026W23_1A_0287_1_D4_cut.fits"
+ },
+ "urls": {
+  "A": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2025W22_2B/l2b-v20-2025-251/4/level2_2025W22_2B_0360_1D4_spx_l2b-v20-2025-251.fits?center=189.9303487837977,4.860401932304993&size=0.5",
+  "B": "https://irsa.ipac.caltech.edu/ibe/data/spherex/qr2/level2/2026W23_1A/l2b-v25-2026-156/4/level2_2026W23_1A_0287_1D4_spx_l2b-v25-2026-156.fits?center=189.9303487837977,4.860401932304993&size=0.5"
+ },
+ "poly": {
+  "A": [
+   [
+    187.559131,
+    6.365196
+   ],
+   [
+    190.794156,
+    5.045287
+   ],
+   [
+    189.357129,
+    1.866635
+   ],
+   [
+    186.102316,
+    3.18746
+   ]
+  ],
+  "B": [
+   [
+    187.549622,
+    5.836804
+   ],
+   [
+    190.781725,
+    4.516963
+   ],
+   [
+    189.346014,
+    1.338289
+   ],
+   [
+    186.092973,
+    2.659678
+   ]
+  ]
+ },
+ "polyHexA": "0103000020E6100000010000000500000074A2A4991B8E65C03DACD3EEF57519407FF72347962665C04D9FE6CA5F2E1440F628FF65925465C0AA6B5367BCDDFD3F4090FCD2B9BC65C0B6F11BFEEA7F094074A2A4991B8E65C03DACD3EEF5751940",
+ "note": "poly = spherex.plane.poly from IRSA TAP for these two images (decoded from hex WKB; polyHexA is the raw value for image A)"
+}

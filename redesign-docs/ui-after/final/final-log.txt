@@ -1,0 +1,43 @@
+v0.40.0 final verification, 2026-11-04T15:56:57.132Z
+SMOKE (desktop 1440x830): 29 of 29 pass; page errors (416 / failed-resource excluded, as smoke.js does): 0
+   ok   RA/Dec box "189.957 -4.182" (Virgo field, cached) (47.1 s) - 348 images, 24 frames
+   ok   View tab: time (0.8 s) - ok
+   ok   View tab: blink (0.7 s) - ok
+   ok   View tab: swipe (0.8 s) - ok
+   ok   View tab: diff (0.8 s) - ok
+   ok   View tab: change (0.8 s) - ok
+   ok   View tab: lab (0.8 s) - mode is change
+   ok   View tab: px (0.8 s) - ok
+   ok   Time machine slider (0.6 s) - epochs 0..23, label "24 of 24 · E3 #8"
+   ok   Color slider (0.8 s) - band 2.2 µm, "2.20 µm"
+   ok   Images per epoch (stacks) select present (0 s) - 3 options: 1,4,8
+   ok   Field size options (0 s) - 0.25, 0.5, 1
+   ok   Flags overlay (0.8 s) - flagged bad: saturated, glare, ghost, cosmic ray, hot pixel (left out or repaire
+   ok   Known asteroids named (SkyBoT/MPC) (0 s) - 2614 object sightings, source undefined
+   ok   Gaia overlay (0.3 s) - 442 Gaia stars via IRSA
+   ok   Hide Planet X (1.8 s) - ×✓ Found by the agentsFake planet: 500 AU away, AB 15.00 (3.6 mJy) at 4.46 µm.Seen in epoch 1 (38σ) and in epo
+   ok   Tested drawer opens/closes (0.5 s) - ok
+   ok   Discovery card GIF (4.6 s) - GIF 540x790 3 frames · 399 kB · GIF
+   ok   Barnard target card (from seed) (61.9 s) - card: ×✓ Found by the agentsFake planet: 500 AU away, AB 15.00 (3.6 mJy) at 4.46 µm.Seen in epoch 1 (38σ) and 
+   ok   Spectrum of Barnard's Star (S3 reads) (192 s) - pass {"n":0,"done":119}
+   ok   Light curve (R Draconis 0.80 µm) (56 s) - 7 points, mode wing, 3 comparison stars
+   ok   Deep view (Barnard field) (242.1 s) - Deep view, Epoch 3, Aug 2026False colour: blue = detectors 1-2 (0.75-1.6 µm), green = 3-4 (1.6-3.8 µm), red = 
+   ok   Whole-sky map (4.6 s) - fov 360°
+   ok   Game opens (1.6 s) -  Find the asteroid✕ Easy: stars removedReal: like Tombaugh ◀Pause▶ HintShow me M
+   ok   Languages (Tamil then English) (1.6 s) - ta: ARCNAVE-இல் திற
+   ok   Share link (1.2 s) - http://localhost:8083/#ra=189.9570&dec=-4.1820&fov=8.000&b=4.45&m=change&e=2&sz=0.5&ipe=8&
+   ok   Embed 640x420 loads (65.4 s) - embed ok, 359 images
+   ok   Copy Python snippet (v0.39) (0 s) - 50 lines
+   ok   Check-and-report box (v0.39) (0.1 s) - box ok, kind lone
+GUIDE (desktop): 30 steps; tool on screen in 30; fully (>=90 %) in 29; partial: [[14,"Changes","100/59%","spot"]]; page errors: none
+GUIDE (phone): 30 steps; tool on screen in 30; fully (>=90 %) in 29; partial: [[13,"Changes","100/50%","spot"]]; page errors: none
+TARGET barnard from its landing card: result true in 43.0 s; badge "✓ Motion seen"; play moved image 23 -> 2 (2025-08-24); page errors: none
+TARGET epsindb from its landing card: result true in 68.6 s; badge "✓ Motion seen"; play moved image 31 -> 2 (2025-04-30); page errors: none
+TARGET wise0855 from its landing card: result true in 21.1 s; badge "✓ Detected (faint)"; play moved image 42 -> 2 (2025-05-05); page errors: none
+TARGET rwaur from its landing card: result true in 63.8 s; badge "✓ Change seen"; play moved image 23 -> 2 (2025-09-09); page errors: none
+TARGET rdra from its landing card: result true in 44.2 s; badge "✓ Change seen"; play moved image 23 -> 2 (2025-09-06); page errors: none
+EMBED 640x420: result false in 180.5 s; {"w":640,"h":420,"embed":true,"bar":false,"hud":false,"landing":false,"side":false}
+EMBED 390x300: result false in 180.4 s; {"w":390,"h":300,"embed":true,"bar":false,"hud":false,"landing":false,"side":false}
+COPY PYTHON (Share > Copy Python clicked): 50 lines; astroquery TAP: true; astropy: true; toast: "Python code copied (Astropy + astroquery). Download .py"
+LIGHT CURVE (R Draconis card, live): finished true in 45 s; points with values 95; readout "This star · 2025-07-17 · −1.11 ± 0.02 mag"; page errors: none
+DONE

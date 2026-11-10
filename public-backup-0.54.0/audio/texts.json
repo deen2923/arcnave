@@ -1,0 +1,570 @@
+{
+ "en": [
+  {
+   "key": "d4e5e6af",
+   "text": "A planet found with a pen. Uranus kept drifting off its predicted path. In 1846 Urbain Le Verrier worked out, on paper, where an unseen planet pulling it had to be. Johann Galle pointed a telescope there and found Neptune, less than one degree from the spot. Astronomers have asked ever since: is there another one?"
+  },
+  {
+   "key": "7047bd61",
+   "text": "One dot jumped. Percival Lowell named the missing world \"Planet X\". At his observatory in January 1930, Clyde Tombaugh, 24, photographed the same stars six days apart and flipped between the two plates in a blink comparator. Stars stayed still. One faint dot jumped. It was Pluto."
+  },
+  {
+   "key": "c2b597b9",
+   "text": "A ninth planet?. In 2016 Konstantin Batygin and Mike Brown noticed that some of the most distant icy worlds beyond Neptune swing out in the same direction, as if something big were herding them. They proposed \"Planet Nine\", several times heavier than Earth. Nobody has seen it. It is still a hypothesis."
+  },
+  {
+   "key": "fbed9291",
+   "text": "Now a telescope does the whole sky. NASA's SPHEREx, launched in March 2025, maps the entire sky every six months in 102 colours of infrared light, one tick each on this ruler. Its archive is open to everyone, and that is what you are about to use."
+  },
+  {
+   "key": "0acc32fb",
+   "text": "Five agents fetch real images. Done. They found 348 SPHEREx images of this patch of sky in NASA's archive, downloaded the 24 best colour-matched ones from 3 sky passes, lined them up on the stars and compared them."
+  },
+  {
+   "key": "f93ff7f5",
+   "text": "Your turn to be Tombaugh. The images of one sky pass now flip like Tombaugh's plates. Stars stay put. Inside the ring: asteroid 3865 Lindbloom, a real one, caught moving in 2 SPHEREx images, right where its known orbit says it should be."
+  },
+  {
+   "key": "a854f6b0",
+   "text": "Now find one yourself. No ring, no help: in Find the asteroid you flip through the same real images and tap the dot that moves. It takes about a minute, and you can send your result to a friend as a challenge."
+  },
+  {
+   "key": "c64147b1",
+   "text": "Hide your own Planet X. Planet X is a hypothesis: no one has seen it, and ARCNAVE does not claim to. So we turn the question around. You hide a fake planet in these real images, the agents hunt for it, and you learn how faint and far a planet could be and still be caught."
+  },
+  {
+   "key": "a1047b31",
+   "text": "Tested on 18 fields, misses included. We hid 19,880 fake planets across 18 fields picked before the run. A planet 1000 AU away was caught in 18 of 18 fields, down to magnitude 17.0 on a typical field. At 300 AU only in 12 of 18, and we show you those misses too."
+  },
+  {
+   "key": "d547478c",
+   "text": "The sky is yours now. Type any place in the sky and the agents start. Look for what jumps. If you find something, check it against the known-object rings before you believe it: that is how real astronomers work too."
+  },
+  {
+   "key": "85b23240",
+   "text": "Every tool, one by one. This guide lights up each tool in ARCNAVE and says what it is for and how to use it. A real example (asteroid 3865 Lindbloom in real SPHEREx images) loads behind it, so every tool shows real data. Press Next or the → key. Jump straight to any tool with the menu above. Esc closes the guide."
+  },
+  {
+   "key": "651d0ea1",
+   "text": "Whole sky. Zooms out to the entire sky in one oval: the 2MASS near-infrared survey, light SPHEREx also sees (1.2 to 2.2 µm), with the Milky Way across the middle. White dots are famous places, the orange ring is the asteroid example, cyan squares are our 18 test fields. Press Whole sky. Drag to turn the sky, scroll or pinch to zoom, click a marker to dive in and start the agents there."
+  },
+  {
+   "key": "a7c5cc3e",
+   "text": "Fly to. Takes you to any place in the sky and starts the agents there. Type a name such as M42, Andromeda or Pleiades, or a position as RA and Dec in degrees, like 190 -4. Press Enter or Fly to."
+  },
+  {
+   "key": "184550f5",
+   "text": "Base sky. The background picture of the sky, taken by other surveys, for context. The real SPHEREx images are drawn on top of it. 2MASS (near-infrared) is the default. Switch to AllWISE (longer infrared) or DSS2 (visible light, what your eyes would see) to compare."
+  },
+  {
+   "key": "3b113474",
+   "text": "Ecliptic. The path the Sun and the planets follow across the sky. Asteroids, comets and any far-off planet stay close to it, so it tells you where to look. Press it to draw the ecliptic as a dashed cyan line. Press again to hide it."
+  },
+  {
+   "key": "0062dfe0",
+   "text": "Examples. Two real cases saved with the site. They open in seconds, even when NASA's archive is busy. Press it, then choose Catch a real asteroid or See a false alarm caught."
+  },
+  {
+   "key": "7a788bdf",
+   "text": "Readout. Where you are and what you are looking at: the sky position (RA, Dec), the wavelength of the image, which sky pass (epoch) and how wide the view is (FoV). Nothing to press: it updates as you move around."
+  },
+  {
+   "key": "76a8e9cf",
+   "text": "The five agents. Small programs that do the work in order: Navigator points the sky, Archivist finds the SPHEREx images, Aligner downloads them and lines them up on the stars, Analyst compares them, Reporter writes it up. Ordinary code, not AI. Watch each step tick. With Auto-run on, typing a place starts them; switch it off to look around without loading."
+  },
+  {
+   "key": "8b3aa8a5",
+   "text": "Run agents here. Loads SPHEREx images for the spot in the middle of the screen, with your settings. Pan to a spot, pick the Field size (0.25° to 1° wide) and Images per epoch (8 gives deeper, cleaner pictures but loads slower), then press Run agents here."
+  },
+  {
+   "key": "193578c7",
+   "text": "Time machine. Every real image of this spot, one at a time, in the order they were taken. Drag the Image slider, or click a thumbnail in the strip. E1, E2, E3 are sky passes about six months apart."
+  },
+  {
+   "key": "118a84b2",
+   "text": "Blink. Tombaugh's method: the images flip by themselves like a flip-book. Stars stay still; anything that jumps is moving. Just watch the sky. The slider picks which sky pass to flip through, or all of them."
+  },
+  {
+   "key": "afe019a3",
+   "text": "Swipe. Two sky passes on top of each other with a dividing line: the earlier one on the left, the later one on the right. Drag the Swipe slider across and look for anything that is on one side but not the other."
+  },
+  {
+   "key": "b5abd13b",
+   "text": "Difference. The earlier pass subtracted from the later one. Stars cancel out. A moving object leaves an orange spot (where it is now) next to a cyan spot (where it was). Look for orange-and-cyan pairs on the sky. Leftover speckle is just noise."
+  },
+  {
+   "key": "0b09a40c",
+   "text": "Changes. Every change the agents found, explained: a known asteroid passing by, a star that got brighter, or something not explained yet. Detector glitches are counted but hidden. By epoch and By image show the same changes as colour maps. Tap a kind to step through its spots; each card flips between that image and the usual sky there. Or choose By epoch or By image and click a bar on the timeline."
+  },
+  {
+   "key": "d4403d22",
+   "text": "Hide Planet X. A test, not a search: you hide a fake planet in these real images and the agents try to find it. Planet X itself is only a hypothesis, and ARCNAVE does not search for it. Set Distance and Brightness, then press Hide it, agents seek. Map this field tries 1,120 fake planets and draws which ones can be caught."
+  },
+  {
+   "key": "3665db9a",
+   "text": "Motion lab. A simulation, not data: the path a distant planet would trace on the sky over the years. A yearly wobble from Earth's own orbit, plus a slow drift. Drag Years and Distance. The farther away the planet, the smaller its wobble."
+  },
+  {
+   "key": "964970e3",
+   "text": "Color and presets. SPHEREx photographs the sky in 102 colours of infrared light. This picks which colour you see, shown in false colour. Drag the Color slider and let go, or press a preset: Hot stars (1 µm), Dust & Ice (3 µm, where water ice absorbs) or Cool worlds (4.5 µm). The agents then fetch the real images taken in that colour, so it takes a few seconds."
+  },
+  {
+   "key": "490cea24",
+   "text": "Result card. The evidence for one object: a status (Confirmed known asteroid, Likely artefact or Unconfirmed), image crops from before and after, and the numbers behind it. Click any ring or mark on the sky to open its card. On phones it is under Result at the bottom."
+  },
+  {
+   "key": "77e012c7",
+   "text": "Discovery card. Turns what you are looking at into a looping GIF you can post: the same patch of sky from each SPHEREx image, with its position, dates and infrared colour, and an honest label (known asteroid, unconfirmed change, or just a field). Pick an object (or just zoom to a spot) and press Discovery card. Then Share, Download GIF, or copy the ready-made post text with a link back to this view."
+  },
+  {
+   "key": "fb32f60b",
+   "text": "Find the asteroid. A one-minute game on real SPHEREx images: the same patch of sky flips by, and one dot is a real asteroid. Easy level takes the stars away; Real level shows the images as SPHEREx took them. Press Find the asteroid and tap the dot that moves. Pause and the arrows step image by image; Hint helps if you are stuck. Win, then make a discovery card to challenge a friend."
+  },
+  {
+   "key": "da688f63",
+   "text": "Share. Copies a link that reopens exactly this view: the place, zoom, colour and mode. Press Share and paste the link in a message or a post."
+  },
+  {
+   "key": "d0ff0b84",
+   "text": "Learn. Plain-language explanations, a glossary and the full test scorecard for all 18 fields. Press Learn to open it. Close or Esc brings you back."
+  },
+  {
+   "key": "d8b8213f",
+   "text": "High contrast. Stronger outlines and brighter text, for easier reading. Press it to switch on or off."
+  },
+  {
+   "key": "e8750209",
+   "text": "Bottom bar. On phones the controls, the agents and the result card share one sheet, so the sky stays visible. Tap Controls, Agents or Result to switch. Tap the open one again to fold it away. A dot on Result means a new result."
+  },
+  {
+   "key": "6a77e906",
+   "text": "You know every tool. That is all of ARCNAVE. Start with the whole sky, click a landmark and blink. Or take the 90-second story."
+  }
+ ],
+ "ta": [
+  {
+   "key": "3755f669",
+   "text": "பேனாவால் கண்டுபிடித்த கோள். யுரேனஸ் கோள் கணித்த பாதையிலிருந்து விலகிக்கொண்டே இருந்தது. அதை இழுக்கும் கண்ணுக்குத் தெரியாத ஒரு கோள் எங்கே இருக்க வேண்டும் என்று 1846-ல் உர்பென் லு வெரியே காகிதத்திலேயே கணக்குப் போட்டார். யோஹான் காலே தொலைநோக்கியை அங்கே திருப்பினார்; குறித்த இடத்திலிருந்து ஒரு டிகிரிக்குள் நெப்டியூன் இருந்தது. அன்றிலிருந்து வானியலாளர்கள் கேட்கிறார்கள்: இன்னொன்று இருக்குமா?"
+  },
+  {
+   "key": "a563d275",
+   "text": "ஒரு புள்ளி மட்டும் தாவியது. காணாமல் போன அந்த உலகத்துக்கு பெர்சிவல் லோவெல் \"பிளானெட் X\" என்று பெயர் வைத்தார். 1930 ஜனவரியில் அவருடைய ஆய்வகத்தில், 24 வயது கிளைட் டாம்பா ஒரே நட்சத்திரங்களை ஆறு நாள் இடைவெளியில் இரண்டு முறை படம் எடுத்து, \"பிளிங்க்\" கருவியில் அந்த இரண்டு படத்தகடுகளையும் மாறி மாறிப் பார்த்தார். நட்சத்திரங்கள் அசையவில்லை. ஒரே ஒரு மங்கலான புள்ளி தாவியது. அதுதான் புளூட்டோ."
+  },
+  {
+   "key": "3f27e8a6",
+   "text": "ஒன்பதாவது கோளா?. 2016-ல் கான்ஸ்டன்டின் பாட்டிஜின், மைக் பிரவுன் இருவரும் ஒன்றைக் கவனித்தனர்: நெப்டியூனுக்கு அப்பால் உள்ள மிகத் தொலைவான பனி உலகங்கள் சில, ஏதோ ஒரு பெரிய பொருள் மேய்ப்பது போல ஒரே திசையில் சுற்றிச் செல்கின்றன. பூமியை விடப் பல மடங்கு கனமான \"பிளானெட் நைன்\" இருக்கலாம் என்று முன்மொழிந்தனர். இதுவரை யாரும் அதைப் பார்க்கவில்லை. அது இன்னும் ஒரு கருதுகோள் மட்டுமே."
+  },
+  {
+   "key": "d4dcb008",
+   "text": "இப்போது ஒரு தொலைநோக்கி முழு வானையும் படம் பிடிக்கிறது. நாசாவின் SPHEREx மார்ச் 2025-ல் ஏவப்பட்டது. ஒவ்வொரு ஆறு மாதத்துக்கும் முழு வானையும் 102 அகச்சிவப்பு (infrared) நிறங்களில் படம் பிடிக்கிறது; இந்த அளவுகோலில் ஒவ்வொரு கோடும் ஒரு நிறம். அதன் தரவுக் களஞ்சியம் எல்லோருக்கும் திறந்திருக்கிறது. நீங்கள் இப்போது பயன்படுத்தப் போவது அதைத்தான்."
+  },
+  {
+   "key": "4ff11646",
+   "text": "ஐந்து ஏஜென்ட்கள் உண்மையான படங்களைக் கொண்டு வருகின்றன. முடிந்தது. இந்த வானப் பகுதியின் 348 SPHEREx படங்களை நாசாவின் களஞ்சியத்தில் கண்டுபிடித்து, 3 வானச் சுற்றுகளிலிருந்து நிறத்தில் பொருந்தும் சிறந்த 24 படங்களைப் பதிவிறக்கி, நட்சத்திரங்களை வைத்து வரிசைப்படுத்தி, ஒப்பிட்டன."
+  },
+  {
+   "key": "7c27d8e7",
+   "text": "இப்போது நீங்கள்தான் டாம்பா. ஒரு வானச் சுற்றின் படங்கள் இப்போது டாம்பாவின் படத்தகடுகள் போல மாறி மாறித் தெரிகின்றன. நட்சத்திரங்கள் அசையாமல் இருக்கின்றன. வட்டத்துக்குள்: 3865 Lindbloom என்ற உண்மையான சிறுகோள் (asteroid). SPHEREx அதை 2 படங்களில் நகரும்போது பிடித்தது, அதன் அறியப்பட்ட சுற்றுப்பாதை சொல்லும் இடத்திலேயே."
+  },
+  {
+   "key": "176d247e",
+   "text": "இப்போது நீங்களே ஒன்றைக் கண்டுபிடியுங்கள். வட்டமும் இல்லை, உதவியும் இல்லை: \"Find the asteroid\" விளையாட்டில் இதே உண்மையான படங்களைப் புரட்டி, நகரும் புள்ளியைத் தொட்டால் போதும். ஒரு நிமிடம் ஆகும். உங்கள் முடிவை நண்பருக்குச் சவாலாக அனுப்பலாம்."
+  },
+  {
+   "key": "1dee6120",
+   "text": "உங்கள் சொந்த பிளானெட் X-ஐ ஒளித்து வையுங்கள். பிளானெட் X ஒரு கருதுகோள் மட்டுமே: யாரும் அதைப் பார்த்ததில்லை, ARCNAVE-ம் பார்த்ததாகச் சொல்லவில்லை. அதனால் கேள்வியைத் திருப்பிக் கேட்கிறோம்: இந்த உண்மையான படங்களில் நீங்கள் ஒரு போலிக் கோளை ஒளித்து வைக்கிறீர்கள், ஏஜென்ட்கள் அதைத் தேடுகின்றன. ஒரு கோள் எவ்வளவு மங்கலாக, எவ்வளவு தொலைவில் இருந்தாலும் பிடிபடும் என்று இதிலிருந்து தெரிந்துகொள்ளலாம்."
+  },
+  {
+   "key": "002ec8ff",
+   "text": "18 பகுதிகளில் சோதனை, தோல்விகளும் சேர்த்து. சோதனைக்கு முன்பே தேர்ந்தெடுத்த 18 வானப் பகுதிகளில் 19,880 போலிக் கோள்களை ஒளித்து வைத்தோம். 1000 AU தொலைவில் உள்ள கோள் 18 பகுதிகளில் 18-ல் பிடிபட்டது; வழக்கமான பகுதியில் magnitude 17.0 வரை. 300 AU-ல் 18-ல் 12 பகுதிகளில் மட்டுமே; அந்தத் தோல்விகளையும் உங்களுக்குக் காட்டுகிறோம்."
+  },
+  {
+   "key": "54fa238f",
+   "text": "வானம் இப்போது உங்களுடையது. வானில் எந்த இடத்தின் பெயரையும் தட்டச்சு செய்யுங்கள், ஏஜென்ட்கள் தொடங்கும். எது தாவுகிறது என்று பாருங்கள். ஏதாவது கண்டால், நம்புவதற்கு முன் அறியப்பட்ட பொருட்களின் வட்டங்களுடன் சரிபாருங்கள்: உண்மையான வானியலாளர்களும் அப்படித்தான் வேலை செய்கிறார்கள்."
+  },
+  {
+   "key": "d034c326",
+   "text": "ஒவ்வொரு கருவியாக. இந்த வழிகாட்டி ARCNAVE-இன் ஒவ்வொரு கருவியையும் ஒளிரச் செய்து, அது எதற்கு, எப்படிப் பயன்படுத்துவது என்று சொல்கிறது. பின்னணியில் ஒரு உண்மையான உதாரணம் (உண்மையான SPHEREx படங்களில் 3865 லிண்ட்ப்ளூம் சிறுகோள்) ஏறுகிறது, அதனால் ஒவ்வொரு கருவியும் உண்மையான தரவைக் காட்டும். Next அல்லது → விசையை அழுத்துங்கள். மேலே உள்ள பட்டியலில் எந்தக் கருவிக்கும் நேரடியாகச் செல்லலாம். Esc அழுத்தினால் வழிகாட்டி மூடும்."
+  },
+  {
+   "key": "0daa7547",
+   "text": "முழு வானம். முழு வானையும் ஒரு நீள்வட்டத்தில் காட்டுகிறது: 2MASS அருகிய-அகச்சிவப்பு ஆய்வு (SPHEREx-ம் பார்க்கும் 1.2–2.2 µm ஒளி), நடுவில் பால்வெளி. வெள்ளைப் புள்ளிகள் புகழ்பெற்ற இடங்கள், ஆரஞ்சு வட்டம் சிறுகோள் உதாரணம், சியான் நிறச் சதுரங்கள் எங்கள் 18 சோதனைப் பகுதிகள். Whole sky அழுத்துங்கள். வானைத் திருப்ப இழுங்கள், பெரிதாக்க ஸ்க்ரோல் அல்லது பிஞ்ச் செய்யுங்கள், ஒரு குறியைத் தட்டினால் அங்கே சென்று ஏஜென்ட்கள் தொடங்கும்."
+  },
+  {
+   "key": "c6e43ead",
+   "text": "Fly to (பறந்து செல்). வானில் எந்த இடத்துக்கும் அழைத்துச் சென்று அங்கே ஏஜென்ட்களைத் தொடங்குகிறது. M42, Andromeda, Pleiades போன்ற ஒரு பெயரை, அல்லது RA, Dec இடத்தை டிகிரியில் (உதா. 190 -4) தட்டச்சு செய்யுங்கள். Enter அல்லது Fly to அழுத்துங்கள்."
+  },
+  {
+   "key": "eec7ae86",
+   "text": "பின்னணி வானம். சூழலுக்காக மற்ற ஆய்வுகள் எடுத்த வானின் பின்னணிப் படம். உண்மையான SPHEREx படங்கள் அதன் மேல் வரையப்படுகின்றன. 2MASS (அருகிய-அகச்சிவப்பு) இயல்பாக இருக்கும். ஒப்பிட AllWISE (நீண்ட அகச்சிவப்பு) அல்லது DSS2 (கண்ணுக்குத் தெரியும் ஒளி) தேர்ந்தெடுங்கள்."
+  },
+  {
+   "key": "022d133e",
+   "text": "கிரகணப் பாதை (Ecliptic). சூரியனும் கோள்களும் வானில் செல்லும் பாதை. சிறுகோள்கள், வால்நட்சத்திரங்கள், தொலைவான எந்தக் கோளும் இதற்கு அருகில்தான் இருக்கும்; அதனால் எங்கே தேடுவது என்று இது சொல்கிறது. அழுத்தினால் கிரகணப் பாதை சியான் நிறப் புள்ளிக்கோடாக வரையப்படும். மீண்டும் அழுத்தினால் மறையும்."
+  },
+  {
+   "key": "ff71c19b",
+   "text": "உதாரணங்கள். தளத்துடன் சேமிக்கப்பட்ட இரண்டு உண்மையான நிகழ்வுகள். நாசாவின் களஞ்சியம் பிஸியாக இருந்தாலும் சில வினாடிகளில் திறக்கும். அழுத்தி, Catch a real asteroid அல்லது See a false alarm caught தேர்ந்தெடுங்கள்."
+  },
+  {
+   "key": "79071486",
+   "text": "விவரப் பலகை. நீங்கள் எங்கே இருக்கிறீர்கள், எதைப் பார்க்கிறீர்கள்: வான இடம் (RA, Dec), படத்தின் அலைநீளம், எந்த வானச் சுற்று (epoch), பார்வை எவ்வளவு அகலம் (FoV). அழுத்த எதுவும் இல்லை: நீங்கள் நகரும்போது தானாக மாறும்."
+  },
+  {
+   "key": "d63d5e2b",
+   "text": "ஐந்து ஏஜென்ட்கள். வேலையை வரிசையாகச் செய்யும் சிறிய நிரல்கள்: Navigator வானைத் திருப்புகிறது, Archivist SPHEREx படங்களைக் கண்டுபிடிக்கிறது, Aligner அவற்றைப் பதிவிறக்கி நட்சத்திரங்களை வைத்து வரிசைப்படுத்துகிறது, Analyst ஒப்பிடுகிறது, Reporter எழுதுகிறது. இவை சாதாரண நிரல்கள், AI அல்ல. ஒவ்வொரு படியும் முடிவதைப் பாருங்கள். Auto-run இயக்கத்தில் இருந்தால், ஒரு இடத்தைத் தட்டச்சு செய்ததும் தொடங்கும்; படங்களை ஏற்றாமல் சுற்றிப் பார்க்க அதை அணையுங்கள்."
+  },
+  {
+   "key": "2e4eee97",
+   "text": "இங்கே ஏஜென்ட்களை இயக்கு. திரையின் நடுவில் உள்ள இடத்துக்கு உங்கள் அமைப்புகளுடன் SPHEREx படங்களை ஏற்றுகிறது. ஒரு இடத்துக்கு நகர்ந்து, Field size (0.25° முதல் 1° அகலம்), Images per epoch (8 என்றால் ஆழமான, தெளிவான படங்கள், ஆனால் ஏற நேரம் ஆகும்) தேர்ந்தெடுத்து Run agents here அழுத்துங்கள்."
+  },
+  {
+   "key": "ae34bb54",
+   "text": "கால இயந்திரம். இந்த இடத்தின் ஒவ்வொரு உண்மையான படமும், எடுத்த வரிசையில், ஒன்றன்பின் ஒன்றாக. Image ஸ்லைடரை இழுங்கள், அல்லது கீழே உள்ள சிறுபடத்தைத் தட்டுங்கள். E1, E2, E3 என்பவை சுமார் ஆறு மாத இடைவெளியில் உள்ள வானச் சுற்றுகள்."
+  },
+  {
+   "key": "24f1c626",
+   "text": "பிளிங்க். டாம்பாவின் முறை: படங்கள் தானாகவே ஒரு புரட்டும் புத்தகம் போல மாறுகின்றன. நட்சத்திரங்கள் அசையாது; தாவுவது எதுவோ அது நகர்கிறது. வானைப் பாருங்கள் போதும். எந்த வானச் சுற்றைப் புரட்டுவது, அல்லது எல்லாவற்றையும், என்று ஸ்லைடர் தேர்ந்தெடுக்கும்."
+  },
+  {
+   "key": "c2d6e94f",
+   "text": "ஸ்வைப். இரண்டு வானச் சுற்றுகள் ஒன்றின் மேல் ஒன்று, நடுவில் ஒரு பிரிகோடு: இடப்பக்கம் முந்தையது, வலப்பக்கம் பிந்தையது. Swipe ஸ்லைடரை இழுத்து, ஒரு பக்கத்தில் இருந்து மறுபக்கத்தில் இல்லாததைத் தேடுங்கள்."
+  },
+  {
+   "key": "0f53118e",
+   "text": "வித்தியாசம். பிந்தைய சுற்றிலிருந்து முந்தைய சுற்று கழிக்கப்படுகிறது. நட்சத்திரங்கள் மறைந்துவிடும். நகரும் பொருள் ஒரு ஆரஞ்சுப் புள்ளியையும் (இப்போது இருக்கும் இடம்) அருகில் ஒரு சியான் புள்ளியையும் (முன்பு இருந்த இடம்) விட்டுச் செல்லும். வானில் ஆரஞ்சு-சியான் ஜோடிகளைத் தேடுங்கள். மீதமுள்ள சிறு புள்ளிகள் வெறும் இரைச்சல் (noise)."
+  },
+  {
+   "key": "e5b7841f",
+   "text": "மாற்றங்கள். ஏஜென்ட்கள் கண்ட ஒவ்வொரு மாற்றமும் விளக்கத்துடன்: கடந்து செல்லும் அறியப்பட்ட சிறுகோள், பிரகாசமான நட்சத்திரம், அல்லது இன்னும் விளக்க முடியாதது. கருவிப் பிழைகள் (glitches) எண்ணப்படும், ஆனால் காட்டப்படாது. By epoch, By image இதே மாற்றங்களை நிற வரைபடமாகக் காட்டும். ஒரு வகையைத் தட்டி அதன் இடங்களை ஒவ்வொன்றாகப் பாருங்கள்; ஒவ்வொரு அட்டையிலும் அந்தப் படமும் அங்குள்ள வழக்கமான வானமும் மாறி மாறித் தெரியும். அல்லது By epoch / By image தேர்ந்தெடுத்து காலவரிசையில் ஒரு பட்டையைத் தட்டுங்கள்."
+  },
+  {
+   "key": "2aa432ba",
+   "text": "பிளானெட் X-ஐ ஒளித்து வை. இது ஒரு சோதனை, தேடல் அல்ல: இந்த உண்மையான படங்களில் நீங்கள் ஒரு போலிக் கோளை ஒளித்து வைக்கிறீர்கள், ஏஜென்ட்கள் அதைக் கண்டுபிடிக்க முயல்கின்றன. பிளானெட் X ஒரு கருதுகோள் மட்டுமே; ARCNAVE அதைத் தேடுவதில்லை. Distance, Brightness அமைத்து Hide it, agents seek அழுத்துங்கள். Map this field 1,120 போலிக் கோள்களை முயன்று, எவை பிடிபடும் என்று வரைகிறது."
+  },
+  {
+   "key": "50d09fc9",
+   "text": "இயக்க ஆய்வகம். இது தரவு அல்ல, ஒரு உருவகப்படுத்துதல் (simulation): தொலைவான ஒரு கோள் பல ஆண்டுகளில் வானில் வரையும் பாதை. பூமியின் சொந்தச் சுற்றால் ஆண்டுதோறும் ஒரு ஆட்டம், அதோடு மெதுவான ஒரு நகர்வு. Years, Distance இழுங்கள். கோள் எவ்வளவு தொலைவோ, அதன் ஆட்டம் அவ்வளவு சிறியது."
+  },
+  {
+   "key": "e50c7c18",
+   "text": "நிறமும் முன்னமைவுகளும். SPHEREx வானை 102 அகச்சிவப்பு நிறங்களில் படம் பிடிக்கிறது. நீங்கள் எந்த நிறத்தைப் பார்க்கிறீர்கள் என்பதை இது தேர்ந்தெடுக்கிறது (போலி நிறத்தில் காட்டப்படும்). Color ஸ்லைடரை இழுத்து விடுங்கள், அல்லது ஒரு முன்னமைவை அழுத்துங்கள்: Hot stars (1 µm), Dust & Ice (3 µm, நீர்ப் பனி ஒளியை உறிஞ்சும் இடம்), Cool worlds (4.5 µm). பிறகு ஏஜென்ட்கள் அந்த நிறத்தில் எடுத்த உண்மையான படங்களைக் கொண்டு வரும்; சில வினாடிகள் ஆகும்."
+  },
+  {
+   "key": "94947d14",
+   "text": "முடிவு அட்டை. ஒரு பொருளுக்கான சான்று: ஒரு நிலை (Confirmed known asteroid, Likely artefact, Unconfirmed), முன்னும் பின்னும் எடுத்த பட வெட்டுகள், அதன் பின்னால் உள்ள எண்கள். வானில் எந்த வட்டத்தையும் குறியையும் தட்டினால் அதன் அட்டை திறக்கும். போனில் அது கீழே Result-ல் இருக்கும்."
+  },
+  {
+   "key": "4fb9e223",
+   "text": "கண்டுபிடிப்பு அட்டை. நீங்கள் பார்ப்பதைப் பகிரக்கூடிய ஒரு சுழலும் GIF ஆக மாற்றுகிறது: ஒவ்வொரு SPHEREx படத்திலிருந்தும் அதே வானப் பகுதி, அதன் இடம், தேதிகள், அகச்சிவப்பு நிறம், ஒரு நேர்மையான குறிப்புடன் (அறியப்பட்ட சிறுகோள், உறுதிப்படுத்தாத மாற்றம், அல்லது வெறும் வானப் பகுதி). ஒரு பொருளைத் தேர்ந்தெடுத்து (அல்லது ஒரு இடத்தைப் பெரிதாக்கி) Discovery card அழுத்துங்கள். பிறகு Share, Download GIF, அல்லது இந்தக் காட்சிக்கான இணைப்புடன் தயாரான பதிவு உரையை நகலெடுங்கள்."
+  },
+  {
+   "key": "45902a6a",
+   "text": "சிறுகோளைக் கண்டுபிடி. உண்மையான SPHEREx படங்களில் ஒரு நிமிட விளையாட்டு: அதே வானப் பகுதி மாறி மாறித் தெரியும், அதில் ஒரு புள்ளி உண்மையான சிறுகோள். Easy நிலையில் நட்சத்திரங்கள் நீக்கப்படும்; Real நிலையில் SPHEREx எடுத்தபடியே படங்கள் தெரியும். Find the asteroid அழுத்தி, நகரும் புள்ளியைத் தட்டுங்கள். Pause, அம்புக்குறிகள் வைத்து ஒவ்வொரு படமாகப் பாருங்கள்; மாட்டிக்கொண்டால் Hint. வென்றதும் கண்டுபிடிப்பு அட்டை செய்து நண்பருக்குச் சவால் விடுங்கள்."
+  },
+  {
+   "key": "1c2f9991",
+   "text": "பகிர். இதே காட்சியை (இடம், பெரிதாக்கம், நிறம், முறை) அப்படியே மீண்டும் திறக்கும் ஒரு இணைப்பை நகலெடுக்கிறது. Share அழுத்தி, இணைப்பை ஒரு செய்தியில் அல்லது பதிவில் ஒட்டுங்கள்."
+  },
+  {
+   "key": "c74daf5e",
+   "text": "கற்க. எளிய விளக்கங்கள், ஒரு சொற்களஞ்சியம், 18 பகுதிகளுக்குமான முழுச் சோதனை மதிப்பெண் அட்டவணை (ஆங்கிலத்தில்). Learn அழுத்தித் திறங்கள். Close அல்லது Esc மூலம் திரும்பலாம்."
+  },
+  {
+   "key": "c068f03a",
+   "text": "அதிக மாறுபாடு. எளிதாகப் படிக்க, தடித்த விளிம்புகளும் பிரகாசமான எழுத்துகளும். அழுத்தி இயக்கவும் அணைக்கவும்."
+  },
+  {
+   "key": "0ec4838e",
+   "text": "கீழ்ப் பட்டை. போனில் கட்டுப்பாடுகள், ஏஜென்ட்கள், முடிவு அட்டை மூன்றும் ஒரே தாளில் இருக்கும், அதனால் வானம் தெரிந்துகொண்டே இருக்கும். Controls, Agents, Result தட்டி மாற்றுங்கள். திறந்ததை மீண்டும் தட்டினால் மடியும். Result மேல் ஒரு புள்ளி என்றால் புதிய முடிவு."
+  },
+  {
+   "key": "30b46090",
+   "text": "எல்லாக் கருவிகளும் இப்போது உங்களுக்குத் தெரியும். ARCNAVE முழுவதும் இவ்வளவுதான். முழு வானத்தில் தொடங்கி, ஒரு அடையாளத்தைத் தட்டி, பிளிங்க் செய்யுங்கள். அல்லது 90 வினாடிக் கதையைப் பாருங்கள்."
+  }
+ ],
+ "hi": [
+  {
+   "key": "9446a1a6",
+   "text": "कलम से खोजा गया ग्रह. यूरेनस अपने अनुमानित रास्ते से भटकता रहा। 1846 में उर्बें ले वेरिए ने कागज़ पर हिसाब लगाया कि उसे खींचने वाला कोई अनदेखा ग्रह कहाँ होना चाहिए। योहान गाले ने वहाँ दूरबीन घुमाई और उस जगह से एक डिग्री से भी कम दूरी पर नेपच्यून मिल गया। तब से खगोलविद पूछते आ रहे हैं: क्या कोई और भी है?"
+  },
+  {
+   "key": "9360128a",
+   "text": "एक बिंदु उछला. पर्सिवल लोवेल ने उस खोए हुए संसार को \"प्लैनेट X\" नाम दिया। जनवरी 1930 में उनकी वेधशाला में 24 साल के क्लाइड टॉमबॉ ने छह दिन के अंतर पर उन्हीं तारों की तस्वीरें लीं और ब्लिंक कंपेरेटर में दोनों प्लेटों को बारी-बारी से देखा। तारे स्थिर रहे। एक धुंधला बिंदु उछला। वह प्लूटो था।"
+  },
+  {
+   "key": "e2a79239",
+   "text": "नौवाँ ग्रह?. 2016 में कॉन्स्टेंटिन बैटिगिन और माइक ब्राउन ने देखा कि नेपच्यून से परे के कुछ सबसे दूर के बर्फ़ीले पिंड एक ही दिशा में घूमते हैं, मानो कोई बड़ी चीज़ उन्हें हाँक रही हो। उन्होंने \"प्लैनेट नाइन\" का प्रस्ताव रखा, जो पृथ्वी से कई गुना भारी हो। किसी ने उसे देखा नहीं है। यह अभी भी केवल एक परिकल्पना है।"
+  },
+  {
+   "key": "f5a6b9f1",
+   "text": "अब एक दूरबीन पूरा आकाश देखती है. NASA का SPHEREx मार्च 2025 में लॉन्च हुआ। यह हर छह महीने में पूरे आकाश का नक्शा इन्फ्रारेड प्रकाश के 102 रंगों में बनाता है; इस पैमाने पर हर लकीर एक रंग है। इसका संग्रह सबके लिए खुला है, और आप अभी उसी का इस्तेमाल करने वाले हैं।"
+  },
+  {
+   "key": "c9ee2d33",
+   "text": "पाँच एजेंट असली तस्वीरें लाते हैं. हो गया। उन्होंने NASA के संग्रह में आकाश के इस हिस्से की 348 SPHEREx तस्वीरें ढूँढीं, 3 आकाश चक्करों से रंग में मेल खाती 24 सबसे अच्छी तस्वीरें डाउनलोड कीं, उन्हें तारों के सहारे मिलाया और तुलना की।"
+  },
+  {
+   "key": "36d8d089",
+   "text": "अब आप टॉमबॉ हैं. एक आकाश चक्कर की तस्वीरें अब टॉमबॉ की प्लेटों की तरह बदल रही हैं। तारे अपनी जगह रहते हैं। घेरे के अंदर: क्षुद्रग्रह 3865 Lindbloom, एक असली क्षुद्रग्रह, जिसे SPHEREx ने 2 तस्वीरों में चलते हुए पकड़ा, ठीक वहीं जहाँ उसकी ज्ञात कक्षा कहती है।"
+  },
+  {
+   "key": "54e4b682",
+   "text": "अब खुद एक खोजिए. न घेरा, न मदद: \"Find the asteroid\" खेल में आप इन्हीं असली तस्वीरों को पलटते हैं और चलते बिंदु पर टैप करते हैं। लगभग एक मिनट लगता है, और आप अपना नतीजा किसी दोस्त को चुनौती के रूप में भेज सकते हैं।"
+  },
+  {
+   "key": "3fd53a9d",
+   "text": "अपना खुद का प्लैनेट X छिपाइए. प्लैनेट X एक परिकल्पना है: किसी ने उसे नहीं देखा, और ARCNAVE भी ऐसा दावा नहीं करता। इसलिए हम सवाल उलट देते हैं। आप इन असली तस्वीरों में एक नकली ग्रह छिपाते हैं, एजेंट उसे ढूँढते हैं, और आप जानते हैं कि कोई ग्रह कितना धुंधला और कितना दूर होकर भी पकड़ा जा सकता है।"
+  },
+  {
+   "key": "5b89a2cc",
+   "text": "18 क्षेत्रों पर परीक्षण, चूकें भी शामिल. हमने पहले से चुने गए 18 क्षेत्रों में 19,880 नकली ग्रह छिपाए। 1000 AU दूर का ग्रह 18 में से 18 क्षेत्रों में पकड़ा गया, एक सामान्य क्षेत्र में मैग्निट्यूड 17.0 तक। 300 AU पर केवल 18 में से 12 में, और हम वे चूकें भी दिखाते हैं।"
+  },
+  {
+   "key": "2820e5f4",
+   "text": "आकाश अब आपका है. आकाश में कोई भी जगह टाइप कीजिए और एजेंट शुरू हो जाएँगे। देखिए क्या उछलता है। कुछ मिले, तो मानने से पहले उसे ज्ञात पिंडों के घेरों से मिलाइए: असली खगोलविद भी ऐसे ही काम करते हैं।"
+  },
+  {
+   "key": "27fc4fa3",
+   "text": "हर टूल, एक-एक करके. यह गाइड ARCNAVE के हर टूल को रोशन करती है और बताती है कि वह किस काम का है और उसे कैसे इस्तेमाल करें। पीछे एक असली उदाहरण (असली SPHEREx तस्वीरों में क्षुद्रग्रह 3865 लिंडब्लूम) लोड होता है, ताकि हर टूल असली डेटा दिखाए। Next या → कुंजी दबाइए। ऊपर की सूची से सीधे किसी भी टूल पर जाइए। Esc से गाइड बंद होती है।"
+  },
+  {
+   "key": "f560bde2",
+   "text": "पूरा आकाश. पूरे आकाश को एक अंडाकार में दिखाता है: 2MASS निकट-इन्फ्रारेड सर्वे, वह प्रकाश जो SPHEREx भी देखता है (1.2 से 2.2 µm), बीच में आकाशगंगा। सफ़ेद बिंदु प्रसिद्ध जगहें हैं, नारंगी घेरा क्षुद्रग्रह का उदाहरण है, सियान वर्ग हमारे 18 परीक्षण क्षेत्र हैं। Whole sky दबाइए। आकाश घुमाने के लिए खींचिए, ज़ूम के लिए स्क्रॉल या पिंच कीजिए, किसी निशान पर क्लिक करके वहाँ जाइए और एजेंट शुरू कीजिए।"
+  },
+  {
+   "key": "80ef63e5",
+   "text": "Fly to (उड़कर जाएँ). आपको आकाश में किसी भी जगह ले जाता है और वहाँ एजेंट शुरू करता है। M42, Andromeda या Pleiades जैसा कोई नाम, या RA और Dec डिग्री में (जैसे 190 -4) टाइप कीजिए। Enter या Fly to दबाइए।"
+  },
+  {
+   "key": "c6b67ee6",
+   "text": "पृष्ठभूमि आकाश. संदर्भ के लिए दूसरे सर्वे द्वारा ली गई आकाश की पृष्ठभूमि तस्वीर। असली SPHEREx तस्वीरें इसके ऊपर बनती हैं। 2MASS (निकट-इन्फ्रारेड) डिफ़ॉल्ट है। तुलना के लिए AllWISE (लंबी इन्फ्रारेड) या DSS2 (दृश्य प्रकाश, जो आपकी आँखें देखतीं) चुनिए।"
+  },
+  {
+   "key": "7cb79fee",
+   "text": "क्रांतिवृत्त (Ecliptic). वह रास्ता जिस पर सूर्य और ग्रह आकाश में चलते हैं। क्षुद्रग्रह, धूमकेतु और कोई भी दूर का ग्रह इसके पास रहते हैं, इसलिए यह बताता है कि कहाँ देखें। दबाने पर क्रांतिवृत्त एक सियान बिंदुदार रेखा के रूप में दिखता है। दोबारा दबाने पर छिप जाता है।"
+  },
+  {
+   "key": "9fa59e28",
+   "text": "उदाहरण. साइट के साथ सहेजे गए दो असली मामले। NASA का संग्रह व्यस्त हो तब भी ये कुछ सेकंड में खुलते हैं। दबाइए, फिर Catch a real asteroid या See a false alarm caught चुनिए।"
+  },
+  {
+   "key": "63a1937d",
+   "text": "विवरण पट्टी. आप कहाँ हैं और क्या देख रहे हैं: आकाश में स्थिति (RA, Dec), तस्वीर की तरंगदैर्ध्य, कौन सा आकाश चक्कर (epoch) और दृश्य कितना चौड़ा है (FoV)। कुछ दबाना नहीं है: आपके घूमने के साथ यह अपने आप बदलता है।"
+  },
+  {
+   "key": "23853d9e",
+   "text": "पाँच एजेंट. छोटे प्रोग्राम जो काम क्रम से करते हैं: Navigator आकाश की ओर मुड़ता है, Archivist SPHEREx तस्वीरें ढूँढता है, Aligner उन्हें डाउनलोड करके तारों के सहारे मिलाता है, Analyst तुलना करता है, Reporter रिपोर्ट लिखता है। साधारण कोड, AI नहीं। हर कदम पूरा होते देखिए। Auto-run चालू हो तो जगह टाइप करते ही ये शुरू हो जाते हैं; बिना लोड किए घूमने के लिए इसे बंद कीजिए।"
+  },
+  {
+   "key": "f70b2b62",
+   "text": "यहाँ एजेंट चलाएँ. स्क्रीन के बीच वाली जगह के लिए आपकी सेटिंग के साथ SPHEREx तस्वीरें लोड करता है। किसी जगह पर जाइए, Field size (0.25° से 1° चौड़ा) और Images per epoch (8 से गहरी, साफ़ तस्वीरें, पर लोड धीमा) चुनिए, फिर Run agents here दबाइए।"
+  },
+  {
+   "key": "af05e505",
+   "text": "टाइम मशीन. इस जगह की हर असली तस्वीर, एक-एक करके, जिस क्रम में ली गई। Image स्लाइडर खींचिए, या पट्टी में किसी छोटी तस्वीर पर क्लिक कीजिए। E1, E2, E3 लगभग छह महीने के अंतर वाले आकाश चक्कर हैं।"
+  },
+  {
+   "key": "f6efeaac",
+   "text": "ब्लिंक. टॉमबॉ का तरीका: तस्वीरें अपने आप फ़्लिप-बुक की तरह पलटती हैं। तारे स्थिर रहते हैं; जो उछले, वह चल रहा है। बस आकाश देखिए। स्लाइडर चुनता है कि कौन सा आकाश चक्कर पलटना है, या सभी।"
+  },
+  {
+   "key": "2b070a00",
+   "text": "स्वाइप. दो आकाश चक्कर एक के ऊपर एक, बीच में एक विभाजक रेखा: पहले वाला बाईं ओर, बाद वाला दाईं ओर। Swipe स्लाइडर को खींचिए और ऐसी चीज़ खोजिए जो एक तरफ़ हो पर दूसरी तरफ़ न हो।"
+  },
+  {
+   "key": "acebe067",
+   "text": "अंतर. बाद वाले चक्कर में से पहले वाला घटाया जाता है। तारे कट जाते हैं। चलती चीज़ एक नारंगी धब्बा (जहाँ वह अब है) और उसके पास एक सियान धब्बा (जहाँ वह थी) छोड़ती है। आकाश में नारंगी-सियान जोड़े खोजिए। बचे हुए छोटे धब्बे बस शोर (noise) हैं।"
+  },
+  {
+   "key": "b706cb56",
+   "text": "बदलाव. एजेंटों को मिला हर बदलाव, समझाकर: पास से गुज़रता ज्ञात क्षुद्रग्रह, चमकीला हुआ तारा, या कुछ जो अभी समझ नहीं आया। डिटेक्टर की गड़बड़ियाँ गिनी जाती हैं पर दिखाई नहीं जातीं। By epoch और By image वही बदलाव रंगीन नक्शे के रूप में दिखाते हैं। किसी प्रकार पर टैप करके उसके धब्बे एक-एक करके देखिए; हर कार्ड में वह तस्वीर और वहाँ का सामान्य आकाश बारी-बारी दिखते हैं। या By epoch या By image चुनकर समयरेखा पर किसी पट्टी पर क्लिक कीजिए।"
+  },
+  {
+   "key": "54958f96",
+   "text": "प्लैनेट X छिपाइए. खोज नहीं, परीक्षण: आप इन असली तस्वीरों में एक नकली ग्रह छिपाते हैं और एजेंट उसे ढूँढने की कोशिश करते हैं। प्लैनेट X ख़ुद केवल एक परिकल्पना है, और ARCNAVE उसे नहीं खोजता। Distance और Brightness सेट कीजिए, फिर Hide it, agents seek दबाइए। Map this field 1,120 नकली ग्रह आज़माता है और दिखाता है कि कौन से पकड़े जा सकते हैं।"
+  },
+  {
+   "key": "e1325bd0",
+   "text": "गति प्रयोगशाला. डेटा नहीं, एक सिमुलेशन: कोई दूर का ग्रह सालों में आकाश में कैसा रास्ता बनाएगा। पृथ्वी की अपनी कक्षा से हर साल एक डोलन, साथ में धीमा खिसकना। Years और Distance खींचिए। ग्रह जितना दूर, उसका डोलन उतना छोटा।"
+  },
+  {
+   "key": "f7b4b5ab",
+   "text": "रंग और प्रीसेट. SPHEREx आकाश को इन्फ्रारेड प्रकाश के 102 रंगों में खींचता है। यह चुनता है कि आप कौन सा रंग देखें, नकली रंग (false colour) में। Color स्लाइडर खींचकर छोड़िए, या कोई प्रीसेट दबाइए: Hot stars (1 µm), Dust & Ice (3 µm, जहाँ पानी की बर्फ़ प्रकाश सोखती है) या Cool worlds (4.5 µm)। फिर एजेंट उस रंग में ली गई असली तस्वीरें लाते हैं, इसलिए कुछ सेकंड लगते हैं।"
+  },
+  {
+   "key": "34ae19e1",
+   "text": "नतीजा कार्ड. किसी एक पिंड का सबूत: एक स्थिति (Confirmed known asteroid, Likely artefact या Unconfirmed), पहले और बाद की तस्वीरों के टुकड़े, और उसके पीछे के आँकड़े। आकाश में किसी घेरे या निशान पर क्लिक करके उसका कार्ड खोलिए। फ़ोन पर यह नीचे Result में है।"
+  },
+  {
+   "key": "1ab6bcc7",
+   "text": "खोज कार्ड. आप जो देख रहे हैं उसे पोस्ट करने लायक लूपिंग GIF बनाता है: हर SPHEREx तस्वीर से आकाश का वही हिस्सा, उसकी स्थिति, तारीख़ें और इन्फ्रारेड रंग, और एक ईमानदार लेबल (ज्ञात क्षुद्रग्रह, अपुष्ट बदलाव, या बस एक क्षेत्र)। कोई पिंड चुनिए (या किसी जगह पर ज़ूम कीजिए) और Discovery card दबाइए। फिर Share, Download GIF, या इस दृश्य के लिंक वाला तैयार पोस्ट टेक्स्ट कॉपी कीजिए।"
+  },
+  {
+   "key": "56f3e329",
+   "text": "क्षुद्रग्रह खोजिए. असली SPHEREx तस्वीरों पर एक मिनट का खेल: आकाश का वही हिस्सा पलटता है, और एक बिंदु असली क्षुद्रग्रह है। Easy स्तर तारे हटा देता है; Real स्तर तस्वीरें वैसे ही दिखाता है जैसे SPHEREx ने लीं। Find the asteroid दबाइए और चलते बिंदु पर टैप कीजिए। Pause और तीरों से एक-एक तस्वीर देखिए; अटक जाएँ तो Hint। जीतिए, फिर खोज कार्ड बनाकर किसी दोस्त को चुनौती दीजिए।"
+  },
+  {
+   "key": "d9797110",
+   "text": "साझा करें. एक लिंक कॉपी करता है जो ठीक यही दृश्य दोबारा खोलता है: जगह, ज़ूम, रंग और मोड। Share दबाइए और लिंक किसी संदेश या पोस्ट में चिपकाइए।"
+  },
+  {
+   "key": "d6afb4a4",
+   "text": "सीखें. सरल भाषा में समझाइश, एक शब्दावली और सभी 18 क्षेत्रों का पूरा परीक्षण स्कोरकार्ड (अंग्रेज़ी में)। खोलने के लिए Learn दबाइए। Close या Esc से वापस आइए।"
+  },
+  {
+   "key": "e81c7298",
+   "text": "हाई कॉन्ट्रास्ट. आसानी से पढ़ने के लिए गहरी रेखाएँ और चमकदार अक्षर। चालू या बंद करने के लिए दबाइए।"
+  },
+  {
+   "key": "701bf4d6",
+   "text": "नीचे की पट्टी. फ़ोन पर नियंत्रण, एजेंट और नतीजा कार्ड एक ही शीट में रहते हैं, ताकि आकाश दिखता रहे। बदलने के लिए Controls, Agents या Result पर टैप कीजिए। खुले वाले पर दोबारा टैप करने से वह मुड़ जाता है। Result पर बिंदु का मतलब नया नतीजा।"
+  },
+  {
+   "key": "c600ef38",
+   "text": "अब आप हर टूल जानते हैं. ARCNAVE बस इतना ही है। पूरे आकाश से शुरू कीजिए, किसी प्रसिद्ध जगह पर क्लिक कीजिए और ब्लिंक कीजिए। या 90 सेकंड की कहानी देखिए।"
+  }
+ ],
+ "es": [
+  {
+   "key": "dd269e5b",
+   "text": "Un planeta hallado con una pluma. Urano se desviaba una y otra vez de su órbita prevista. En 1846 Urbain Le Verrier calculó, sobre el papel, dónde tenía que estar un planeta invisible que tiraba de él. Johann Galle apuntó allí un telescopio y encontró Neptuno a menos de un grado del lugar. Desde entonces los astrónomos se preguntan: ¿hay otro más?"
+  },
+  {
+   "key": "73de63a2",
+   "text": "Un punto saltó. Percival Lowell llamó \"Planeta X\" al mundo que faltaba. En su observatorio, en enero de 1930, Clyde Tombaugh, de 24 años, fotografió las mismas estrellas con seis días de diferencia y alternó las dos placas en un comparador de parpadeo. Las estrellas no se movieron. Un punto débil saltó. Era Plutón."
+  },
+  {
+   "key": "762e656e",
+   "text": "¿Un noveno planeta?. En 2016 Konstantin Batygin y Mike Brown notaron que algunos de los mundos helados más lejanos, más allá de Neptuno, se alejan en la misma dirección, como si algo grande los arreara. Propusieron el \"Planeta Nueve\", varias veces más pesado que la Tierra. Nadie lo ha visto. Sigue siendo una hipótesis."
+  },
+  {
+   "key": "ac406925",
+   "text": "Ahora un telescopio mira todo el cielo. SPHEREx, de la NASA, lanzado en marzo de 2025, cartografía todo el cielo cada seis meses en 102 colores de luz infrarroja, una marca por color en esta regla. Su archivo está abierto a todo el mundo, y es lo que vas a usar ahora."
+  },
+  {
+   "key": "b47a3914",
+   "text": "Cinco agentes traen imágenes reales. Listo. Encontraron 348 imágenes de SPHEREx de esta zona del cielo en el archivo de la NASA, descargaron las 24 mejores con el mismo color de 3 pasadas por el cielo, las alinearon con las estrellas y las compararon."
+  },
+  {
+   "key": "d79f1c95",
+   "text": "Te toca ser Tombaugh. Las imágenes de una pasada se alternan ahora como las placas de Tombaugh. Las estrellas se quedan quietas. Dentro del anillo: el asteroide 3865 Lindbloom, uno real, captado en movimiento en 2 imágenes de SPHEREx, justo donde dice su órbita conocida."
+  },
+  {
+   "key": "8b734ac4",
+   "text": "Ahora encuentra uno tú. Sin anillo y sin ayuda: en Find the asteroid pasas las mismas imágenes reales y tocas el punto que se mueve. Lleva cerca de un minuto, y puedes mandar tu resultado a un amigo como reto."
+  },
+  {
+   "key": "68fcdc39",
+   "text": "Esconde tu propio Planeta X. El Planeta X es una hipótesis: nadie lo ha visto, y ARCNAVE no dice haberlo visto. Así que damos la vuelta a la pregunta. Tú escondes un planeta falso en estas imágenes reales, los agentes lo buscan, y aprendes lo débil y lejano que puede estar un planeta y aun así ser detectado."
+  },
+  {
+   "key": "ca7445b3",
+   "text": "Probado en 18 campos, fallos incluidos. Escondimos 19,880 planetas falsos en 18 campos elegidos antes de empezar. Un planeta a 1000 UA se detectó en 18 de 18 campos, hasta magnitud 17.0 en un campo típico. A 300 UA solo en 12 de 18, y también te mostramos esos fallos."
+  },
+  {
+   "key": "b529c55e",
+   "text": "El cielo ahora es tuyo. Escribe cualquier lugar del cielo y los agentes empiezan. Busca lo que salta. Si encuentras algo, compáralo con los anillos de objetos conocidos antes de creértelo: así trabajan también los astrónomos de verdad."
+  },
+  {
+   "key": "990c784f",
+   "text": "Todas las herramientas, una a una. Esta guía ilumina cada herramienta de ARCNAVE y explica para qué sirve y cómo se usa. Detrás se carga un ejemplo real (el asteroide 3865 Lindbloom en imágenes reales de SPHEREx), así que cada herramienta muestra datos reales. Pulsa Next o la tecla →. Salta a cualquier herramienta con el menú de arriba. Esc cierra la guía."
+  },
+  {
+   "key": "fbfc283f",
+   "text": "Todo el cielo. Muestra el cielo entero en un óvalo: el sondeo 2MASS en infrarrojo cercano, luz que SPHEREx también ve (1,2 a 2,2 µm), con la Vía Láctea en el centro. Los puntos blancos son lugares famosos, el anillo naranja es el ejemplo del asteroide y los cuadrados cian son nuestros 18 campos de prueba. Pulsa Whole sky. Arrastra para girar el cielo, desplaza o pellizca para hacer zoom, y haz clic en un marcador para ir allí y lanzar los agentes."
+  },
+  {
+   "key": "dad69685",
+   "text": "Fly to (volar a). Te lleva a cualquier lugar del cielo y lanza allí los agentes. Escribe un nombre como M42, Andromeda o Pleiades, o una posición en RA y Dec en grados, como 190 -4. Pulsa Enter o Fly to."
+  },
+  {
+   "key": "161cbf76",
+   "text": "Cielo de fondo. La imagen de fondo del cielo, tomada por otros sondeos, como contexto. Las imágenes reales de SPHEREx se dibujan encima. 2MASS (infrarrojo cercano) es el predeterminado. Cambia a AllWISE (infrarrojo más largo) o DSS2 (luz visible, lo que verían tus ojos) para comparar."
+  },
+  {
+   "key": "f9b27f6c",
+   "text": "Eclíptica. El camino que siguen el Sol y los planetas por el cielo. Los asteroides, los cometas y cualquier planeta lejano se mantienen cerca de ella, así que te dice dónde mirar. Púlsalo para dibujar la eclíptica como una línea cian discontinua. Púlsalo otra vez para ocultarla."
+  },
+  {
+   "key": "432d822e",
+   "text": "Ejemplos. Dos casos reales guardados con el sitio. Se abren en segundos, incluso cuando el archivo de la NASA está ocupado. Púlsalo y elige Catch a real asteroid o See a false alarm caught."
+  },
+  {
+   "key": "0138ca5f",
+   "text": "Panel de datos. Dónde estás y qué estás mirando: la posición en el cielo (RA, Dec), la longitud de onda de la imagen, qué pasada por el cielo (época) y lo ancha que es la vista (FoV). No hay nada que pulsar: se actualiza mientras te mueves."
+  },
+  {
+   "key": "da2667d7",
+   "text": "Los cinco agentes. Pequeños programas que hacen el trabajo en orden: Navigator apunta al cielo, Archivist encuentra las imágenes de SPHEREx, Aligner las descarga y las alinea con las estrellas, Analyst las compara y Reporter lo resume. Código normal, no IA. Mira cómo se completa cada paso. Con Auto-run activado, escribir un lugar los pone en marcha; desactívalo para mirar sin cargar nada."
+  },
+  {
+   "key": "75b3fd86",
+   "text": "Lanzar los agentes aquí. Carga imágenes de SPHEREx para el punto del centro de la pantalla, con tus ajustes. Muévete a un punto, elige Field size (de 0,25° a 1° de ancho) e Images per epoch (8 da imágenes más profundas y limpias, pero carga más despacio) y pulsa Run agents here."
+  },
+  {
+   "key": "041554c5",
+   "text": "Máquina del tiempo. Cada imagen real de este punto, una a una, en el orden en que se tomaron. Arrastra el control Image o haz clic en una miniatura de la tira. E1, E2 y E3 son pasadas por el cielo separadas unos seis meses."
+  },
+  {
+   "key": "70b6a2d5",
+   "text": "Parpadeo. El método de Tombaugh: las imágenes se alternan solas como un folioscopio. Las estrellas se quedan quietas; lo que salta se está moviendo. Solo mira el cielo. El control elige qué pasada alternar, o todas."
+  },
+  {
+   "key": "e19782ac",
+   "text": "Deslizar. Dos pasadas por el cielo superpuestas con una línea divisoria: la anterior a la izquierda y la posterior a la derecha. Arrastra el control Swipe y busca algo que esté en un lado pero no en el otro."
+  },
+  {
+   "key": "d10430cc",
+   "text": "Diferencia. La pasada anterior restada de la posterior. Las estrellas se anulan. Un objeto en movimiento deja una mancha naranja (donde está ahora) junto a una mancha cian (donde estaba). Busca parejas naranja y cian en el cielo. El moteado que queda es solo ruido."
+  },
+  {
+   "key": "f1a7dcaa",
+   "text": "Cambios. Cada cambio que encontraron los agentes, explicado: un asteroide conocido que pasa, una estrella que se hizo más brillante o algo aún sin explicar. Los fallos del detector se cuentan pero no se muestran. By epoch y By image muestran los mismos cambios como mapas de color. Toca un tipo para recorrer sus puntos uno a uno; cada tarjeta alterna entre esa imagen y el cielo habitual en ese lugar. O elige By epoch o By image y haz clic en una barra de la línea de tiempo."
+  },
+  {
+   "key": "e339ee0c",
+   "text": "Esconder el Planeta X. Una prueba, no una búsqueda: escondes un planeta falso en estas imágenes reales y los agentes intentan encontrarlo. El Planeta X en sí es solo una hipótesis, y ARCNAVE no lo busca. Ajusta Distance y Brightness y pulsa Hide it, agents seek. Map this field prueba 1.120 planetas falsos y dibuja cuáles se pueden detectar."
+  },
+  {
+   "key": "b4060f89",
+   "text": "Laboratorio de movimiento. Una simulación, no datos: el camino que trazaría en el cielo un planeta lejano a lo largo de los años. Un vaivén anual por la propia órbita de la Tierra, más una deriva lenta. Arrastra Years y Distance. Cuanto más lejos el planeta, más pequeño su vaivén."
+  },
+  {
+   "key": "edba02d3",
+   "text": "Color y preajustes. SPHEREx fotografía el cielo en 102 colores de luz infrarroja. Esto elige qué color ves, mostrado en falso color. Arrastra el control Color y suéltalo, o pulsa un preajuste: Hot stars (1 µm), Dust & Ice (3 µm, donde absorbe el hielo de agua) o Cool worlds (4,5 µm). Los agentes traen entonces las imágenes reales tomadas en ese color, así que tarda unos segundos."
+  },
+  {
+   "key": "12098091",
+   "text": "Tarjeta de resultado. Las pruebas sobre un objeto: un estado (Confirmed known asteroid, Likely artefact o Unconfirmed), recortes de imagen de antes y después, y los números detrás. Haz clic en cualquier anillo o marca del cielo para abrir su tarjeta. En el móvil está en Result, abajo."
+  },
+  {
+   "key": "7f0009d0",
+   "text": "Tarjeta de descubrimiento. Convierte lo que estás mirando en un GIF en bucle para publicar: la misma zona del cielo en cada imagen de SPHEREx, con su posición, fechas y color infrarrojo, y una etiqueta honesta (asteroide conocido, cambio sin confirmar o solo un campo). Elige un objeto (o haz zoom en un punto) y pulsa Discovery card. Luego Share, Download GIF, o copia el texto listo para publicar con un enlace a esta vista."
+  },
+  {
+   "key": "ae217f54",
+   "text": "Encuentra el asteroide. Un juego de un minuto con imágenes reales de SPHEREx: la misma zona del cielo se alterna y un punto es un asteroide real. El nivel Easy quita las estrellas; el nivel Real muestra las imágenes tal como las tomó SPHEREx. Pulsa Find the asteroid y toca el punto que se mueve. Pause y las flechas avanzan imagen a imagen; Hint ayuda si te atascas. Gana y crea una tarjeta de descubrimiento para retar a un amigo."
+  },
+  {
+   "key": "5c3f7682",
+   "text": "Compartir. Copia un enlace que vuelve a abrir exactamente esta vista: el lugar, el zoom, el color y el modo. Pulsa Share y pega el enlace en un mensaje o una publicación."
+  },
+  {
+   "key": "2eac32d4",
+   "text": "Aprender. Explicaciones sencillas, un glosario y la tabla completa de pruebas de los 18 campos (en inglés). Pulsa Learn para abrirlo. Close o Esc te devuelven."
+  },
+  {
+   "key": "b1fa18f6",
+   "text": "Alto contraste. Contornos más marcados y texto más brillante, para leer mejor. Púlsalo para activarlo o desactivarlo."
+  },
+  {
+   "key": "2c536e32",
+   "text": "Barra inferior. En el móvil, los controles, los agentes y la tarjeta de resultado comparten una hoja, para que el cielo siga visible. Toca Controls, Agents o Result para cambiar. Toca otra vez el que está abierto para plegarlo. Un punto en Result significa un resultado nuevo."
+  },
+  {
+   "key": "7adfaeed",
+   "text": "Ya conoces todas las herramientas. Eso es todo ARCNAVE. Empieza con todo el cielo, haz clic en un lugar famoso y usa el parpadeo. O mira la historia de 90 segundos."
+  }
+ ]
+}

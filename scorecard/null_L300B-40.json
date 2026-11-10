@@ -1,0 +1,76 @@
+{
+ "id": "null_L300B-40",
+ "eclLon": 300,
+ "eclLat": -40,
+ "ra": 317.3371,
+ "dec": -58.6095,
+ "galLat": -40.7,
+ "field": "L300B-40",
+ "version": "0.29",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-10-25T11:30:36.233Z",
+ "real": {
+  "epochs": 4,
+  "changes": 1,
+  "artefacts": 1,
+  "confirmed": 0,
+  "unconfirmed": 0
+ },
+ "splits": [
+  {
+   "pair": [
+    1,
+    2
+   ],
+   "colours": 2,
+   "skipped": "fewer than 4 colours with an image in both passes"
+  },
+  {
+   "pair": [
+    1,
+    3
+   ],
+   "colours": 2,
+   "skipped": "fewer than 4 colours with an image in both passes"
+  },
+  {
+   "pair": [
+    1,
+    4
+   ],
+   "colours": 2,
+   "skipped": "fewer than 4 colours with an image in both passes"
+  },
+  {
+   "pair": [
+    2,
+    3
+   ],
+   "colours": 2,
+   "skipped": "fewer than 4 colours with an image in both passes"
+  },
+  {
+   "pair": [
+    2,
+    4
+   ],
+   "colours": 2,
+   "skipped": "fewer than 4 colours with an image in both passes"
+  },
+  {
+   "pair": [
+    3,
+    4
+   ],
+   "colours": 2,
+   "skipped": "fewer than 4 colours with an image in both passes"
+  }
+ ],
+ "comparisons": 0,
+ "falseAlarms": 0,
+ "rawFlags": 0,
+ "status": "no-split",
+ "totalSecs": 1036,
+ "savedAt": "2026-10-25T11:47:52.377Z"
+}

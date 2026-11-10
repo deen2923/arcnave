@@ -1,0 +1,59 @@
+{
+ "id": "null_L120B+00",
+ "eclLon": 120,
+ "eclLat": 0,
+ "ra": 122.1813,
+ "dec": 20.1504,
+ "galLat": 25.7,
+ "field": "L120B+00",
+ "version": "0.29",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-10-25T10:12:25.843Z",
+ "real": {
+  "epochs": 2,
+  "changes": 0,
+  "artefacts": 0,
+  "confirmed": 0,
+  "unconfirmed": 0
+ },
+ "splits": [
+  {
+   "pair": [
+    1,
+    2
+   ],
+   "colours": 8,
+   "matched": 505,
+   "nearMiss": 0,
+   "misaligned": false,
+   "raw": 0,
+   "artefacts": 0,
+   "shown": 0,
+   "snr": [],
+   "control": [
+    {
+     "ab": 14,
+     "hidden": 16,
+     "found": 15
+    },
+    {
+     "ab": 15,
+     "hidden": 16,
+     "found": 14
+    },
+    {
+     "ab": 16,
+     "hidden": 16,
+     "found": 12
+    }
+   ]
+  }
+ ],
+ "comparisons": 1,
+ "falseAlarms": 0,
+ "rawFlags": 0,
+ "status": "ok",
+ "totalSecs": 21,
+ "savedAt": "2026-10-25T10:12:46.969Z"
+}

@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>About ARCNAVE: data, method and limits</title>
+<meta name="description" content="How ARCNAVE works: which NASA SPHEREx data it uses, how images are cleaned, aligned and compared, how it was tested on 18 sky fields, and what it cannot do.">
+<meta name="theme-color" content="#05070f">
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icon-180.png"><link rel="manifest" href="/manifest.webmanifest">
+<meta property="og:type" content="article"><meta property="og:site_name" content="ARCNAVE">
+<meta property="og:title" content="About ARCNAVE: data, method and limits">
+<meta property="og:description" content="Real NASA SPHEREx images, compared over time in the browser. How it works, how it was tested, and what it cannot do.">
+<meta property="og:url" content="%ORIGIN%/about.html"><meta property="og:image" content="%ORIGIN%/og.jpg">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="%ORIGIN%/og.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--void:#05070f;--ink:#0a0e1a;--line:#222b40;--line2:#323d57;--text:#eef1f7;--dust:#8e98ae;--ir:#ffb05a;--cy:#5fe3f0;--ok:#5ff0a0;--bad:#ff7a7a;--vi:#9b8cff;
+--spec:linear-gradient(90deg,hsl(190 85% 58%),hsl(115 85% 58%),hsl(40 85% 58%));--ui:'Archivo',system-ui,sans-serif}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--void);color:var(--text);font:400 16px/1.65 var(--ui);font-variant-numeric:tabular-nums}
+a{color:var(--cy)}a:focus-visible,button:focus-visible{outline:2px solid #ffc46b;outline-offset:2px}
+.wrap{max-width:780px;margin:0 auto;padding:0 16px 80px}
+header{position:sticky;top:0;z-index:5;background:rgba(5,7,15,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:12px;padding-bottom:12px}
+.wm{font:800 1rem/1 var(--ui);letter-spacing:.16em;color:var(--ir);text-decoration:none}
+.back{display:inline-flex;align-items:center;gap:6px;padding:.45rem .9rem;border-radius:8px;background:var(--text);color:#070a12;font-weight:650;text-decoration:none;white-space:nowrap}
+.hero{padding:44px 0 8px}
+.spec{height:8px;width:min(360px,70%);background:var(--spec);-webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 4px);mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 4px);margin-bottom:22px}
+h1{font:750 clamp(1.9rem,6vw,2.7rem)/1.1 var(--ui);letter-spacing:-.015em;margin:0 0 14px}
+.lede{font-size:1.12rem;color:#c4cbdb;margin:0}
+nav.toc{display:flex;flex-wrap:wrap;gap:6px;margin:26px 0 8px}
+nav.toc a{font-size:.85rem;padding:.3rem .75rem;border:1px solid var(--line2);border-radius:99px;color:var(--text);text-decoration:none}
+nav.toc a:hover{border-color:var(--text)}
+h2{font:700 1.45rem/1.25 var(--ui);margin:52px 0 12px;scroll-margin-top:72px}
+h2 small{display:block;font:600 .72rem/1 var(--ui);letter-spacing:.14em;text-transform:uppercase;color:var(--ir);margin-bottom:10px}
+h3{font:650 1.05rem/1.3 var(--ui);margin:24px 0 6px}
+p,li{color:#d3d8e4}
+.callout{border:1px solid var(--line2);border-left:3px solid var(--ir);background:var(--ink);border-radius:10px;padding:14px 16px;margin:18px 0}
+.callout.ok{border-left-color:var(--ok)}
+.callout b{color:var(--text)}
+table{width:100%;border-collapse:collapse;font-size:.92rem;margin:12px 0}
+th,td{text-align:left;padding:.55rem .6rem;border-bottom:1px solid var(--line);vertical-align:top}
+th{color:var(--dust);font-weight:600;font-size:.78rem;letter-spacing:.06em;text-transform:uppercase}
+td.n{text-align:right;white-space:nowrap}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+ol.flow{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+ol.flow li{counter-increment:s;position:relative;padding:0 0 16px 46px}
+ol.flow li::before{content:counter(s);position:absolute;left:0;top:0;width:30px;height:30px;border-radius:50%;border:1px solid var(--line2);display:grid;place-items:center;font-weight:700;color:var(--ir);font-size:.9rem}
+ol.flow li b{color:var(--text)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
+.stat{border:1px solid var(--line);border-radius:12px;padding:14px;background:var(--ink)}
+.stat b{display:block;font:750 1.6rem/1.1 var(--ui);color:var(--text)}
+.stat span{font-size:.82rem;color:var(--dust)}
+ul.lim li{margin:6px 0}
+.muted{color:var(--dust);font-size:.88rem}
+footer{border-top:1px solid var(--line);margin-top:60px;padding-top:20px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="wm" href="/">ARCNAVE</a><a class="back" href="/">Open the sky →</a></div></header>
+<main class="wrap">
+  <section class="hero">
+    <div class="spec" aria-hidden="true"></div>
+    <h1>Data, method and limits</h1>
+    <p class="lede">ARCNAVE lets anyone flip through real NASA SPHEREx images of the same patch of sky, taken months apart, and see what moved. This page says exactly where the data comes from, what the software does to it, how we tested it, and what it cannot do.</p>
+    <nav class="toc" aria-label="On this page"><a href="#what">What it is</a><a href="#data">The data</a><a href="#how">How it works</a><a href="#proof">Known asteroids</a><a href="#tested">How we tested it</a><a href="#limits">Limits</a><a href="#credits">Credits</a></nav>
+  </section>
+
+  <h2 id="what"><small>01</small>What ARCNAVE is, and is not</h2>
+  <p>In 1930 Clyde Tombaugh found Pluto by flipping between two photographs of the same stars, taken days apart: the stars stayed still, Pluto jumped. ARCNAVE does the same with SPHEREx, a NASA space telescope that photographs the whole sky every six months in 102 colours of near-infrared light. You pick any spot, the app fetches the real images of it, lines them up on the stars and shows you what changed.</p>
+  <div class="callout"><b>No discovery is claimed.</b> Every object ARCNAVE names is a <i>known</i> one, checked against an orbit catalogue. A change it cannot explain is labelled <i>unconfirmed</i>. Planet X (a hypothesised planet far beyond Neptune) is not confirmed to exist, and ARCNAVE does not search for it: the Hide Planet X tool only tests how faint a planet the method could catch.</div>
+
+  <h2 id="data"><small>02</small>The data</h2>
+  <p>Everything is fetched live from public archives (and kept in a cache on the server, so a spot opens in seconds the second time). Nothing is simulated except the clearly labelled fake planet in Hide Planet X.</p>
+  <div class="tw"><table>
+    <thead><tr><th>What</th><th>From</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td>SPHEREx spectral images</td><td><a href="https://irsa.ipac.caltech.edu/Missions/spherex.html" target="_blank" rel="noopener">NASA/IPAC Infrared Science Archive (IRSA)</a>: image list from its TAP service. Pixels are read from the same files in NASA's open-data copy on AWS (<a href="https://registry.opendata.aws/spherex-qr/" target="_blank" rel="noopener">s3://nasa-irsa-spherex</a>), only the rows of the field, which takes seconds instead of the 25 to 45 s of IRSA's cutout service; that service is the fallback. Checked: pixel for pixel identical to IRSA's own cutouts</td><td>Every image you see; all measurements</td></tr>
+      <tr><td>Known asteroids, comets and planets</td><td><a href="https://ssp.imcce.fr/webservices/skybot/" target="_blank" rel="noopener">SkyBoT</a> (Virtual Observatory Sky Body Tracker), asked for the exact time of each image. If SkyBoT cannot be reached, the <a href="https://minorplanetcenter.net/cgi-bin/checkmp.cgi" target="_blank" rel="noopener">Minor Planet Center's MPChecker</a> is asked instead (same orbit catalogue; positions printed to about 2″; the page says which one answered)</td><td>Orange rings, and the check that names a known asteroid</td></tr>
+      <tr><td>Orbit tracks</td><td><a href="https://ssd.jpl.nasa.gov/horizons/" target="_blank" rel="noopener">NASA JPL Horizons</a></td><td>The white track drawn for a chosen object</td></tr>
+      <tr><td>Background sky</td><td>2MASS (default), AllWISE or DSS2 sky surveys shown with <a href="https://aladin.cds.unistra.fr/AladinLite/" target="_blank" rel="noopener">Aladin Lite</a> (CDS, Strasbourg)</td><td>Context only: never measured</td></tr>
+      <tr><td>Object names</td><td>CDS Sesame name resolver</td><td>Typing "Orion Nebula" instead of coordinates</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">About SPHEREx: launched 11 March 2025, it surveys the entire sky every six months in 102 colour bands from 0.75 to 5 microns (<a href="https://www.jpl.nasa.gov/missions/spherex/" target="_blank" rel="noopener">NASA JPL mission page</a>). Each image covers one narrow slice of wavelength, so the colours you see in ARCNAVE are false colour.</p>
+  <p><b>New data releases.</b> ARCNAVE asks IRSA's archive for every spot when you open it (the list is kept for one day), so images from a new SPHEREx release show up without any change to the code. The Agents panel names the release (for example QR2, Quick Release 2, from the file path) and the date of the newest image at that spot.</p>
+  <p><b>Contamination flags.</b> Every SPHEREx image comes with a FLAGS plane from the pipeline. ARCNAVE leaves out pixels marked saturated, bleeding, halo or ghost, repairs single bad pixels (cosmic-ray hits, hot pixels) from their neighbours, and keeps "outlier"-only pixels for finding movers. Press <b>Flags</b> (Time machine or Blink) to see them on the image, with the counts for that image.</p>
+  <p><b>Light curves and deep views.</b> <b>Light curve</b> follows one star's brightness at one colour through every pass, with steady comparison stars measured the same way; stars too bright for SPHEREx are measured from their outer glow (tested: about 0.1 mag scatter). <b>Deep view</b> adds up the images of each of SPHEREx's six detectors in one pass, so fainter things show; the noise drop is measured (1.7 to 2.6 times for 6 images on Barnard's Star's field). While building these we found that R Draconis and RW Aurigae are saturated at the centre in almost every image, so their earlier numbers were withdrawn and re-measured; the cards say so. On 30 Oct 2026 both were measured again at several colours: RW Aurigae faded by 0.74 mag from Sep 2025 to Sep 2026 in all six colours checked (3.9 to 4.8 µm, 49 images, about ten times the uncertainty), and R Draconis showed the same pulse at 0.75, 0.80 and 0.85 µm (25 images); steady comparison stars scatter by about 0.1 mag.</p>
+  <p><b>Checked against Astropy.</b> The tool runs in your browser (JavaScript), so Astropy is used to check it: on two real SPHEREx files our sky-to-pixel maths, distortion included, agrees with <code>astropy.wcs</code> to 0.000″, and our predicted positions of Barnard's Star, Epsilon Indi B and WISE 0855 agree with Astropy's <code>apply_space_motion</code> within 0.07″ (<code>tools/astropy_check.py</code>).</p>
+  <p><b>Gaia stars and their motion.</b> Press <b>Gaia</b> to see the stars measured by ESA's Gaia satellite (from NASA/IPAC IRSA), placed where they are on the date of the SPHEREx images, with arrows for the fast movers (20 years of motion). Tap one to see how far away it is and how fast it moves; for the fastest, <b>Measure its motion</b> checks it in the SPHEREx images, with slow stars as a comparison. Tested on Wolf 359 (4.1″ measured, 5.0″ predicted) and Kapteyn's Star (9.1″ measured, 8.6″ predicted).</p>
+  <p><b>Spectra on the fly.</b> Press <b>Spectrum</b> and tap a star. SPHEREx's filters change colour across each detector, so in every image of a six-month pass the star is seen in a different colour: about 120 images give its brightness in about 100 colours from 0.75 to 5 µm. ARCNAVE reads only the few pixels around the star from NASA's archive (about 40 to 55 s for a pass), measures them with simple aperture photometry, leaves out colours where a flagged pixel sits on the star (and says why), and draws the 2MASS and WISE brightness of the same star as a check. Tested: a normal star agreed with 2MASS and WISE within 13 %; the brown dwarf Epsilon Indi B shows the water and methane dips expected for its type. This is a quick look, not the official SPHEREx spectra; very bright stars are saturated.</p>
+  <p><b>Embed it.</b> Press <b>Share</b>, then <b>Copy embed code</b>: an <code>&lt;iframe&gt;</code> that shows only that patch of sky flipping through its SPHEREx images, with a link back to the full tool. Any link works too: <code>?embed=1#ra=269.45&amp;dec=4.77&amp;load=1</code>, or <code>?embed=1#ct=barnard</code> for a NASA test target.</p>
+  <p><b>Check it, then tell someone.</b> In <b>Changes</b>, every spot that is unexplained or got brighter has links to the same position in SIMBAD, the Legacy Surveys viewer and the Minor Planet Center's asteroid checker. If it is still unexplained, <b>Send this candidate</b> opens your own e-mail app with a filled-in report (position, image, date, colour, signal, the checks already done and a link back to the view); you choose who gets it, ARCNAVE sends nothing itself. <b>Copy report</b> puts the same text on the clipboard, for example for the volunteers' Talk board of Backyard Worlds. The report always says "unconfirmed": most such spots are artefacts.</p>
+  <p><b>Take it to Python.</b> <b>Share → Copy Python</b> gives code for the spot you are looking at, using Astropy and astroquery: it sends ARCNAVE's own query to NASA/IPAC IRSA, then downloads small cutouts of the first and last images in time with IRSA's cutout service and shows them side by side (<code>pip install astroquery matplotlib</code>).</p>
+
+  <h2 id="how"><small>03</small>How it works</h2>
+  <p>Five small programs (we call them agents; they are ordinary code, not AI models) run in order every time you fly to a spot. Each step is shown live in the Agents panel.</p>
+  <ol class="flow">
+    <li><b>Navigator</b> points the sky at your spot (a name or RA/Dec coordinates).</li>
+    <li><b>Archivist</b> asks IRSA for every SPHEREx image covering it, groups them into sky passes (epochs: a gap over 60 days starts a new one) and picks images of the same colour in every pass, so stars look alike.</li>
+    <li><b>Aligner</b> downloads small cutouts (8 per pass by default), removes the zodiacal-light background, masks pixels the SPHEREx pipeline flags as bad, reprojects every image onto one common sky grid (the files' own TAN + SIP coordinates) and registers each one on the stars of the first pass (median offset of matched bright stars).</li>
+    <li><b>Analyst</b> combines each pass into a median stack (so a cosmic ray or a satellite glint in one image disappears), compares the stacks source by source, and looks inside each pass for anything that sits in one visit and has gone hours later. It asks SkyBoT (or, if that is unreachable, the Minor Planet Center checker) which known objects were there at each image's exact time.</li>
+    <li><b>Reporter</b> writes it up: every change gets a status and the evidence behind it, and the report can be downloaded.</li>
+  </ol>
+  <p>All image processing runs in your browser (in background threads, so the page stays responsive). The server only searches the archives, fetches and caches files, and never changes a pixel.</p>
+
+  <h2 id="proof"><small>04</small>When does it say "known asteroid"?</h2>
+  <p>Only when every check passes:</p>
+  <ul>
+    <li><b>Position:</b> SPHEREx saw something within 12″ (two SPHEREx pixels) of where SkyBoT puts a known object at that image's time, plus SkyBoT's own position error.</li>
+    <li><b>Brightness:</b> the object is bright enough for one SPHEREx image (visual magnitude 19 or brighter). Fainter known objects nearby are not credited.</li>
+    <li><b>Real light, not a glitch:</b> it is also there in the exposure taken minutes earlier or later, or it is as blurred as the stars (a hot pixel or cosmic ray is sharper).</li>
+    <li><b>Gone at other visits</b>, and its measured motion matches the predicted motion.</li>
+  </ul>
+  <div class="callout ok"><b>Try it:</b> the example "Catch a real asteroid" shows asteroid 3865 Lindbloom passing all checks in real SPHEREx images (RA 189.957°, Dec −4.182°). The example "See a false alarm caught" shows a very strong change that is correctly labelled a hot pixel, not an object.</div>
+
+  <h2 id="tested"><small>05</small>How we tested it</h2>
+  <p>Before trusting the method we ran an injection-recovery test, the standard way astronomers measure a search: hide <b>fake</b> planets of known brightness and distance in the real images, with the blur of each field's own stars and the position a distant body would have at each image's time, then let the same agents look for them. We picked 18 sky fields on a fixed grid before the run (<span id="grid">ecliptic longitude 0°, 60° … 300° × latitude 0°, +40°, −40°</span>) and publish every field, including where it fails.</p>
+  <div class="stats" id="stats" aria-live="polite">
+    <div class="stat"><b>18</b><span>sky fields, chosen before the run</span></div>
+  </div>
+  <p id="scs" class="muted">Loading the scorecard…</p>
+  <div class="tw" id="sct"></div>
+  <p class="muted">Each number is the faintest fake planet (AB magnitude) still found at least half of the time at that distance. Bigger means fainter, which is better.</p>
+
+  <h2 id="limits"><small>06</small>Limits, honestly</h2>
+  <ul class="lim">
+    <li><b>Only a few passes so far.</b> SPHEREx has made a small number of full-sky passes; some spots have only one, and then nothing can be compared yet.</li>
+    <li><b>Coarse pixels.</b> One SPHEREx pixel is about 6″ of sky, so small motions within one visit are hard to measure and faint objects blend with noise.</li>
+    <li><b>Shallow single images.</b> One SPHEREx image is much shallower than the full survey, so ARCNAVE only credits known asteroids of visual magnitude 19 or brighter. Many known asteroids in a field are fainter; ARCNAVE lists them as too faint instead of pretending to see them.</li>
+    <li><b>Different colours between passes.</b> Each pass may have images at slightly different wavelengths at a given spot, so stars do not cancel perfectly in the Difference view.</li>
+    <li><b>Crowded Milky Way fields</b> are the hardest: changes and fake planets often land on stars.</li>
+    <li><b>Planets about 300 AU away</b> were missed in some test fields, because the images of one pass are spread over weeks and such a planet moves many pixels between them.</li>
+    <li><b>New spots take a minute or two the first time.</b> The archive search and about 7 MB per image have to come over the internet (about 24 images for a full run). The example fields and landmarks are stored with the app and open in seconds, and every spot opened once stays fast.</li>
+    <li><b>Positions of nearby objects</b> (asteroids passing very close to Earth) can be off by about an arcminute, because predictions assume a viewer at Earth's centre.</li>
+    <li><b>Unconfirmed means unconfirmed.</b> A change that is not a known object could be a variable star, an artefact or something real. Confirming anything new needs follow-up by astronomers.</li>
+  </ul>
+
+  <h2 id="credits"><small>07</small>Credits</h2>
+  <p>Images: NASA SPHEREx, via the NASA/IPAC Infrared Science Archive. Known objects: SkyBoT, with the Minor Planet Center checker as fallback. Orbits: NASA JPL Horizons. Sky atlas: Aladin Lite (CDS, Strasbourg; a copy ships with this site) and the CDS HiPS surveys 2MASS, AllWISE and DSS2, served from NASA/IPAC IRSA's mirror (other mirrors as fallback). Name search: CDS Sesame. Tour narration (English, Tamil, Hindi, Spanish): recorded with Microsoft neural text-to-speech voices through the open-source edge-tts tool; the Tamil, Hindi and Spanish captions were translated with AI help.</p>
+  <p>Built for the 2026 NASA Space Apps Challenge, "Planet X and SPHEREx". The code was written with the help of an AI assistant (Claude); every number in the app comes from that code running on the real archive data, not from the AI.</p>
+  <footer><p class="muted">Questions or a correction? Every result in the app has a "Check it yourself" link to the Minor Planet Center or JPL. <a href="/">Back to the sky →</a></p></footer>
+</main>
+<script>
+(async () => {
+  try {
+    const r = await fetch('/scorecard.json'); if (!r.ok) throw 0;
+    const sc = await r.json(), s = sc.summary, A = s.at1000, B = s.at300;
+    document.getElementById('grid').textContent = s.grid.replace(/ deg/g, '°').replace(/, fixed before the run$/, '');
+    const st = document.getElementById('stats');
+    st.innerHTML = '';
+    const add = (b, t) => { const d = document.createElement('div'); d.className = 'stat'; const x = document.createElement('b'); x.textContent = b; const y = document.createElement('span'); y.textContent = t; d.append(x, y); st.append(d); };
+    add(s.fields, 'sky fields, chosen before the run');
+    add(s.fakes.toLocaleString('en'), 'fake planets hidden and searched for');
+    add(`${A.found} of ${A.of}`, 'fields where a planet 1000 AU away was found');
+    add(`${B.found} of ${B.of}`, 'fields where a planet 300 AU away was found');
+    document.getElementById('scs').textContent = `At 1000 AU the faintest planet found at least half the time is magnitude ${A.min.toFixed(1)} to ${A.max.toFixed(1)} (median ${A.median.toFixed(1)}). At 300 AU it was found in ${B.found} of ${B.of} fields. ` + (s.retried && s.retried.length ? `Run a second time: ${s.retried.join('; ')}.` : '');
+    const why = { 'one-epoch': 'one pass so far', 'no-psf': 'too few clean stars', error: 'failed' };
+    const t = document.createElement('table'), sky = r => Math.abs(r.galLat) < 10 ? 'Milky Way plane' : Math.abs(r.galLat) > 50 ? 'far from Milky Way' : 'between';
+    t.innerHTML = '<thead><tr><th>Field (ecliptic)</th><th>Sky</th><th class="n">300 AU</th><th class="n">1000 AU</th></tr></thead>';
+    const tb = document.createElement('tbody');
+    for (const r of sc.rows) {
+      const tr = document.createElement('tr'), ok = r.status === 'ok';
+      const cells = [`λ ${r.eclLon}°, β ${r.eclLat > 0 ? '+' : ''}${r.eclLat}°`, sky(r), ok ? (r.lim300 != null ? r.lim300.toFixed(1) : 'missed') : (why[r.status] || r.status), ok ? (r.lim1000 != null ? r.lim1000.toFixed(1) : 'missed') : ''];
+      cells.forEach((c, i) => { const td = document.createElement('td'); td.textContent = c; if (i > 1) td.className = 'n'; tr.append(td); });
+      tr.title = `RA ${r.ra}°, Dec ${r.dec}°`; tb.append(tr);
+    }
+    t.append(tb); document.getElementById('sct').append(t);
+  } catch { document.getElementById('scs').textContent = 'The scorecard is not available in this copy.'; }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+ARCNAVE v0.38 - how to run it on any laptop
+=============================================
+
+WINDOWS (nothing to install)
+1. Unzip ARCNAVE-v0.38.zip (right-click > Extract All).
+2. Open the ARCNAVE folder and double-click start.bat
+   (if Windows says "Windows protected your PC": More info > Run anyway;
+    if the firewall asks: Allow).
+3. The browser opens http://localhost:8083 by itself. Keep the black window open while you use ARCNAVE.
+4. To stop: close the black window.
+
+MAC / LINUX
+1. Install Node.js LTS from https://nodejs.org (once).
+2. Unzip, open Terminal in the ARCNAVE folder, run:  sh start.sh
+3. Open http://localhost:8083
+
+WHAT TO EXPECT
+- The 5 NASA targets and the 2 examples open in about 10-20 s (images are saved in demo-cache).
+- A NEW place in the sky downloads real SPHEREx images from NASA: 20-90 s, depending on the internet speed.
+- The first start copies the saved images into a "cache" folder (a few seconds, once).
+
+PROBLEMS
+- "address already in use": ARCNAVE is already running; just open http://localhost:8083
+- Want another port: open start.bat in Notepad and change 8083.
+- Other phones/laptops on the same WiFi can open http://<this laptop's IP>:8083 (ipconfig shows the IP;
+  allow port 8083 in the Windows firewall).
