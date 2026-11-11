@@ -5350,8 +5350,20 @@ function movieMovers() {
   const okFF = ff => ff && !ff.fail && ff.fit && ff.passes && ff.passes.length >= 2;
   if (DS.res && DS.res.run === S.run) DS.res.flagged.forEach(fl => okFF(fl.ff) && add(nameOf(fl), fl.label, '🔭', fl.ff.passes, fl.ff.fit.mu, fl.ff.fit.dir, fl));
   if (DF.res && DF.res.run === S.run) DF.res.flagged.forEach(fl => okFF(fl.fff) && add(nameOf(fl), fl.label, '◐', fl.fff.passes, fl.fff.fit.mu, fl.fff.fit.dir, fl));
+  // v0.56: a 🎯 find with no catalogue behind it, within 4 pixels (25″) of a saturated star's blank core in any pass, sits
+  // in that star's glare: its peak moves with the glare, not as a star (Epsilon Indi field: a peak 17″ from saturated
+  // Epsilon Indi A, "4.7″/yr north" while A moves south-east; A's core is blank only in the pass where it is saturated in
+  // most images). The scan only skips a blank core within 2 pixels. On that field 10 of 367 scanned sources lie this close.
+  const glareOf = fl => { if (fl.label === 'known' || fl.label === 'target') return false; const n = f.n, X = Math.round(fl.s.x), Y = Math.round(fl.s.y); let hit = 0, tot = 0;
+    for (let e = 0; e < S.eps.length; e++) { const fr = frameOf(e); if (!fr) continue; tot++; let blank = 0;
+      for (let j = -4; j <= 4; j++) for (let i = -4; i <= 4; i++) { if (i * i + j * j > 16) continue; const x = X + i, y = Y + j; if (x >= 0 && y >= 0 && x < n && y < n && !(fr.flat[y * n + x] === fr.flat[y * n + x])) blank++; }
+      if (blank >= 4) hit++; }
+    return hit > 0; };
   if (TSC.res && TSC.res.run === S.run) TSC.res.flagged.forEach(fl => {
-    if (okFF(fl.fff)) return add(nameOf(fl), fl.label, '🎯', fl.fff.passes, fl.fff.fit.mu, fl.fff.fit.dir, fl);
+    if (glareOf(fl)) return;
+    // the frame-by-frame track only where it agreed with the scan; "scan only" means it was too faint or too uncertain
+    // there (Epsilon Indi field: 32 ± 5″/yr against the scan's 4.7), so the scan's own path is shown
+    if (okFF(fl.fff) && fl.check !== 'scan only') return add(nameOf(fl), fl.label, '🎯', fl.fff.passes, fl.fff.fit.mu, fl.fff.fit.dir, fl);
     add(nameOf(fl), fl.label, '🎯', TSC.res.PS.map(q => { const sk = F.gridToSky(fl.x + fl.muE * q.dt / arc, fl.y - fl.muN * q.dt / arc, grid); return { e: q.e, ra: sk[0], dec: sk[1] }; }), fl.mu, fl.dir, fl); });
   if (MS.res && MS.res.run === S.run) MS.res.flagged.forEach(fl => {
     const known = fl.gaia && fl.label === 'known', o = known ? gaiaObj(fl.gaia) : { ra0: fl.ra, dec0: fl.dec, ep: epMid(MS.res.passes[0]), pmra: 0, pmdec: 0, noCat: true };
@@ -5445,11 +5457,13 @@ async function movieStart() {
   if (!S.field || S.eps.length < 2) { toast('An animation needs at least two passes of this field.', 5000); return; }
   movieStop(true);
   const c = $('card'), run = S.run;
-  const anyRun = [MS, DS, DF, TSC].some(R => R.res && R.res.run === S.run);
-  if (!anyRun) {
-    c.replaceChildren(h('h3', {}, '🎬 Finding the moving stars first'), h('p', {}, 'Running 🔍 Find moving stars and 🔭 Deep search on every pass of this field, then the film starts.')); c.hidden = false;
+  // v0.56: every search the film needs runs first, unless it already ran on this field: 🔍 bright stars, 🔭 deep search and
+  // 🎯 motion scan (faint movers, all images added up along 625 trial motions), so bright and faint movers share one film
+  const ran = R => R.res && R.res.run === S.run, todo = [[MS, '🔍 Find moving stars', motionSearch], [DS, '🔭 Deep search', deepSearch], [TSC, '🎯 Motion scan (faint stars)', motionScan]].filter(([R]) => !ran(R));
+  if (todo.length) {
+    c.replaceChildren(h('h3', {}, '🎬 Finding the moving stars first'), h('p', {}, `Running ${todo.map(t => t[1]).join(', then ')} on every pass of this field, then the film starts with every mover they find.`)); c.hidden = false;
     if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card');
-    await motionSearch(); if (run !== S.run || MS.stop) return; await deepSearch(); if (run !== S.run || DS.stop) return;   // v0.55 U9: Cancel stops the film too
+    for (const [R, , fn] of todo) { await fn(); if (run !== S.run || R.stop) return; }   // v0.55 U9: Cancel stops the film too
   }
   // v0.54: the Gaia and WISE movers join the film, so both catalogues must be here (at most 45 s; without them the film
   // shows what the searches measured)
