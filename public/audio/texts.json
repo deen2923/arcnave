@@ -139,6 +139,58 @@
   {
    "key": "6a77e906",
    "text": "You know every tool. That is all of ARCNAVE. Start with the whole sky, click a landmark and blink. Or take the 90-second story."
+  },
+  {
+   "key": "a6179b77",
+   "text": "Play the film. Finds the stars that move in this patch of sky and plays the passes like a film. A spotlight follows one star at a time: a dashed circle where it was on one date, a ring where it is on the next, and how far it went. Press Play the film (or Animate). Save it as a GIF or video with the buttons on its card."
+  },
+  {
+   "key": "4fe2b5bb",
+   "text": "Find moving stars. Measures the position of up to 120 bright stars in every pass and points out the ones that shifted. Press it after a field has loaded. Movers get an arrow; tap one for its numbers."
+  },
+  {
+   "key": "5e326890",
+   "text": "Deep search. Adds all the pictures together to see stars too faint for one picture, then checks each of them for motion. Press it and wait a minute; the card lists what moved."
+  },
+  {
+   "key": "76978532",
+   "text": "Slow movers. Finds stars that moved less than one pixel: in a difference picture such a star leaves a small light-and-dark pair. Press it; each pair found is checked and shown with its motion."
+  },
+  {
+   "key": "2ef37c95",
+   "text": "Motion scan. For very faint stars: tries 625 possible speeds and directions for each one and keeps the one where the star lines up best in every pass. Press it; it takes about a minute. The film runs it for you too."
+  },
+  {
+   "key": "0bf84506",
+   "text": "Known asteroid paths. Draws a line for every known asteroid in this patch, from where it was at the start of a pass to where it was at the end. Press it; tap a line for the asteroid's name."
+  },
+  {
+   "key": "81750268",
+   "text": "WISE sources. Puts the objects found by NASA's WISE telescope on top. WISE sees cold, dark brown dwarfs that Gaia misses; very red ones are marked pink. Press WISE; arrows show the ones that move."
+  },
+  {
+   "key": "1a5ffba1",
+   "text": "Colour picture. Mixes three groups of SPHEREx colours into one picture: blue for the shortest, green for the middle, red for the longest. Hot stars look blue, dusty and cool things red. Press it while a field is open; press again to go back."
+  },
+  {
+   "key": "53ce896e",
+   "text": "Images per pass. SPHEREx photographs the whole sky every six months (a \"pass\"). More pictures per pass are added together, so faint things show and glitches vanish. Choose 1, 4 or 8. 8 is the most precise; 1 is the quickest."
+  },
+  {
+   "key": "151332dd",
+   "text": "Mover test. Adds 32 pretend moving stars of known speed to this field's real pictures, then counts how many ARCNAVE finds. It shows honestly what it can and cannot see. Press Mover test; the pictures are put back exactly as they were afterwards."
+  },
+  {
+   "key": "285a4fe2",
+   "text": "Tested. How far you can trust ARCNAVE: the results of its tests on 18 sky fields, with the misses shown too. Press Tested at the top to open the results."
+  },
+  {
+   "key": "e02d7999",
+   "text": "Save picture. Saves the sky as you see it, with every mark on it, as a picture with its position and date. Press Save PNG."
+  },
+  {
+   "key": "2e548dac",
+   "text": "Check for new data. Asks NASA right now whether new pictures of this spot have come out since the list was saved. Press it; new pictures are added if there are any."
   }
  ],
  "ta": [
@@ -281,6 +333,58 @@
   {
    "key": "30b46090",
    "text": "எல்லாக் கருவிகளும் இப்போது உங்களுக்குத் தெரியும். ARCNAVE முழுவதும் இவ்வளவுதான். முழு வானத்தில் தொடங்கி, ஒரு அடையாளத்தைத் தட்டி, பிளிங்க் செய்யுங்கள். அல்லது 90 வினாடிக் கதையைப் பாருங்கள்."
+  },
+  {
+   "key": "eda94a69",
+   "text": "படத்தை ஓட்டு. இந்த வானப் பகுதியில் நகரும் நட்சத்திரங்களைக் கண்டுபிடித்து, சுற்றுகளை ஒரு படம் போல ஓட்டுகிறது. ஒளிக்கற்றை ஒரு நேரத்தில் ஒரு நட்சத்திரத்தைப் பின்தொடர்கிறது: ஒரு தேதியில் அது இருந்த இடத்தில் புள்ளி வட்டம், அடுத்த தேதியில் இருக்கும் இடத்தில் வளையம், மற்றும் எவ்வளவு தூரம் சென்றது. Play the film (அல்லது Animate) அழுத்துங்கள். அதன் அட்டையில் உள்ள பொத்தான்களால் GIF அல்லது வீடியோவாகச் சேமியுங்கள்."
+  },
+  {
+   "key": "1150d9e8",
+   "text": "நகரும் நட்சத்திரங்களைக் கண்டுபிடி. ஒவ்வொரு சுற்றிலும் 120 வரையிலான பிரகாசமான நட்சத்திரங்களின் இடத்தை அளந்து, இடம் மாறியவற்றைச் சுட்டிக்காட்டுகிறது. ஒரு பகுதி ஏறிய பின் அழுத்துங்கள். நகர்பவைக்கு அம்பு வரும்; எண்களுக்கு அதைத் தட்டுங்கள்."
+  },
+  {
+   "key": "79017a5c",
+   "text": "ஆழ்ந்த தேடல். ஒரு படத்தில் தெரியாத அளவு மங்கலான நட்சத்திரங்களைப் பார்க்க எல்லாப் படங்களையும் கூட்டி, பின் ஒவ்வொன்றும் நகர்கிறதா என்று சோதிக்கிறது. அழுத்தி ஒரு நிமிடம் காத்திருங்கள்; நகர்ந்தவற்றை அட்டை பட்டியலிடும்."
+  },
+  {
+   "key": "a05e0712",
+   "text": "மெதுவாக நகர்பவை. ஒரு பிக்சலுக்கும் குறைவாக நகர்ந்த நட்சத்திரங்களைக் கண்டுபிடிக்கிறது: வேறுபாட்டுப் படத்தில் அது ஒரு சிறிய ஒளி-இருள் ஜோடியை விட்டுச்செல்லும். அழுத்துங்கள்; கண்டுபிடித்த ஒவ்வொரு ஜோடியும் சோதிக்கப்பட்டு அதன் இயக்கத்துடன் காட்டப்படும்."
+  },
+  {
+   "key": "b413b34f",
+   "text": "இயக்க வருடல். மிக மங்கலான நட்சத்திரங்களுக்கு: ஒவ்வொன்றுக்கும் 625 வேகங்களையும் திசைகளையும் முயன்று, எல்லாச் சுற்றுகளிலும் நட்சத்திரம் சிறப்பாகப் பொருந்துவதை வைத்துக்கொள்கிறது. அழுத்துங்கள்; சுமார் ஒரு நிமிடம் ஆகும். படமும் இதை உங்களுக்காக இயக்கும்."
+  },
+  {
+   "key": "a319a2e0",
+   "text": "அறியப்பட்ட சிறுகோள் பாதைகள். இந்தப் பகுதியில் உள்ள ஒவ்வொரு அறியப்பட்ட சிறுகோளுக்கும், ஒரு சுற்றின் தொடக்கத்தில் இருந்த இடத்திலிருந்து முடிவில் இருந்த இடம் வரை ஒரு கோடு வரைகிறது. அழுத்துங்கள்; சிறுகோளின் பெயருக்கு ஒரு கோட்டைத் தட்டுங்கள்."
+  },
+  {
+   "key": "b55354ad",
+   "text": "WISE மூலங்கள். நாசாவின் WISE தொலைநோக்கி கண்டுபிடித்த பொருள்களை மேலே வைக்கிறது. கையா தவறவிடும் குளிர்ந்த, இருண்ட பழுப்புக் குள்ளன்களை WISE பார்க்கிறது; மிகச் சிவப்பானவை இளஞ்சிவப்பில் குறிக்கப்படும். WISE அழுத்துங்கள்; நகர்பவற்றை அம்புகள் காட்டும்."
+  },
+  {
+   "key": "f5f8d300",
+   "text": "நிறப் படம். SPHEREx-இன் மூன்று நிறக் குழுக்களை ஒரே படமாகக் கலக்கிறது: குறுகியதற்கு நீலம், நடுவுக்குப் பச்சை, நீளமானதற்குச் சிவப்பு. சூடான நட்சத்திரங்கள் நீலமாக, தூசியானவையும் குளிர்ந்தவையும் சிவப்பாகத் தெரியும். ஒரு பகுதி திறந்திருக்கும்போது அழுத்துங்கள்; திரும்ப மீண்டும் அழுத்துங்கள்."
+  },
+  {
+   "key": "65f7f9fe",
+   "text": "ஒவ்வொரு சுற்றுக்கும் படங்கள். SPHEREx ஆறு மாதத்துக்கு ஒருமுறை முழு வானையும் படம் எடுக்கிறது (ஒரு \"சுற்று\"). ஒரு சுற்றுக்கு அதிகப் படங்கள் சேர்க்கப்பட்டால் மங்கலானவை தெரியும், பிழைகள் மறையும். 1, 4 அல்லது 8 தேர்ந்தெடுங்கள். 8 மிகத் துல்லியமானது; 1 மிக வேகமானது."
+  },
+  {
+   "key": "1dcba5cb",
+   "text": "நகர்பவை சோதனை. தெரிந்த வேகமுள்ள 32 போலி நகரும் நட்சத்திரங்களை இந்தப் பகுதியின் உண்மையான படங்களில் சேர்த்து, ARCNAVE எத்தனையைக் கண்டுபிடிக்கிறது என்று எண்ணுகிறது. அது எதைப் பார்க்கும், எதைப் பார்க்காது என்று நேர்மையாகக் காட்டுகிறது. Mover test அழுத்துங்கள்; பிறகு படங்கள் இருந்தபடியே திரும்ப வைக்கப்படும்."
+  },
+  {
+   "key": "8fab846d",
+   "text": "சோதிக்கப்பட்டது. ARCNAVE-ஐ எவ்வளவு நம்பலாம்: 18 வானப் பகுதிகளில் செய்த சோதனைகளின் முடிவுகள், தவறியவையும் சேர்த்து. முடிவுகளைத் திறக்க மேலே உள்ள Tested அழுத்துங்கள்."
+  },
+  {
+   "key": "5422c9fe",
+   "text": "படத்தைச் சேமி. நீங்கள் பார்க்கும் வானை, அதன் மேலுள்ள எல்லாக் குறிகளுடனும், இடமும் தேதியும் கொண்ட படமாகச் சேமிக்கிறது. Save PNG அழுத்துங்கள்."
+  },
+  {
+   "key": "7987f1a2",
+   "text": "புதிய தரவைச் சோதி. பட்டியல் சேமிக்கப்பட்ட பிறகு இந்த இடத்தின் புதிய படங்கள் வந்துள்ளனவா என்று இப்போதே நாசாவிடம் கேட்கிறது. அழுத்துங்கள்; புதிய படங்கள் இருந்தால் சேர்க்கப்படும்."
   }
  ],
  "hi": [
@@ -423,6 +527,58 @@
   {
    "key": "c600ef38",
    "text": "अब आप हर टूल जानते हैं. ARCNAVE बस इतना ही है। पूरे आकाश से शुरू कीजिए, किसी प्रसिद्ध जगह पर क्लिक कीजिए और ब्लिंक कीजिए। या 90 सेकंड की कहानी देखिए।"
+  },
+  {
+   "key": "91a0fdb8",
+   "text": "फ़िल्म चलाएँ. इस हिस्से में चलने वाले तारे ढूँढता है और चक्करों को फ़िल्म की तरह चलाता है। एक स्पॉटलाइट एक बार में एक तारे के पीछे चलती है: एक तारीख़ पर वह जहाँ था वहाँ बिंदीदार गोला, अगली तारीख़ पर जहाँ है वहाँ छल्ला, और वह कितना चला। Play the film (या Animate) दबाएँ। उसके कार्ड के बटनों से GIF या वीडियो के रूप में सहेजें।"
+  },
+  {
+   "key": "f88b6fd0",
+   "text": "चलते तारे खोजें. हर चक्कर में 120 तक चमकीले तारों की जगह मापता है और जो खिसके उन्हें दिखाता है। क्षेत्र लोड होने के बाद दबाएँ। चलने वालों पर तीर आता है; आँकड़ों के लिए उस पर टैप करें।"
+  },
+  {
+   "key": "ca9ceafe",
+   "text": "गहरी खोज. सारी तस्वीरें जोड़कर वे तारे देखता है जो एक तस्वीर में नहीं दिखते, फिर हर एक की गति जाँचता है। दबाएँ और एक मिनट रुकें; कार्ड में जो चला उसकी सूची आती है।"
+  },
+  {
+   "key": "c66d9e9f",
+   "text": "धीमे चलने वाले. एक पिक्सेल से कम चले तारे ढूँढता है: अंतर वाली तस्वीर में ऐसा तारा एक छोटा उजला-अँधेरा जोड़ा छोड़ता है। दबाएँ; मिला हर जोड़ा जाँचकर उसकी गति के साथ दिखाया जाता है।"
+  },
+  {
+   "key": "08abb20f",
+   "text": "गति स्कैन. बहुत धुँधले तारों के लिए: हर एक के लिए 625 रफ़्तारें और दिशाएँ आज़माता है और वह रखता है जिसमें तारा हर चक्कर में सबसे अच्छा मिलता है। दबाएँ; लगभग एक मिनट लगता है। फ़िल्म भी इसे आपके लिए चलाती है।"
+  },
+  {
+   "key": "fa80919b",
+   "text": "जाने-माने क्षुद्रग्रहों के रास्ते. इस हिस्से के हर जाने-माने क्षुद्रग्रह के लिए एक रेखा खींचता है, चक्कर की शुरुआत की जगह से अंत की जगह तक। दबाएँ; क्षुद्रग्रह का नाम देखने के लिए रेखा पर टैप करें।"
+  },
+  {
+   "key": "e4932ec1",
+   "text": "WISE स्रोत. NASA की WISE दूरबीन से मिली चीज़ें ऊपर दिखाता है। WISE ठंडे, अँधेरे भूरे बौने देखता है जो गाइया से छूट जाते हैं; बहुत लाल वाले गुलाबी में दिखते हैं। WISE दबाएँ; तीर चलने वालों को दिखाते हैं।"
+  },
+  {
+   "key": "ba950f9d",
+   "text": "रंगीन तस्वीर. SPHEREx के रंगों के तीन समूह एक तस्वीर में मिलाता है: सबसे छोटे के लिए नीला, बीच वाले के लिए हरा, सबसे लंबे के लिए लाल। गरम तारे नीले, धूल भरी और ठंडी चीज़ें लाल दिखती हैं। क्षेत्र खुला हो तब दबाएँ; वापस जाने के लिए फिर दबाएँ।"
+  },
+  {
+   "key": "0e58d0a2",
+   "text": "हर चक्कर की तस्वीरें. SPHEREx हर छह महीने में पूरे आसमान की तस्वीर लेता है (एक \"चक्कर\")। हर चक्कर की ज़्यादा तस्वीरें जोड़ने से धुँधली चीज़ें दिखती हैं और गड़बड़ियाँ गायब होती हैं। 1, 4 या 8 चुनें। 8 सबसे सटीक है; 1 सबसे तेज़।"
+  },
+  {
+   "key": "3a3127fd",
+   "text": "चलने वालों की जाँच. इस क्षेत्र की असली तस्वीरों में जानी हुई रफ़्तार के 32 नकली चलते तारे जोड़ता है, फिर गिनता है कि ARCNAVE कितने ढूँढता है। यह ईमानदारी से बताता है कि वह क्या देख सकता है और क्या नहीं। Mover test दबाएँ; बाद में तस्वीरें बिल्कुल पहले जैसी कर दी जाती हैं।"
+  },
+  {
+   "key": "ba41baca",
+   "text": "जाँचा गया. ARCNAVE पर कितना भरोसा करें: 18 आसमानी क्षेत्रों पर इसके परीक्षणों के नतीजे, चूक भी दिखाकर। नतीजे खोलने के लिए ऊपर Tested दबाएँ।"
+  },
+  {
+   "key": "a9fe7091",
+   "text": "तस्वीर सहेजें. आसमान को जैसा आप देख रहे हैं, सारे निशानों के साथ, जगह और तारीख़ वाली तस्वीर के रूप में सहेजता है। Save PNG दबाएँ।"
+  },
+  {
+   "key": "67a99bc9",
+   "text": "नया डेटा जाँचें. अभी NASA से पूछता है कि सूची सहेजे जाने के बाद इस जगह की नई तस्वीरें आई हैं या नहीं। दबाएँ; नई तस्वीरें हों तो जोड़ दी जाती हैं।"
   }
  ],
  "es": [
@@ -565,6 +721,58 @@
   {
    "key": "7adfaeed",
    "text": "Ya conoces todas las herramientas. Eso es todo ARCNAVE. Empieza con todo el cielo, haz clic en un lugar famoso y usa el parpadeo. O mira la historia de 90 segundos."
+  },
+  {
+   "key": "3e7a7988",
+   "text": "Ver la película. Encuentra las estrellas que se mueven en este trozo de cielo y reproduce las pasadas como una película. Un foco sigue a una estrella a la vez: un círculo de puntos donde estaba en una fecha, un anillo donde está en la siguiente y cuánto se movió. Pulsa Play the film (o Animate). Guárdala como GIF o vídeo con los botones de su tarjeta."
+  },
+  {
+   "key": "9ba407bd",
+   "text": "Buscar estrellas que se mueven. Mide la posición de hasta 120 estrellas brillantes en cada pasada y señala las que se desplazaron. Púlsalo cuando el campo haya cargado. Las que se mueven llevan una flecha; tócala para ver sus datos."
+  },
+  {
+   "key": "8262c576",
+   "text": "Búsqueda profunda. Suma todas las fotos para ver estrellas demasiado débiles para una sola foto y luego comprueba si cada una se mueve. Púlsalo y espera un minuto; la tarjeta enumera lo que se movió."
+  },
+  {
+   "key": "0d5f2ebe",
+   "text": "Movimientos lentos. Encuentra estrellas que se movieron menos de un píxel: en una foto de diferencia dejan una pequeña pareja clara y oscura. Púlsalo; cada pareja encontrada se comprueba y se muestra con su movimiento."
+  },
+  {
+   "key": "ae35be7f",
+   "text": "Barrido de movimiento. Para estrellas muy débiles: prueba 625 velocidades y direcciones para cada una y se queda con la que mejor alinea la estrella en todas las pasadas. Púlsalo; tarda alrededor de un minuto. La película también lo hace por ti."
+  },
+  {
+   "key": "7ef01d62",
+   "text": "Rutas de asteroides conocidos. Dibuja una línea para cada asteroide conocido de este trozo, desde donde estaba al empezar una pasada hasta donde estaba al acabar. Púlsalo; toca una línea para ver el nombre del asteroide."
+  },
+  {
+   "key": "d3e26ec4",
+   "text": "Fuentes de WISE. Pone encima los objetos que encontró el telescopio WISE de la NASA. WISE ve enanas marrones frías y oscuras que Gaia no ve; las muy rojas van en rosa. Pulsa WISE; las flechas muestran las que se mueven."
+  },
+  {
+   "key": "aaaffc6a",
+   "text": "Foto en color. Mezcla tres grupos de colores de SPHEREx en una foto: azul para los más cortos, verde para los medios, rojo para los más largos. Las estrellas calientes se ven azules; lo polvoriento y frío, rojo. Púlsalo con un campo abierto; púlsalo otra vez para volver."
+  },
+  {
+   "key": "5873ef7b",
+   "text": "Imágenes por pasada. SPHEREx fotografía todo el cielo cada seis meses (una \"pasada\"). Sumar más fotos por pasada hace visible lo débil y borra los fallos. Elige 1, 4 u 8. 8 es lo más preciso; 1 lo más rápido."
+  },
+  {
+   "key": "2074c39c",
+   "text": "Prueba de movimiento. Añade 32 estrellas falsas en movimiento, de velocidad conocida, a las fotos reales del campo y cuenta cuántas encuentra ARCNAVE. Muestra con honradez lo que puede ver y lo que no. Pulsa Mover test; después las fotos quedan exactamente como estaban."
+  },
+  {
+   "key": "eb373fc6",
+   "text": "Probado. Cuánto puedes fiarte de ARCNAVE: los resultados de sus pruebas en 18 campos del cielo, fallos incluidos. Pulsa Tested arriba para abrir los resultados."
+  },
+  {
+   "key": "4d0c85ba",
+   "text": "Guardar imagen. Guarda el cielo tal como lo ves, con todas sus marcas, como una imagen con su posición y fecha. Pulsa Save PNG."
+  },
+  {
+   "key": "e3d611d0",
+   "text": "Buscar datos nuevos. Pregunta ahora mismo a la NASA si han salido fotos nuevas de este sitio desde que se guardó la lista. Púlsalo; si hay fotos nuevas, se añaden."
   }
  ]
 }
