@@ -3561,7 +3561,7 @@ function wrapText(g, s, x, y, max, lh) {
   for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > max && line) { g.fillText(line, x, y); y += lh; line = w; } else line = t; }
   if (line) g.fillText(line, x, y); return y + lh;
 }
-function drawCardFrame(g, plan, i) {
+function drawCardFrame(g, plan, i, an = { k: 1, lock: 1 }) {   // v0.56 an: the film's glide (k) and lock-on ring (lock), 0..1
   const { W: CW, H: CH, X, Y, S: SZ } = CARD, f = plan.frames[i], n = S.field.n, half = plan.half, k = SZ / (2 * half);
   const sx = plan.cx + 0.5 - half, sy = plan.cy + 0.5 - half;   // canvas coords of the crop's corner (pixel x spans x..x+1)
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#05070f'; g.fillRect(0, 0, CW, CH);
@@ -3579,11 +3579,42 @@ function drawCardFrame(g, plan, i) {
   g.save(); g.beginPath(); g.rect(X, Y, SZ, SZ); g.clip();
   if (x1 > x0 && y1 > y0) { g.imageSmoothingEnabled = k < 14; g.imageSmoothingQuality = 'high'; g.drawImage(f.fr.canvas, x0, y0, x1 - x0, y1 - y0, X + (x0 - sx) * k, Y + (y0 - sy) * k, (x1 - x0) * k, (y1 - y0) * k); }
   const toC = p => [X + (p.x + 0.5 - sx) * k, Y + (p.y + 0.5 - sy) * k];
+  const st = f.stage, ease = an.k * an.k * (3 - 2 * an.k), cur = st && toC(st.cur); let pv = st && st.prev && toC(st.prev), Fx = 1;
+  // a shift of a few ″ is a pixel or two here: as in the film, the step is drawn longer by a stated factor (the ring stays
+  // on the star in this pass; the dashed circle goes back along the measured direction)
+  if (pv) { const dd = Math.hypot(pv[0] - cur[0], pv[1] - cur[1]); if (dd < 50) { Fx = dd > 0.05 ? Math.min(300, Math.round(56 / dd)) : 1; pv = [cur[0] + (pv[0] - cur[0]) * Fx, cur[1] + (pv[1] - cur[1]) * Fx]; } }
+  const head = st && (pv ? [pv[0] + (cur[0] - pv[0]) * ease, pv[1] + (cur[1] - pv[1]) * ease] : cur);
+  if (st) {   // v0.56 spotlight: the crop dims away from the mover, a soft beam falls on it from above
+    const R = 46, rg = g.createRadialGradient(head[0], head[1], R * 0.8, head[0], head[1], R * 2.6);
+    rg.addColorStop(0, 'rgba(2,4,10,0)'); rg.addColorStop(1, 'rgba(2,4,10,.6)'); g.fillStyle = rg; g.fillRect(X, Y, SZ, SZ);
+    const src = [head[0] * 0.6 + (X + SZ / 2) * 0.4, Y - 30], bx = head[0] - src[0], by = head[1] - src[1], bl = Math.hypot(bx, by) || 1, nx = -by / bl, ny = bx / bl;
+    g.globalCompositeOperation = 'lighter'; const lg = g.createLinearGradient(src[0], src[1], head[0], head[1]); lg.addColorStop(0, 'rgba(255,244,214,0)'); lg.addColorStop(1, 'rgba(255,244,214,.12)');
+    g.fillStyle = lg; g.beginPath(); g.moveTo(src[0] - nx * 5, src[1] - ny * 5); g.lineTo(src[0] + nx * 5, src[1] + ny * 5); g.lineTo(head[0] + nx * 30, head[1] + ny * 30); g.lineTo(head[0] - nx * 30, head[1] - ny * 30); g.closePath(); g.fill();
+    g.globalCompositeOperation = 'source-over';
+  }
   for (const m of f.marks) {
     const [px, py] = toC(m); g.strokeStyle = m.color; g.lineWidth = 2.5;
     if (m.plus) { g.beginPath(); g.moveTo(px - 12, py); g.lineTo(px - 4, py); g.moveTo(px + 4, py); g.lineTo(px + 12, py); g.moveTo(px, py - 12); g.lineTo(px, py - 4); g.moveTo(px, py + 4); g.lineTo(px, py + 12); g.stroke(); }
     else { g.setLineDash([6, 4]); g.beginPath(); g.arc(px, py, Math.max(14, 2.2 * k), 0, 7); g.stroke(); g.setLineDash([]); }
     if (m.label) { g.fillStyle = m.color; g.font = font(650, 13); g.fillText(m.label, px + Math.max(18, 2.2 * k + 4), py - 10); }
+  }
+  if (st) {   // v0.56 on stage: was here (dashed, dated) → the glide → a ring locking on → the dated callout
+    const out = (t, x, y, c, al) => { g.textAlign = al || 'left'; g.lineWidth = 3; g.strokeStyle = 'rgba(2,4,10,.9)'; g.strokeText(t, x, y); g.fillStyle = c; g.fillText(t, x, y); g.textAlign = 'left'; };
+    if (pv) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.6; g.setLineDash([5, 4]); g.beginPath(); g.arc(pv[0], pv[1], 17, 0, 7); g.stroke(); g.setLineDash([]);
+      g.font = font(600, 12); out(`was here · ${st.prev.date}`, pv[0], pv[1] + 33, 'rgba(255,255,255,.9)', 'center');
+      g.strokeStyle = st.col; g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(pv[0], pv[1]); g.lineTo(head[0], head[1]); g.stroke(); g.lineCap = 'butt'; }
+    if (an.k < 1) { g.strokeStyle = st.col; g.lineWidth = 1.6; g.setLineDash([5, 5]); g.beginPath(); g.arc(head[0], head[1], 26, 0, 7); g.stroke(); g.setLineDash([]); }
+    else { const r = 15 + 20 * (1 - an.lock) ** 2, a0 = -Math.PI / 2;
+      g.save(); g.shadowColor = st.col; g.shadowBlur = 12; g.strokeStyle = '#ffffff'; g.lineWidth = 2.4; g.beginPath(); g.arc(head[0], head[1], r, a0, a0 + 2 * Math.PI * Math.max(0.02, an.lock)); g.stroke(); g.restore();
+      if (an.lock >= 1) { g.lineWidth = 1.8; g.strokeStyle = '#ffffff'; for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { g.beginPath(); g.moveTo(head[0] + ux * 18, head[1] + uy * 18); g.lineTo(head[0] + ux * 25, head[1] + uy * 25); g.stroke(); } } }
+    // the callout, kept inside the image (below the scale bar, above the caption strip)
+    const lines = Fx > 1 ? [...st.lines, [`step drawn ${Fx}x longer to be seen`, '#8e98ae']] : st.lines;
+    const lh = 17, pad = 9; let wmax = 0; for (const [t, , fw] of lines) { g.font = fw ? font(720, 13) : font(600, 12); wmax = Math.max(wmax, g.measureText(t).width); }
+    const bw = Math.min(SZ - 16, wmax + 2 * pad), bh = lines.length * lh + pad + 2;
+    let bx = head[0] + 34, by = head[1] - bh - 22; if (bx + bw > X + SZ - 8) bx = head[0] - 34 - bw; if (bx < X + 8) bx = X + 8; if (by < Y + 46) by = head[1] + 40; if (by + bh > Y + SZ - 60) by = Y + SZ - 60 - bh;
+    g.globalAlpha = Math.min(1, 0.3 + an.k); g.fillStyle = 'rgba(5,8,15,.88)'; g.fillRect(bx, by, bw, bh); g.strokeStyle = st.col; g.lineWidth = 1; g.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
+    lines.forEach(([t, c, fw], j) => { g.font = fw ? font(720, 13) : font(600, 12); g.fillStyle = c; cardText(g, t, bx + pad, by + pad + 10 + j * lh, bw - 2 * pad); });
+    g.globalAlpha = 1;
   }
   // scale bar: 1 arcminute (or 30″ when zoomed in)
   const pxArc = S.field.s * 3600, arc = 2 * half * pxArc > 240 ? 60 : 30, bar = arc / pxArc * k;
@@ -5305,6 +5336,8 @@ function movieMovers() {
   const nameOf = fl => fl.label === 'target' ? fl.target : fl.gaia && fl.label === 'known' ? 'Gaia DR3 ' + fl.gaia.id : fl.cw && fl.label === 'known' ? 'CatWISE ' + fl.cw.name : null;
   const add = (name, label, src, passes, mu, dir, fl) => {
     if (!passes || passes.length < 2) return; const p0 = passes[0], cd = Math.cos(p0.dec * Math.PI / 180);
+    // v0.56: a track whose passes all sit on the very same place (seen on Barnard's field: a 🔍 track of 0″/yr) moved nothing
+    if (!(fl && fl.slow) && passes.every(q => Math.hypot((q.ra - p0.ra) * cd, q.dec - p0.dec) * 3600 < 0.001)) return;
     if (list.some(m => Math.hypot((m.passes[0].ra - p0.ra) * cd, m.passes[0].dec - p0.dec) * 3600 < 9)) return;   // the same star from another search
     list.push({ name: name || `Moving star ${list.length + 1}`, label, src, mu, dir, cw: fl && fl.cw, cwNear: fl && fl.cwNear, pm: fl && fl.pm, how: (fl && fl.how) || 'measured', catPm: fl && fl.catPm, slow: fl && fl.slow,
       // v0.55 U4: a search's own error (its frame-by-frame fit) and its Gaia match, for the SPHEREx vs catalogue row
@@ -5536,16 +5569,21 @@ function filmPlan() {
   half = Math.min(n / 2, half);
   const short = m => m.name.replace(/^Gaia DR3 (\d{4})\d+/, 'Gaia $1…').replace(/ \(.*\)$/, '');
   const frames = S.eps.map((_, e) => { const fr = frameOf(e), im = chosen(e); if (!fr || !im) return null;
+    // v0.56: the main mover is on stage, as in the film: spotlight, the pass before as a dashed ghost with its date, a
+    // ring locking on to this pass's place and the dated "here → there" callout
+    const ci = main ? main.passes.findIndex(q => q.e === e && q.g) : -1, pq = ci > 0 && main.passes[ci - 1].g ? main.passes[ci - 1] : null;
+    const stage = ci >= 0 ? { col: movieCol(main), cur: { x: main.passes[ci].g[0], y: main.passes[ci].g[1] }, prev: pq && { x: pq.g[0], y: pq.g[1], date: movieDate(pq) },
+      lines: movieStageLines(main, ci, pq ? ci - 1 : -1, short(main), movieCol(main)) } : null;
     const marks = ms.flatMap(m => { const now = m.passes.find(q => q.e === e && q.g), col = movieCol(m);
-      return [...m.passes.filter(q => q.e < e && q.g).map(q => ({ x: q.g[0], y: q.g[1], color: col, plus: true })), ...(now ? [{ x: now.g[0], y: now.g[1], color: col, label: m === main || ms.length <= 3 ? short(m) : null }] : [])]; });
-    return { fr, top: `Pass ${e + 1}`, sub: `${fmtMonth(S.eps[e].t0)} · ${lamOf(im).toFixed(2)} µm` + (fr.stack ? ` · median of ${fr.stack} images` : ''), marks, mjd: im.mjd, lam: lamOf(im) }; }).filter(Boolean);
+      return [...m.passes.filter(q => q.e < e && q.g).map(q => ({ x: q.g[0], y: q.g[1], color: col, plus: true })), ...(now && !(stage && m === main) ? [{ x: now.g[0], y: now.g[1], color: col, label: ms.length <= 3 ? short(m) : null }] : [])]; });
+    return { stage, fr, top: `Pass ${e + 1}`, sub: `${fmtMonth(S.eps[e].t0)} · ${lamOf(im).toFixed(2)} µm` + (fr.stack ? ` · median of ${fr.stack} images` : ''), marks, mjd: im.mjd, lam: lamOf(im) }; }).filter(Boolean);
   const c = main && movieCat(main), cmp = c && catCmp(c), sky = F.gridToSky(cx, cy, cardGrid());
   const badge = !main ? ['Nothing here moves enough to see', '#9b8cff'] : main.label === 'target' ? ['✓ Known mover: the NASA target', '#5ff0a0'] : main.how === 'predicted' ? ['Catalogue prediction: too small to measure here', '#93c5fd']
     : cmp ? (cmp.result === 'agrees' ? [`✓ Measured; ${c.cat || 'the catalogue'} agrees`, '#5ff0a0'] : [`Measured; ${c.cat || 'the catalogue'} differs`, '#ffb05a']) : ['Unconfirmed candidate', '#9b8cff'];
   return { title: main ? main.name : 'SPHEREx sky over time', badge, cx, cy, half, frames, ra: sky[0], dec: sky[1], slug: 'film-' + (main ? main.name : 'field'),
     credit: 'Images: NASA SPHEREx via IRSA · Motions: ARCNAVE, Gaia DR3, CatWISE2020 · False colour',
     fact: main ? `${main.mu.toFixed(2)}${main.smu ? ' ± ' + main.smu.toFixed(2) : ''}″ per year toward the ${main.dir} · ${ms.length} mover${ms.length === 1 ? '' : 's'} in the film` : `${frames.length} passes · no mover`,
-    note: 'Real SPHEREx images, one per pass. Ring: where each mover was in this pass; +: where it was in the passes before.' + (main && main.how === 'predicted' ? ' Positions are the catalogue\'s prediction, not a measurement.' : '') + ' Not a discovery claim.' };
+    note: 'Real SPHEREx images, one per pass. Spotlight: ' + (main ? short(main) : 'the main mover') + ', with its place in the pass before (dashed circle) and in this pass (ring), both dated. Other rings: where each mover was in this pass; +: in the passes before.' + (main && main.how === 'predicted' ? ' Positions are the catalogue\'s prediction, not a measurement.' : '') + ' Not a discovery claim.' };
 }
 async function filmFrames(plan) {
   try { await document.fonts.ready; } catch { /* fallback fonts */ }
@@ -5556,7 +5594,11 @@ async function filmGif() {
   if (!plan || plan.frames.length < 2) { toast('The film needs at least two passes with images loaded.'); return; }
   EXP.busy = true; toast('Making the film GIF...', 8000);
   try { const { g } = await filmFrames(plan), frames = [];
-    for (let i = 0; i < plan.frames.length; i++) { drawCardFrame(g, plan, i); frames.push({ rgba: g.getImageData(0, 0, CARD.W, CARD.H).data, delay: i === plan.frames.length - 1 ? 1700 : 1000 }); }
+    // v0.56: between passes the spotlit mover glides (3 short frames) and its ring locks on (2), then the pass holds
+    const push = delay => frames.push({ rgba: g.getImageData(0, 0, CARD.W, CARD.H).data, delay });
+    for (let i = 0; i < plan.frames.length; i++) { const tw = i > 0 && plan.frames[i].stage && plan.frames[i].stage.prev;
+      if (tw) { for (const k of [0, 0.35, 0.7]) { drawCardFrame(g, plan, i, { k, lock: 0 }); push(120); } for (const lock of [0.35, 0.7]) { drawCardFrame(g, plan, i, { k: 1, lock }); push(90); } }
+      drawCardFrame(g, plan, i); push(i === plan.frames.length - 1 ? 1700 : 1000); }
     const gif = await encodeGif({ width: CARD.W, height: CARD.H, frames });
     showCardDialog(plan, new Blob([gif], { type: 'image/gif' })); $('toast').hidden = true;
     EXP.last = { name: CARD.last && CARD.last.name, size: gif.length, type: 'image/gif', frames: plan.frames.length };
@@ -5573,7 +5615,11 @@ async function filmWebm() {
     rec.ondataavailable = ev => { if (ev.data && ev.data.size) parts.push(ev.data); };
     const done = new Promise(r => { rec.onstop = r; });
     drawCardFrame(g, plan, 0); rec.start(250);
-    for (let loop = 0; loop < 2; loop++) for (let i = 0; i < plan.frames.length; i++) { drawCardFrame(g, plan, i); await sleep(i === plan.frames.length - 1 ? 1700 : 1000); }
+    for (let loop = 0; loop < 2; loop++) for (let i = 0; i < plan.frames.length; i++) {
+      // v0.56: the glide and the lock-on drawn in real time (~30 frames a second), then the pass holds
+      const tw = i > 0 && plan.frames[i].stage && plan.frames[i].stage.prev, t0 = performance.now(), A = 450, B = 300;
+      if (tw) for (let t = 0; t < A + B; t = performance.now() - t0) { drawCardFrame(g, plan, i, { k: Math.min(1, t / A), lock: Math.max(0, (t - A) / B) }); await sleep(33); }
+      drawCardFrame(g, plan, i); await sleep(i === plan.frames.length - 1 ? 1700 : 1000); }
     rec.stop(); await done;
     saveBlob(new Blob(parts, { type: 'video/webm' }), `arcnave-${expSlug(plan.slug)}-${plan.ra.toFixed(3)}_${plan.dec.toFixed(3)}.webm`);
     EXP.last.frames = plan.frames.length;
@@ -5652,6 +5698,17 @@ function movieShift(a, b) {   // from pass a to pass b of one mover, on the sky:
 }
 const movieDate = q => fmtDay(q.mjd ?? epMid(q.e));
 const fmtShift = d => d.toFixed(d < 1 ? 2 : 1) + '″';
+// the callout's lines for pass index ci of mover m (pi: the pass before, -1 on its first pass): [text, colour, font?]
+function movieStageLines(m, ci, pi, title, col) {
+  const ps = m.passes, cur = ps[ci], last = ps[ps.length - 1], first = ps[0], lines = [[title, col, '700 12px']];
+  if (pi >= 0) { const s = movieShift(ps[pi], cur);
+    lines.push([`P${ps[pi].e + 1} · ${movieDate(ps[pi])}: here (dashed circle)`, 'rgba(230,236,245,.9)'], [`P${cur.e + 1} · ${movieDate(cur)}: there (ring)`, '#ffffff'],
+      [`moved ${fmtShift(s.d)} toward the ${s.dir} in ${s.days} days`, col]); }
+  else { const s = movieShift(first, last);
+    lines.push([`P${first.e + 1} · ${movieDate(first)}: it starts here`, '#ffffff'], [`by P${last.e + 1} · ${movieDate(last)}: ${fmtShift(s.d)} to the ${s.dir}`, col]); }
+  if (m.how === 'predicted') lines.push(['catalogue prediction, not measured here', 'rgba(147,197,253,.95)']);
+  return lines;
+}
 function movieStage(g, now, k) {
   const { m, i, col, qs, es, head, ci, pi } = g, dpr = window.devicePixelRatio || 1, cw = ctx.canvas.width / dpr, ch = ctx.canvas.height / dpr;
   const lock = Math.max(0, Math.min(1, (now - MOVIE.t0 - 0.45 * MOVIE.step) / (0.3 * MOVIE.step))), arrived = k >= 1;
@@ -5677,14 +5734,7 @@ function movieStage(g, now, k) {
     ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 14; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(head[0], head[1], r, a0, a0 + 2 * Math.PI * Math.max(0.02, lock)); ctx.stroke(); ctx.restore();
     if (lock >= 1) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6; for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { ctx.beginPath(); ctx.moveTo(head[0] + ux * 16, head[1] + uy * 16); ctx.lineTo(head[0] + ux * 22, head[1] + uy * 22); ctx.stroke(); } } }
   // 4. the callout: name, both dates and the true shift between them
-  const cur = m.passes[ci], last = m.passes[m.passes.length - 1], first = m.passes[0];
-  const lines = [[`${i + 1} ${m.name}`, col, '700 12px']];
-  if (pi >= 0) { const s = movieShift(m.passes[pi], cur);
-    lines.push([`P${es[pi] + 1} · ${movieDate(m.passes[pi])}: here (dashed circle)`, 'rgba(230,236,245,.9)'], [`P${es[ci] + 1} · ${movieDate(cur)}: there (ring)`, '#ffffff'],
-      [`moved ${fmtShift(s.d)} toward the ${s.dir} in ${s.days} days`, col]); }
-  else { const s = movieShift(first, last);
-    lines.push([`P1 · ${movieDate(first)}: it starts here`, '#ffffff'], [`by P${last.e + 1} · ${movieDate(last)}: ${fmtShift(s.d)} to the ${s.dir}`, col]); }
-  if (m.how === 'predicted') lines.push(['catalogue prediction, not measured here', 'rgba(147,197,253,.95)']);
+  const lines = movieStageLines(m, ci, pi, `${i + 1} ${m.name}`, col);
   const fade = Math.min(1, 0.25 + k * 1.2), lh = 15, pad = 8;
   ctx.font = '600 11px Inter,system-ui,sans-serif'; let wmax = 0; for (const [t, , f] of lines) { ctx.font = (f || '600 11px') + ' Inter,system-ui,sans-serif'; wmax = Math.max(wmax, ctx.measureText(t).width); }
   const bw = wmax + 2 * pad, bh = lines.length * lh + pad + 2;
