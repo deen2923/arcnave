@@ -341,8 +341,13 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     const sj = JSON.parse(fs.readFileSync(path.join(cacheDir, sfile), 'utf8')); sj.savedAt -= 2 * 864e5; fs.writeFileSync(path.join(cacheDir, sfile), JSON.stringify(sj));
     S._test.clearMemory();
     const realFetch = global.fetch; global.fetch = async () => { throw new Error('offline'); };
-    const off = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
-    assert.ok(off.stale === true && off.count === 1, 'offline search should come from the disk cache: ' + JSON.stringify(off).slice(0, 200));
+    // v0.56: an answer past its day is served at once (stale-while-revalidate) with the date the archive was asked; the
+    // background refresh fails offline and the old answer stays. "Check for new data" (fresh) waits, and says IRSA failed.
+    const t0 = Date.now(), off = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
+    assert.ok(off.count === 1 && off.checkedAt && !off.stale && Date.now() - t0 < 2000, 'an old search should come from the disk cache at once: ' + JSON.stringify(off).slice(0, 200));
+    await new Promise(r => setTimeout(r, 50)); S._test.clearMemory();
+    const offF = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4&fresh=1')).t);
+    assert.ok(offF.stale === true && offF.count === 1, 'a fresh check offline should say the saved list is used: ' + JSON.stringify(offF).slice(0, 200));
     assert.strictEqual((await get('/api/spherex/search?ra=10&dec=10')).s, 502, 'never-seen field offline must fail honestly');
     global.fetch = realFetch;
     const h = JSON.parse((await get('/api/health')).t); assert.ok(h.ok && h.cache.files >= 2 && h.stats.downloads >= 1, JSON.stringify(h));

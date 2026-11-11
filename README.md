@@ -15,6 +15,22 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.56: every field within a minute, the start screen ready (11 Nov 2026)
+Measured on this PC (2.2-2.4 MB/s to NASA's S3, the same with 4, 8 or 16 streams): a new field at 8 images per pass took
+79-90 s (archive search 6-16 s, then ~170 MB of image rows). Now:
+- **Fewer bytes per image.** ZODI (the zodiacal-light model) was a third of every image read (half on QR3 files). It is
+  smooth, so 9 of its rows are read and the rest rebuilt between them (`lib/s3cut.js` `zodiRows`). IMAGE and FLAGS are byte
+  for byte the same; on 120 real cutouts the rebuilt ZODI is within 1.2 % of the image noise (rms, worst image), 0.3 % after
+  the app's own processing. 7.5 MB → 5.1 MB per image.
+- **Quick first report.** A new field (its images not in the cache) reports first from 3 images per pass, then downloads the
+  rest and redoes the report with all 8 by itself (it waits while a card or the film is open). Measured from inside the app:
+  first report 40 s (search 11 s), full report 85 s; before, 79-90 s for the first report.
+- **Opened before = fast for good.** Archive and catalogue answers older than their time are served at once and asked for
+  again in the background (they waited 6-16 s for IRSA after a day). Cache limit 2000 → 8000 MB.
+- **Start screen prewarmed.** `#prewarm=start` runs the 18 test fields and 5 landmarks of the whole-sky map, the NASA targets
+  and the examples (with Gaia and CatWISE); then `node tools/pin-cache.js --newer-than <minutes>` writes `cache/pinned.json`,
+  and prune never removes those files. A cached field opens with its report in about 8-10 s.
+
 ## v0.54.0: from here to there, in every pass (7 Nov 2026)
 
 **🎬 Animate** (now also in Overlays) plays the passes as a film. Every star that Gaia, WISE or ARCNAVE's searches say
@@ -995,7 +1011,7 @@ longer covers the title, and known objects outside the compared square are drawn
 - **11x less data to the browser.** An IRSA cutout is ~6.4 MB, of which ~4.9 MB is a PSF cube the app never uses. The server
   keeps only IMAGE, FLAGS, ZODI and WCS-WAVE (~1.1 MB, byte-for-byte, still valid FITS) and gzips it (~0.6 MB). Measured on a
   real QR2 cutout: 6.42 MB -> 1.08 MB -> 0.58 MB. This matters most when the app runs on a server and visitors are far away.
-- **Disk cache** in `cache/` (limit `SKYSHIFT_CACHE_MB`, default 2000): cutouts and archive / SkyBoT / Horizons / name
+- **Disk cache** in `cache/` (limit `SKYSHIFT_CACHE_MB`, default 8000): cutouts and archive / SkyBoT / Horizons / name
   results. A field loads instantly the second time. **Offline demo:** if IRSA or the internet fails, results already in the
   cache are served (marked `stale`), so load your demo fields once before presenting.
 - **Parallel:** up to 8 downloads at once (`SKYSHIFT_UPSTREAM`), the browser asks for all epochs together, two requests for
