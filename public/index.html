@@ -89,6 +89,7 @@
           <a href="#lp-feat" data-i18n="v5.nav.feat">Features</a>
           <a href="#lp-targets" data-i18n="nav.targets">Test targets</a>
           <a href="#lp-tested" data-i18n="v5.nav.tested">Tested</a>
+          <a href="/tools.html" data-i18n="nav.tools">Tools, simply</a>
           <a href="/about.html" data-i18n="nav.about">About</a>
         </div>
         <button class="lp-menu btn-ghost" type="button" aria-expanded="false" aria-controls="lplinks" aria-label="Menu"><svg class="ic" aria-hidden="true"><use href="#i-menu"/></svg></button>
@@ -301,7 +302,7 @@
     <button type="button" id="sharetop" aria-label="Share" title="Share: copy a link to exactly this view"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg><span class="lbl">Share</span></button>
     <button id="playb" data-play aria-label="Find the asteroid" title="Find the asteroid: a 60-second game on real SPHEREx images"><svg class="ic" aria-hidden="true"><use href="#i-target"/></svg><span class="lbl">Find the asteroid</span></button>
     <button id="exb" aria-label="Examples" title="Examples: open a ready-made real example"><svg class="ic" aria-hidden="true"><use href="#i-spark"/></svg><span class="lbl">Examples</span></button>
-    <span class="tmw"><button id="tourm" aria-haspopup="true" aria-expanded="false" aria-controls="tmenu" aria-label="Tour" title="Tour: the 90-second story, every tool, quick start"><svg class="ic" aria-hidden="true"><use href="#i-compass"/></svg><span class="lbl">Tour</span></button><span id="tmenu" class="tmenu glass" role="menu" hidden><button role="menuitem" data-tour><b>90-second story</b><small>Neptune, Pluto, Planet Nine, then a real asteroid</small></button><button role="menuitem" data-guide><b>Every tool, one by one</b><small>What each tool is and how to use it</small></button><button role="menuitem" data-coach><b>Quick start</b><small>Four tips in 30 seconds</small></button></span></span>
+    <span class="tmw"><button id="tourm" aria-haspopup="true" aria-expanded="false" aria-controls="tmenu" aria-label="Tour" title="Tour: the 90-second story, every tool, quick start"><svg class="ic" aria-hidden="true"><use href="#i-compass"/></svg><span class="lbl">Tour</span></button><span id="tmenu" class="tmenu glass" role="menu" hidden><button role="menuitem" data-tour><b>90-second story</b><small>Neptune, Pluto, Planet Nine, then a real asteroid</small></button><button role="menuitem" data-guide><b>Every tool, one by one</b><small>What each tool is and how to use it</small></button><button role="menuitem" data-coach><b>Quick start</b><small>Four tips in 30 seconds</small></button><a role="menuitem" class="tmlink" href="/tools.html" target="_blank" rel="noopener"><b>All tools on one page</b><small>Plain words, 4 languages, to read or share</small></a></span></span>
     <button id="lb" aria-expanded="false" aria-controls="drawer" aria-label="Learn" title="Learn: the ideas behind it"><svg class="ic" aria-hidden="true"><use href="#i-book"/></svg><span class="lbl">Learn</span></button>
     <button id="tb" aria-expanded="false" aria-controls="tdrawer" aria-label="Tested" title="Tested: how far you can trust ARCNAVE, misses included"><svg class="ic" aria-hidden="true"><use href="#i-check"/></svg><span class="lbl">Tested</span></button>
     <span class="sep" aria-hidden="true"></span>
@@ -513,6 +514,7 @@
 
 <aside id="drawer" aria-label="Learn" aria-hidden="true">
   <button id="lc">Close</button>
+  <p><a href="/tools.html" style="color:var(--cy)">Every tool in plain words (English, தமிழ், हिन्दी, Español) →</a></p>
   <p><a href="/about.html" style="color:var(--cy)">Full page: data, method, test results and limits →</a></p>
   <h2>What is SPHEREx?</h2>
   <p>A NASA space telescope launched in March 2025. It maps the whole sky about every six months in 102 colors of near-infrared light, from 0.75 to 5 microns.</p>
@@ -586,7 +588,7 @@
     <p class="lede">Pick any spot on the sky. Agents fetch the real NASA SPHEREx images of it, line them up and show you what changed.</p>
     <p class="hist">In 1930 Clyde Tombaugh found Pluto by flipping between two photographs taken days apart. ARCNAVE does the same with a space telescope.</p>
     <div class="cta"><button id="go">Explore the whole sky</button><button class="tourb" data-tour>90-second story</button><button class="ghost" data-guide>Learn every tool</button><select class="langsel" data-lang aria-label="Language"><option value="en">English</option><option value="ta" lang="ta">தமிழ்</option><option value="hi" lang="hi">हिन्दी</option><option value="es" lang="es">Español</option></select></div>
-    <p class="abl"><a href="/about.html">How it works, the data and its limits →</a></p>
+    <p class="abl"><a href="/tools.html">Every tool in plain words →</a> · <a href="/about.html">How it works, the data and its limits →</a></p>
     <div class="exs" role="group" aria-label="Real examples (ready instantly)"><small>Or open a real example, ready in seconds</small>
       <button class="ex play" data-play><b>Play: find the asteroid</b><span>Flip through real SPHEREx images like Tombaugh did. One dot is moving. Can you spot it?</span></button>
       <button class="ex" data-ex="proof"><b>Catch a real asteroid</b><span>3865 Lindbloom, caught moving in real SPHEREx images and checked against its known orbit</span></button>
@@ -637,7 +639,7 @@
      2.4 MB of script plus WebGL, and starting it behind the start page blocked a phone for seconds. -->
 <script>
 window.ARC_TOOL = { aladin: '/vendor/aladin-lite-3.8.2.js', aladinCds: 'https://aladin.cds.unistra.fr/AladinLite/api/v3/3.8.2/aladin.js',
-  rest: ['/lib/fits.js', '/lib/s3cut.js', '/lib/wave.js', '/lib/spot.js', '/lib/slots.js', '/lib/planetx.js', '/gif.js', '/app.js', '/i18n.js', '/tour.js'] };
+  rest: ['/lib/fits.js', '/lib/s3cut.js', '/lib/wave.js', '/lib/spot.js', '/lib/slots.js', '/lib/planetx.js', '/gif.js', '/app.js', '/i18n.js', '/tools-plain.js', '/tour.js'] };
 if (!document.documentElement.classList.contains('landing')) {
   document.write('<script src="' + ARC_TOOL.aladin + '" charset="utf-8"><\/script>');
   document.write('<script>if (!window.A) document.write(\'<script src="' + ARC_TOOL.aladinCds + '" charset="utf-8"><\\/script>\');<\/script>');

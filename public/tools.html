@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ARCNAVE tools in plain words</title>
+<meta name="description" content="Every ARCNAVE tool explained in plain words: what it does and how to use it, in English, Tamil, Hindi and Spanish.">
+<meta name="theme-color" content="#05070f">
+<link rel="icon" href="/icon.svg" type="image/svg+xml"><link rel="apple-touch-icon" href="/icon-180.png"><link rel="manifest" href="/manifest.webmanifest">
+<meta property="og:type" content="article"><meta property="og:site_name" content="ARCNAVE">
+<meta property="og:title" content="ARCNAVE tools in plain words">
+<meta property="og:description" content="Every tool explained simply: what it does and how to use it. English, தமிழ், हिन्दी, Español.">
+<meta property="og:url" content="%ORIGIN%/tools.html"><meta property="og:image" content="%ORIGIN%/og.jpg">
+<meta name="twitter:card" content="summary_large_image"><meta name="twitter:image" content="%ORIGIN%/og.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..800&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:dark;--void:#05070f;--ink:#0a0e1a;--ink2:#0e1424;--line:#222b40;--line2:#323d57;--text:#eef1f7;--dust:#8e98ae;--ir:#ffb05a;--cy:#5fe3f0;--ok:#5ff0a0;
+--spec:linear-gradient(90deg,hsl(190 85% 58%),hsl(115 85% 58%),hsl(40 85% 58%));--ui:'Archivo',system-ui,'Noto Sans Tamil','Noto Sans Devanagari',sans-serif}
+@media (prefers-color-scheme:light){:root:not([data-theme=dark]){color-scheme:light;--void:#f6f7fb;--ink:#ffffff;--ink2:#eef1f7;--line:#dde2ec;--line2:#c9d0de;--text:#121726;--dust:#5b6478;--ir:#b45f00;--cy:#00798a;--ok:#11804a}}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{margin:0;background:var(--void);color:var(--text);font:400 16px/1.65 var(--ui)}
+a{color:var(--cy)}a:focus-visible,button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #ffc46b;outline-offset:2px}
+.wrap{max-width:900px;margin:0 auto;padding:0 16px 80px}
+header{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--void) 92%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:10px;padding-bottom:10px;flex-wrap:wrap}
+.wm{font:800 1rem/1 var(--ui);letter-spacing:.16em;color:var(--ir);text-decoration:none}
+.hr{display:flex;gap:8px;align-items:center}
+select,input{font:inherit;color:var(--text);background:var(--ink);border:1px solid var(--line2);border-radius:8px;padding:.4rem .6rem}
+.open{display:inline-flex;align-items:center;gap:6px;padding:.45rem .9rem;border-radius:8px;background:var(--text);color:var(--void);font-weight:650;text-decoration:none;white-space:nowrap}
+.hero{padding:40px 0 6px}
+.spec{height:8px;width:min(360px,70%);background:var(--spec);-webkit-mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 4px);mask:repeating-linear-gradient(90deg,#000 0 2px,transparent 2px 4px);margin-bottom:20px}
+h1{font:750 clamp(1.8rem,6vw,2.6rem)/1.12 var(--ui);letter-spacing:-.015em;margin:0 0 12px}
+.lede{font-size:1.1rem;color:var(--dust);margin:0}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin:24px 0 6px;padding:0;list-style:none}
+.steps li{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.steps b{display:block;color:var(--ir);font-size:.8rem;letter-spacing:.12em;text-transform:uppercase}
+.bar{display:flex;flex-wrap:wrap;gap:6px;margin:26px 0 6px;align-items:center}
+.bar a{font-size:.85rem;padding:.3rem .75rem;border:1px solid var(--line2);border-radius:99px;color:var(--text);text-decoration:none}
+.bar a:hover{border-color:var(--text)}
+#find{flex:1 1 220px;min-width:0}
+h2{font:700 1.3rem/1.25 var(--ui);margin:40px 0 12px;scroll-margin-top:80px;display:flex;align-items:center;gap:10px}
+h2::before{content:"";width:18px;height:3px;background:var(--spec);border-radius:2px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,380px),1fr));gap:12px}
+.tool{background:var(--ink);border:1px solid var(--line);border-radius:14px;padding:14px 16px;display:grid;grid-template-columns:40px 1fr;gap:4px 12px}
+.tool .ic{grid-row:span 3;width:40px;height:40px;border-radius:10px;background:var(--ink2);display:grid;place-items:center;font-size:1.25rem;line-height:1}
+.tool h3{margin:0;font:700 1.02rem/1.3 var(--ui)}
+.tool p{margin:0;color:var(--text);opacity:.88}
+.tool .how{color:var(--dust);font-size:.93rem}
+.tool .how b{color:var(--ok);font-weight:650}
+.gl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:10px;padding:0;margin:0;list-style:none}
+.gl li{background:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 14px}
+.gl b{color:var(--cy)}
+.none{color:var(--dust);display:none}
+footer{margin-top:50px;color:var(--dust);font-size:.88rem;border-top:1px solid var(--line);padding-top:16px}
+</style>
+</head>
+<body>
+<header><div class="wrap"><a class="wm" href="/">ARCNAVE</a>
+  <div class="hr"><select id="lang" aria-label="Language"><option value="en">English</option><option value="ta" lang="ta">தமிழ்</option><option value="hi" lang="hi">हिन्दी</option><option value="es" lang="es">Español</option></select>
+  <a class="open" id="open" href="/">Open ARCNAVE</a></div></div></header>
+<main class="wrap">
+  <section class="hero"><div class="spec" aria-hidden="true"></div>
+    <h1 id="h1">Every tool, in plain words</h1>
+    <p class="lede" id="lede"></p>
+    <ol class="steps" id="steps"></ol>
+  </section>
+  <div class="bar" id="bar"><input id="find" type="search" aria-label="Find a tool"></div>
+  <p class="none" id="none"></p>
+  <div id="list"></div>
+  <h2 id="glh"></h2>
+  <ul class="gl" id="gl"></ul>
+  <footer id="foot"></footer>
+</main>
+<script src="/tools-plain.js"></script>
+<script>
+(function () {
+  const L = ['en', 'ta', 'hi', 'es'], $ = id => document.getElementById(id), A = window.ARC_TOOLS;
+  const UI = {
+    title: ['Every tool, in plain words', 'ஒவ்வொரு கருவியும், எளிய சொற்களில்', 'हर टूल, आसान शब्दों में', 'Cada herramienta, en palabras sencillas'],
+    lede: ['ARCNAVE shows real pictures of the sky taken by NASA\'s SPHEREx telescope, months apart, so you can see what changed and what moved. Here is what every button does.',
+      'நாசாவின் SPHEREx தொலைநோக்கி மாதங்கள் இடைவெளியில் எடுத்த வானின் உண்மையான படங்களை ARCNAVE காட்டுகிறது; எது மாறியது, எது நகர்ந்தது என்று நீங்கள் பார்க்கலாம். ஒவ்வொரு பொத்தானும் என்ன செய்கிறது என்பது இங்கே.',
+      'ARCNAVE NASA की SPHEREx दूरबीन से महीनों के अंतर पर ली गई आसमान की असली तस्वीरें दिखाता है, ताकि आप देख सकें कि क्या बदला और क्या चला। यहाँ हर बटन का काम बताया गया है।',
+      'ARCNAVE muestra fotos reales del cielo tomadas por el telescopio SPHEREx de la NASA con meses de diferencia, para que veas qué cambió y qué se movió. Aquí está lo que hace cada botón.'],
+    s1: [['1 · Pick a place', 'Search a name or click a dot on the whole-sky map.'], ['1 · இடத்தைத் தேர்ந்தெடுங்கள்', 'ஒரு பெயரைத் தேடுங்கள் அல்லது முழு வான வரைபடத்தில் ஒரு புள்ளியைக் கிளிக் செய்யுங்கள்.'], ['1 · जगह चुनें', 'कोई नाम खोजें या पूरे आसमान के नक्शे पर किसी बिंदु पर क्लिक करें।'], ['1 · Elige un lugar', 'Busca un nombre o haz clic en un punto del mapa del cielo.']],
+    s2: [['2 · Watch it change', 'Slide through the dates, or blink between them.'], ['2 · மாறுவதைப் பாருங்கள்', 'தேதிகளின் வழியே நகர்த்துங்கள், அல்லது அவற்றுக்கிடையே சிமிட்டுங்கள்.'], ['2 · बदलते देखें', 'तारीख़ों के बीच स्लाइड करें, या उनके बीच ब्लिंक करें।'], ['2 · Mira cómo cambia', 'Desliza por las fechas o parpadea entre ellas.']],
+    s3: [['3 · See what moved', 'Play the film: a spotlight shows each star, where it was and where it went.'], ['3 · நகர்ந்ததைப் பாருங்கள்', 'படத்தை ஓட்டுங்கள்: ஒளிக்கற்றை ஒவ்வொரு நட்சத்திரத்தையும், அது இருந்த இடத்தையும் சென்ற இடத்தையும் காட்டும்.'], ['3 · देखें क्या चला', 'फ़िल्म चलाएँ: स्पॉटलाइट हर तारा दिखाती है, वह कहाँ था और कहाँ गया।'], ['3 · Mira qué se movió', 'Pon la película: un foco muestra cada estrella, dónde estaba y adónde fue.']],
+    find: ['Find a tool…', 'கருவியைத் தேடுங்கள்…', 'टूल खोजें…', 'Busca una herramienta…'],
+    none: ['No tool matches that word.', 'அந்தச் சொல்லுக்குப் பொருந்தும் கருவி இல்லை.', 'उस शब्द से कोई टूल नहीं मिला।', 'Ninguna herramienta coincide con esa palabra.'],
+    how: ['How:', 'எப்படி:', 'कैसे:', 'Cómo:'],
+    open: ['Open ARCNAVE', 'ARCNAVE-ஐத் திற', 'ARCNAVE खोलें', 'Abrir ARCNAVE'],
+    glh: ['Words you will see', 'நீங்கள் காணும் சொற்கள்', 'शब्द जो आप देखेंगे', 'Palabras que verás'],
+    foot: ['ARCNAVE is free and needs no sign-up. The pictures are real data from NASA/IPAC IRSA. Anything it flags as new is a candidate to check, never a confirmed discovery. Tip: the guide in the app (Tour → Learn every tool) lights up each of these tools on real data.',
+      'ARCNAVE இலவசம், பதிவு தேவையில்லை. படங்கள் NASA/IPAC IRSA-வின் உண்மையான தரவு. புதியது என்று அது குறிப்பது சோதிக்க வேண்டிய ஒரு வாய்ப்பு மட்டுமே, உறுதிசெய்யப்பட்ட கண்டுபிடிப்பு அல்ல. குறிப்பு: செயலியில் உள்ள வழிகாட்டி (Tour → Learn every tool) இந்தக் கருவிகள் ஒவ்வொன்றையும் உண்மையான தரவில் ஒளிரச் செய்யும்.',
+      'ARCNAVE मुफ़्त है और साइन-अप नहीं चाहिए। तस्वीरें NASA/IPAC IRSA का असली डेटा हैं। जो कुछ वह नया बताता है वह जाँचने लायक उम्मीदवार है, पक्की खोज नहीं। सुझाव: ऐप की गाइड (Tour → Learn every tool) इनमें से हर टूल को असली डेटा पर दिखाती है।',
+      'ARCNAVE es gratis y no pide registro. Las fotos son datos reales de NASA/IPAC IRSA. Lo que marca como nuevo es un candidato a comprobar, nunca un descubrimiento confirmado. Consejo: la guía de la app (Tour → Learn every tool) ilumina cada una de estas herramientas con datos reales.']
+  };
+  const GL = [
+    [['SPHEREx', 'NASA\'s space telescope, launched in March 2025. It photographs the whole sky every six months in 102 infrared colours.'], ['SPHEREx', 'மார்ச் 2025-ல் ஏவப்பட்ட நாசாவின் விண்வெளித் தொலைநோக்கி. ஆறு மாதத்துக்கு ஒருமுறை முழு வானையும் 102 அகச்சிவப்பு நிறங்களில் படம் எடுக்கிறது.'], ['SPHEREx', 'NASA की अंतरिक्ष दूरबीन, मार्च 2025 में छोड़ी गई। यह हर छह महीने में पूरे आसमान की 102 इन्फ़्रारेड रंगों में तस्वीर लेती है।'], ['SPHEREx', 'El telescopio espacial de la NASA, lanzado en marzo de 2025. Fotografía todo el cielo cada seis meses en 102 colores infrarrojos.']],
+    [['Pass', 'One complete photograph of the sky by SPHEREx, about six months long. Comparing passes shows what changed.'], ['சுற்று (pass)', 'SPHEREx வானை ஒருமுறை முழுமையாகப் படம் எடுப்பது, சுமார் ஆறு மாதம். சுற்றுகளை ஒப்பிட்டால் மாறியது தெரியும்.'], ['चक्कर (pass)', 'SPHEREx का आसमान का एक पूरा फ़ोटो, लगभग छह महीने का। चक्करों की तुलना से पता चलता है कि क्या बदला।'], ['Pasada', 'Una foto completa del cielo hecha por SPHEREx, de unos seis meses. Comparar pasadas muestra lo que cambió.']],
+    [['Infrared', 'Light just beyond red, which our eyes cannot see. It goes through dust and shows cool things.'], ['அகச்சிவப்பு', 'சிவப்புக்கு அப்பால் உள்ள, நம் கண்களுக்குத் தெரியாத ஒளி. அது தூசியைக் கடந்து குளிர்ந்தவற்றைக் காட்டுகிறது.'], ['इन्फ़्रारेड', 'लाल से ठीक आगे की रोशनी, जिसे हमारी आँखें नहीं देखतीं। यह धूल के पार जाती है और ठंडी चीज़ें दिखाती है।'], ['Infrarrojo', 'Luz justo más allá del rojo, que nuestros ojos no ven. Atraviesa el polvo y muestra cosas frías.']],
+    [['Pixel', 'One dot of a picture. One SPHEREx pixel covers 6 arcseconds of sky, about a 300th of the Moon\'s width.'], ['பிக்சல்', 'படத்தின் ஒரு புள்ளி. ஒரு SPHEREx பிக்சல் வானில் 6 வில்வினாடி, நிலவின் அகலத்தில் ஏறக்குறைய 300-ல் ஒரு பங்கு.'], ['पिक्सेल', 'तस्वीर का एक बिंदु। एक SPHEREx पिक्सेल आसमान का 6 आर्कसेकंड है, चाँद की चौड़ाई का लगभग 300वाँ हिस्सा।'], ['Píxel', 'Un punto de una foto. Un píxel de SPHEREx cubre 6 segundos de arco, más o menos la 300ª parte del ancho de la Luna.']],
+    [['″ (arcsecond)', 'A tiny angle on the sky: the full Moon is about 1800″ wide. Star motions are given in ″ per year.'], ['″ (வில்வினாடி)', 'வானில் மிகச் சிறிய கோணம்: முழு நிலவு சுமார் 1800″ அகலம். நட்சத்திர இயக்கங்கள் ஆண்டுக்கு ″ என்று சொல்லப்படும்.'], ['″ (आर्कसेकंड)', 'आसमान पर बहुत छोटा कोण: पूरा चाँद लगभग 1800″ चौड़ा है। तारों की गति ″ प्रति वर्ष में बताई जाती है।'], ['″ (segundo de arco)', 'Un ángulo diminuto en el cielo: la Luna llena mide unos 1800″. El movimiento de las estrellas se da en ″ por año.']],
+    [['Asteroid', 'A small rocky body going round the Sun. Asteroids move fast across the sky, so they jump between pictures.'], ['சிறுகோள்', 'சூரியனைச் சுற்றும் சிறிய பாறை. சிறுகோள்கள் வானில் வேகமாக நகர்வதால் படங்களுக்கு இடையே துள்ளும்.'], ['क्षुद्रग्रह', 'सूरज के चारों ओर घूमने वाली छोटी चट्टान। ये आसमान में तेज़ चलते हैं, इसलिए तस्वीरों के बीच उछलते हैं।'], ['Asteroide', 'Un pequeño cuerpo rocoso que gira alrededor del Sol. Se mueven rápido por el cielo, así que saltan entre fotos.']],
+    [['Brown dwarf', 'A "failed star": too small to shine like the Sun, warm enough to glow in infrared. Nearby ones move visibly in a year.'], ['பழுப்புக் குள்ளன்', '"தோல்வியடைந்த நட்சத்திரம்": சூரியனைப் போல ஒளிர மிகச் சிறியது, அகச்சிவப்பில் ஒளிரும் அளவு வெப்பம். அருகிலுள்ளவை ஓராண்டில் நகர்வது தெரியும்.'], ['भूरा बौना', '"असफल तारा": सूरज जैसा चमकने के लिए बहुत छोटा, पर इन्फ़्रारेड में चमकने लायक गरम। पास वाले एक साल में चलते दिखते हैं।'], ['Enana marrón', 'Una "estrella fallida": demasiado pequeña para brillar como el Sol, pero lo bastante tibia para brillar en infrarrojo. Las cercanas se ven moverse en un año.']],
+    [['Planet X', 'A planet some scientists think may exist far beyond Neptune. Not found yet. It would move very slowly, so it is hard to catch.'], ['Planet X', 'நெப்டியூனுக்கு அப்பால் தொலைவில் இருக்கலாம் என்று சில விஞ்ஞானிகள் நினைக்கும் ஒரு கோள். இன்னும் கண்டுபிடிக்கப்படவில்லை. மிக மெதுவாக நகரும், அதனால் பிடிப்பது கடினம்.'], ['Planet X', 'एक ग्रह जो कुछ वैज्ञानिकों के अनुसार नेपच्यून से बहुत आगे हो सकता है। अभी तक नहीं मिला। यह बहुत धीरे चलेगा, इसलिए पकड़ना मुश्किल है।'], ['Planet X', 'Un planeta que algunos científicos creen que puede existir mucho más allá de Neptuno. Aún no se ha encontrado. Se movería muy despacio, por eso es difícil de pillar.']]
+  ];
+  let lang = 'en';
+  try { const m = /[#?&]lang=([a-z]{2})/.exec(location.hash + location.search), st = localStorage.getItem('arcnave.lang'); lang = m && L.includes(m[1]) ? m[1] : L.includes(st) ? st : 'en'; } catch { /* default */ }
+  const t = v => v[L.indexOf(lang)] ?? v[0], el = (tag, cls, txt) => { const e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; };
+  function render() {
+    document.documentElement.lang = lang; $('lang').value = lang;
+    $('h1').textContent = t(UI.title); $('lede').textContent = t(UI.lede); $('find').placeholder = t(UI.find); $('none').textContent = t(UI.none);
+    $('open').textContent = t(UI.open); $('glh').textContent = t(UI.glh); $('foot').textContent = t(UI.foot); document.title = 'ARCNAVE · ' + t(UI.title);
+    $('steps').replaceChildren(...['s1', 's2', 's3'].map(k => { const [h, p] = t(UI[k]), li = el('li'); li.append(el('b', '', h), el('span', '', p)); return li; }));
+    const bar = $('bar'); bar.querySelectorAll('a').forEach(a => a.remove());
+    const list = $('list'); list.replaceChildren();
+    for (const g of A.groups) {
+      const items = A.tools.filter(x => x.group === g.id); if (!items.length) continue;
+      const a = el('a', '', A.tx(g.name, lang)); a.href = '#g-' + g.id; bar.append(a);
+      const h = el('h2', '', A.tx(g.name, lang)); h.id = 'g-' + g.id;
+      const grid = el('div', 'grid');
+      for (const x of items) {
+        const c = el('article', 'tool'); c.dataset.text = [x.name, x.what, x.how].flat().join(' ').toLowerCase(); c.id = 'tool-' + x.id;
+        const how = el('p', 'how'); how.append(el('b', '', t(UI.how) + ' '), document.createTextNode(A.tx(x.how, lang)));
+        c.append(el('span', 'ic', x.icon), el('h3', '', A.tx(x.name, lang)), el('p', '', A.tx(x.what, lang)), how); grid.append(c);
+      }
+      const sec = el('section'); sec.dataset.group = g.id; sec.append(h, grid); list.append(sec);
+    }
+    $('gl').replaceChildren(...GL.map(w => { const [n, d] = t(w), li = el('li'); li.append(el('b', '', n), document.createTextNode(' — ' + d)); return li; }));
+    filter();
+  }
+  function filter() {
+    const q = $('find').value.trim().toLowerCase(); let any = false;
+    document.querySelectorAll('#list section').forEach(s => { let n = 0; s.querySelectorAll('.tool').forEach(c => { const on = !q || c.dataset.text.includes(q); c.hidden = !on; if (on) n++; }); s.hidden = !n; if (n) any = true; });
+    $('none').style.display = any ? 'none' : 'block';
+  }
+  $('lang').onchange = e => { lang = e.target.value; try { localStorage.setItem('arcnave.lang', lang); } catch { /* not kept */ } render(); };
+  $('find').oninput = filter;
+  render();
+})();
+</script>
+</body>
+</html>
