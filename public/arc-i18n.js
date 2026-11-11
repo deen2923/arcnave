@@ -5,7 +5,7 @@ window.ARC_LP = {
   ta: {
     'hero.p1': '102 அகச்சிவப்பு நிறங்கள்', 'hero.p2': 'உண்மையான நாசா SPHEREx தரவு', 'hero.p3': 'நாசா ஸ்பேஸ் ஆப்ஸ் 2026', 'cta.see': 'நகர்வதைப் பாருங்கள்', 'see.eye': 'நகர்வதைப் பாருங்கள்', 'see.h': 'உண்மையான SPHEREx படங்களில் பிடிபட்ட ஒரு உண்மையான சிறுகோள்',
     'sp.dvh': 'ஆழமான பார்வை', 'sp.dvp': 'SPHEREx-இன் 6 கண்டறிவான்களில் ஒவ்வொன்றிலிருந்தும் 6 படங்கள் வரை, நட்சத்திரங்களை வைத்து வரிசைப்படுத்திச் சராசரியாக்கப்படுகின்றன, எனவே மங்கலானவையும் தெரிகின்றன. பர்னார்ட் நட்சத்திரப் பகுதியில் இரைச்சல் ஒவ்வொரு கண்டறிவானிலும் 1.7 முதல் 2.6 மடங்கு குறைந்தது.', 'sp.lch': 'ஒளி வளைவுகள்', 'sp.lcp': 'ஒரு நட்சத்திரத்தின் பிரகாசம் காலப்போக்கில், எந்த நிறத்திலும், 36 படங்கள் வரை, நிலையான ஒப்பீட்டு நட்சத்திரங்களுடன். மிகப் பிரகாசமானவை அவற்றின் வெளி ஒளிவட்டத்தில் அளக்கப்படுகின்றன; RW ஆரிகே 6 நிறங்களிலும், R டிராகோனிஸ் 3 நிறங்களிலும் சோதிக்கப்பட்டன.', 'sp.tsh': 'வெளிப்படையாகச் சோதிக்கப்பட்டது', 'sp.tsp': 'ஓட்டத்துக்கு முன்பே தேர்ந்த 18 வானப் பகுதிகள், ஒவ்வொன்றும் வெளியிடப்பட்டது, தவறியவை உட்பட. எங்கள் வானக் கணக்கு Astropy-உடன் 0.000″ வரை ஒத்துப்போகிறது.',
-    'nav.explore': 'ஆராயுங்கள்', 'nav.how': 'எப்படி வேலை செய்கிறது', 'nav.targets': 'சோதனை இலக்குகள்', 'nav.science': 'அறிவியல்', 'nav.about': 'பற்றி',
+    'nav.explore': 'ஆராயுங்கள்', 'nav.how': 'எப்படி வேலை செய்கிறது', 'nav.targets': 'சோதனை இலக்குகள்', 'nav.science': 'அறிவியல்', 'nav.about': 'பற்றி', 'nav.tools': 'கருவிகள் எளிதாக',
     'cta.launch': 'ARCNAVE-ஐத் தொடங்கு', 'cta.barnard': 'பர்னார்ட் நட்சத்திரத்தைப் பாருங்கள்', 'cta.story': '90 வினாடிக் கதை',
     'hero.kick': 'நாசா ஸ்பேஸ் ஆப்ஸ் சவால் 2026 · Planet X மற்றும் SPHEREx',
     'start.eye': 'இங்கிருந்து தொடங்குங்கள்', 'start.h': 'நாசாவின் ஐந்து சோதனை இலக்குகளில் ஒன்றைத் திறங்கள்',
@@ -83,7 +83,7 @@ window.ARC_LP = {
   hi: {
     'hero.p1': '102 इन्फ्रारेड रंग', 'hero.p2': 'असली नासा SPHEREx डेटा', 'hero.p3': 'नासा स्पेस ऐप्स 2026', 'cta.see': 'चलते देखिए', 'see.eye': 'चलते देखिए', 'see.h': 'असली SPHEREx तस्वीरों में पकड़ा गया एक असली क्षुद्रग्रह',
     'sp.dvh': 'डीप व्यू', 'sp.dvp': 'SPHEREx के 6 डिटेक्टरों में से हर एक की 6 तक तस्वीरें, तारों के सहारे मिलाकर औसत की जाती हैं, इसलिए धुँधली चीज़ें भी दिखती हैं। बर्नार्ड तारे के क्षेत्र में हर डिटेक्टर पर शोर 1.7 से 2.6 गुना घटा।', 'sp.lch': 'प्रकाश वक्र', 'sp.lcp': 'किसी तारे की चमक समय के साथ, किसी भी रंग पर, 36 तस्वीरों तक, स्थिर तुलना तारों के साथ। बहुत चमकीले तारे उनकी बाहरी चमक से मापे जाते हैं; RW ऑरिगी 6 और R ड्रेकोनिस 3 रंगों पर जाँचे गए।', 'sp.tsh': 'खुले में परखा गया', 'sp.tsp': 'चलाने से पहले चुने गए 18 आकाश-क्षेत्र, हर एक प्रकाशित, चूकें भी। हमारा आकाश-गणित Astropy से 0.000″ तक मेल खाता है।',
-    'nav.explore': 'खोजें', 'nav.how': 'यह कैसे काम करता है', 'nav.targets': 'परीक्षण लक्ष्य', 'nav.science': 'विज्ञान', 'nav.about': 'परिचय',
+    'nav.explore': 'खोजें', 'nav.how': 'यह कैसे काम करता है', 'nav.targets': 'परीक्षण लक्ष्य', 'nav.science': 'विज्ञान', 'nav.about': 'परिचय', 'nav.tools': 'टूल आसान भाषा में',
     'cta.launch': 'ARCNAVE शुरू करें', 'cta.barnard': 'बर्नार्ड तारा देखें', 'cta.story': '90 सेकंड की कहानी',
     'hero.kick': 'नासा स्पेस ऐप्स चैलेंज 2026 · Planet X और SPHEREx',
     'start.eye': 'यहाँ से शुरू करें', 'start.h': 'नासा के पाँच परीक्षण लक्ष्यों में से एक खोलें',
@@ -161,7 +161,7 @@ window.ARC_LP = {
   es: {
     'hero.p1': '102 colores infrarrojos', 'hero.p2': 'Datos reales de SPHEREx de la NASA', 'hero.p3': 'NASA Space Apps 2026', 'cta.see': 'Verlo moverse', 'see.eye': 'Verlo moverse', 'see.h': 'Un asteroide real, captado en imágenes reales de SPHEREx',
     'sp.dvh': 'Vista profunda', 'sp.dvp': 'Hasta 6 imágenes de cada uno de los 6 detectores de SPHEREx, alineadas con las estrellas y promediadas, así que se ven cosas más débiles. En el campo de la estrella de Barnard el ruido bajó entre 1,7 y 2,6 veces por detector.', 'sp.lch': 'Curvas de luz', 'sp.lcp': 'El brillo de una estrella a lo largo del tiempo en cualquier color, hasta 36 imágenes, junto a estrellas de comparación estables. Las demasiado brillantes se miden en su halo exterior; RW Aurigae y R Draconis se comprobaron en 6 y 3 colores.', 'sp.tsh': 'Probado a la vista', 'sp.tsp': '18 campos del cielo elegidos antes de la prueba, todos publicados, fallos incluidos. Nuestras cuentas del cielo coinciden con Astropy hasta 0,000″.',
-    'nav.explore': 'Explorar', 'nav.how': 'Cómo funciona', 'nav.targets': 'Objetivos de prueba', 'nav.science': 'Ciencia', 'nav.about': 'Acerca de',
+    'nav.explore': 'Explorar', 'nav.how': 'Cómo funciona', 'nav.targets': 'Objetivos de prueba', 'nav.science': 'Ciencia', 'nav.about': 'Acerca de', 'nav.tools': 'Herramientas, fácil',
     'cta.launch': 'Abrir ARCNAVE', 'cta.barnard': 'Probar con la estrella de Barnard', 'cta.story': 'Historia de 90 segundos',
     'hero.kick': 'NASA Space Apps Challenge 2026 · Planet X y SPHEREx',
     'start.eye': 'Empieza aquí', 'start.h': 'Abre uno de los cinco objetivos de prueba de la NASA',

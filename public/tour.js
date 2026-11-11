@@ -348,6 +348,18 @@
   GUIDE.splice(GUIDE.length - 1, 0, G('Phone', ['Bottom bar', 'கீழ்ப் பட்டை'],
     ['On phones the controls, the agents and the result card share one sheet, so the sky stays visible.', 'போனில் கட்டுப்பாடுகள், ஏஜென்ட்கள், முடிவு அட்டை மூன்றும் ஒரே தாளில் இருக்கும், அதனால் வானம் தெரிந்துகொண்டே இருக்கும்.'],
     ['Tap Controls, Agents or Result to switch. Tap the open one again to fold it away. A dot on Result means a new result. Tap or drag the small handle on the sheet to make it a peek, half or full screen; dragging the sky lowers it.', 'Controls, Agents, Result தட்டி மாற்றுங்கள். திறந்ததை மீண்டும் தட்டினால் மடியும். Result மேல் ஒரு புள்ளி என்றால் புதிய முடிவு. ஷீட்டின் மேல் உள்ள சிறிய கைப்பிடியைத் தட்டி அல்லது இழுத்து, அதைச் சிறிதாக, பாதியாக அல்லது முழுத் திரையாக மாற்றலாம்; வானை இழுத்தால் அது கீழிறங்கும்.'], () => $('mnav'), null, { phoneOnly: true }));
+  // v0.56: the tools added since this guide was written, in the plain words of public/tools-plain.js (one step each, put
+  // before the result card): the film, the four motion searches, known asteroid paths, WISE, the colour picture, images
+  // per pass, the mover test, the test results, saving a picture and checking for new data.
+  if (window.ARC_TOOLS) {
+    const YR = { look: 'Images & epochs', motion: 'Movers', colour: 'Bands & spectra', maps: 'Overlays', test: 'Planet X & agents', share: 'Share & report' };
+    const near = el => () => { sheet('panel'); try { const e = el(); e && e.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch { /* not on screen */ } };
+    const first = s => () => q(s.split(',')[0].trim());
+    const add = ['film', 'ms', 'ds', 'df', 'sc', 'kp', 'wise', 'comp', 'ipe', 'mt', 'tested', 'png', 'relchk'].map(id => ARC_TOOLS.tools.find(t => t.id === id)).filter(Boolean)
+      .map(t => G(YR[t.group] || 'Tools', t.name, t.what, t.how, first(t.sel), near(first(t.sel)), t.group === 'test' || t.group === 'share' ? {} : { data: true }));
+    const at = GUIDE.findIndex(c => Array.isArray(c.t) && c.t[0] === 'Result card');
+    GUIDE.splice(at >= 0 ? at : GUIDE.length - 1, 0, ...add);
+  }
 
   function build() {
     root = document.createElement('div'); root.id = 'tour'; root.setAttribute('role', 'dialog'); root.setAttribute('aria-label', 'Guided tour');
