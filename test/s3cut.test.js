@@ -49,6 +49,15 @@ const get = async (a, b) => { calls++; return { buf: new Uint8Array(full.subarra
   // second file with the layout hint: headers asked for in parallel, fewer rounds
   const c2 = await C.cutout(get, centre[0], centre[1], 0.2, c.offsets);
   assert.strictEqual(Buffer.compare(Buffer.from(c2.fits), Buffer.from(c.fits)), 0, 'same result with the hint');
+  // v0.56 zodiRows: IMAGE and FLAGS byte for byte the same, ZODI rebuilt from 9 rows close to the real one, fewer bytes read
+  const cz = await C.cutout(get, centre[0], centre[1], 0.2, c.offsets, { zodiRows: 9 });
+  const oz = F.parseFITS(cz.fits.buffer.slice(cz.fits.byteOffset, cz.fits.byteOffset + cz.fits.length)), bz = cz.fits.buffer.slice(cz.fits.byteOffset, cz.fits.byteOffset + cz.fits.length), bc = c.fits.buffer.slice(c.fits.byteOffset, c.fits.byteOffset + c.fits.length);
+  for (const nm of ['IMAGE', 'FLAGS']) { const a = new Uint8Array(bc, F.findHDU(out, nm).dataStart, F.findHDU(out, nm).dataLen), b = new Uint8Array(bz, F.findHDU(oz, nm).dataStart, F.findHDU(oz, nm).dataLen); assert.ok(Buffer.from(a).equals(Buffer.from(b)), nm + ' identical with zodiRows'); }
+  const zA = F.readImage(bc, F.findHDU(out, 'ZODI')).data, zB = F.readImage(bz, F.findHDU(oz, 'ZODI')).data, noise = c.fits && (() => { const v = Array.from(cutImg).filter(Number.isFinite).sort((p, q) => p - q), m = v[v.length >> 1]; return v.map(x => Math.abs(x - m)).sort((p, q) => p - q)[v.length >> 1] * 1.4826; })();
+  let zr = 0, zn = 0; for (let k = 0; k < zA.length; k++) { const d = zA[k] - zB[k]; if (Number.isFinite(d)) { zr += d * d; zn++; } } zr = Math.sqrt(zr / zn);
+  assert.ok(zr < 0.05 * noise, `ZODI from 9 rows within 5 % of the image noise (rms ${zr.toPrecision(2)} vs noise ${noise.toPrecision(2)})`);
+  assert.ok(cz.bytesRead < c2.bytesRead * 0.9, `fewer bytes (0.2 deg here, so headers weigh more than on a 0.5 deg field): ${cz.bytesRead} vs ${c2.bytesRead}`);
+  assert.ok(/ZODI rebuilt from 9 rows/.test(Buffer.from(bz).toString('latin1')), 'the header says how ZODI was made');
   // off the image
   await assert.rejects(C.cutout(get, (centre[0] + 180) % 360, -centre[1], 0.2), /not on this image/);
   console.log(`ok  S3 cutout: ${n} pixels identical, wavelength map intact, ${first} range reads (${calls ? '' : ''}hint reuses the layout)`);

@@ -333,7 +333,7 @@ async function loadViaS3(im, fld) {
   while (S3B.active >= S3B.max) await new Promise(r => S3B.waiting.push(r));
   S3B.active++;
   try {
-    const c = await S3Cut.cutout((a, b) => s3Get(url, a, b, S3B.hosts[0] + u.slice(S3B.hosts[0].length)), +(+fld.ra).toFixed(5), +(+fld.dec).toFixed(5), +(+fld.size).toFixed(4), s3HintGet(u));
+    const c = await S3Cut.cutout((a, b) => s3Get(url, a, b, S3B.hosts[0] + u.slice(S3B.hosts[0].length)), +(+fld.ra).toFixed(5), +(+fld.dec).toFixed(5), +(+fld.size).toFixed(4), s3HintGet(u), { zodiRows: 9 });   // v0.56: ZODI from 9 rows, a third fewer bytes (lib/s3cut.js)
     s3HintSet(u, c.offsets); S3B.fails = 0; S3B.ok++;
     return c.fits;
   } catch (e) {
@@ -351,6 +351,7 @@ async function loadFrame(im) {
     r = await fetch(`/api/spherex/cutout?${qs}&cached=1`);
     if (S.field !== fld) throw new Error('cancelled');
     if (r.status === 204) {
+      S.netLoads = (S.netLoads || 0) + 1;   // v0.56: not in the cache: this field is new (runAgents then reports early)
       const f = r.headers.get('X-Arcnave-Server-S3') === '1' ? null : await loadViaS3(im, fld);   // server reads S3 itself on a public host
       if (S.field !== fld) throw new Error('cancelled');
       if (f) {
@@ -2263,7 +2264,7 @@ function writeHash() {
   if (!S.al) return;
   // the whole-sky view is the front page: no link for it (a saved fov=360 in the north-up projection showed a broken half sky)
   if (allSky()) { try { if (location.hash && !/tour|guide|ex=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ } return; }
-  try { const [ra, dec] = S.al.getRaDec(); history.replaceState(null, '', `#ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&fov=${S.al.getFov()[0].toFixed(3)}&b=${S.band.toFixed(2)}&m=${S.mode}&e=${S.ei}&sz=${$('csize').value}&ipe=${S.depth}${S.field ? `&load=1&fra=${S.field.ra.toFixed(5)}&fdec=${S.field.dec.toFixed(5)}` : ''}`); } catch { /* ignore */ }
+  try { const [ra, dec] = S.al.getRaDec(); history.replaceState(null, '', `#ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&fov=${S.al.getFov()[0].toFixed(3)}&b=${S.band.toFixed(2)}&m=${S.mode}&e=${S.ei}&sz=${$('csize').value}&ipe=${S.depthWanted || S.depth}${S.field ? `&load=1&fra=${S.field.ra.toFixed(5)}&fdec=${S.field.dec.toFixed(5)}` : ''}`); } catch { /* ignore */ }
 }
 const embedUrl = () => location.origin + location.pathname + '?embed=1' + location.hash;
 const embedCode = () => `<iframe src="${embedUrl()}" width="640" height="420" style="border:0" loading="lazy" allowfullscreen title="ARCNAVE: this patch of sky in NASA SPHEREx images"></iframe>`;
@@ -2325,6 +2326,8 @@ async function runAgents(target, opts = {}) {
   if (!S.al) return;
   closeIntro();   // a search typed while the welcome screen is open must not leave it over the results (seen live)
   const run = ++S.run, live = () => run === S.run;
+  // v0.56: a run that is not the background deepening starts from the depth the user chose
+  if (!opts.deepen) { S.netLoads = 0; if (S.depthWanted) { S.depth = S.depthWanted; $('ipe').value = S.depth; } S.depthWanted = 0; }
   S.ag = {}; S.cands = []; S.known = []; S.report = null; S.sel = null; S.ct = opts.ct || null; renderAgents(); $('agents').open = true;
   let cur = 'nav';
   const skipAfter = id => { let on = false; for (const [k] of AGENTS) { if (k === id) on = true; else if (on) S.ag[k] = { state: 'skip', msg: 'Skipped' }; } renderAgents(); };
@@ -2384,6 +2387,11 @@ async function runAgents(target, opts = {}) {
     await Promise.all(idx.map(i => ensureFrame(i))); if (!live()) return;
     await flight; if (!live()) return;   // show the preview only once the camera is there
     waitEnd();
+    // v0.56 quick first report: a NEW field (its first images came from NASA, not the cache) at 8 images per pass costs
+    // ~120 MB, about 50 s on a 2.4 MB/s line after the archive search. So the report comes first from 3 per pass (3/8 of the
+    // bytes; measured: about 50 s with 4), and the other 5 per pass download afterwards and the report is redone with all 8 (runAgents deepen). Prewarm
+    // and the validation runs (S.noQuick) and any other depth always load everything first.
+    if (!opts.deepen && !S.noQuick && S.depth === 8 && S.netLoads > 0 && E > 1) { S.depthWanted = S.depth; S.depth = 3; }
     // Several images per epoch: the colour may have changed while loading, so rebuild the slots, then load them all.
     buildSlotsNow(); renderStrip();
     // v0.17: ask which known objects were there now, while the images download (it used to start after all 24 had arrived
@@ -2473,10 +2481,31 @@ async function runAgents(target, opts = {}) {
     if (!multi()) prefetchEpochs(run);
     if (opts.focus) focusExample(opts.focus);
     stat(`Agents finished: ${E > 1 ? 'Difference view of epoch 1 vs ' + E : 'single epoch'}.`);
+    if (S.depthWanted) deepenLater(run, label, opts);   // v0.56: the quick report is out; now the rest, in the background
   } catch (e) {
     if (!live() || e.message === 'cancelled') return;
     waitEnd(); setAgent(cur, 'err', e.message); skipAfter(cur); stat(e.message, true);
   }
+}
+
+/* v0.56: after a quick first report (4 images per pass on a new field), download the images the chosen depth adds, without
+   touching what is on screen, then redo the run at that depth: every image is then in memory, so the agents take a few
+   seconds and the report comes back with the deeper stacks. Waits while a card or the film is open, so nothing the user is
+   looking at is pulled away. Any newer run (another field, a new colour) cancels it. */
+async function deepenLater(run, label, opts) {
+  const want = S.depthWanted, live = () => run === S.run; if (!want || !S.field) return;
+  const keep = { depth: S.depth, slots: S.slots, extra: S.extra, seq: S.seq, slotDLam: S.slotDLam };
+  S.depth = want; buildSlotsNow(); const ims = S.seq.map(x => x.im);
+  Object.assign(S, keep);   // the screen keeps the quick run's images and order
+  const todo = ims.filter(im => !S.frames.get(im.url)); let done = ims.length - todo.length;
+  const say = () => { if (live()) setAgent('rep', 'done', `Report ready from ${keep.depth} images per pass. Deepening to ${want} per pass in the background: ${done} of ${ims.length} images...`); };
+  say();
+  await Promise.all(todo.map(im => ensureImg(im).then(() => { done++; say(); }, () => { /* the redo reports what is missing */ })));
+  for (let k = 0; k < 600 && live() && ((S.sel && !S.sel.report) || MOVIE.on || S.lab); k++) await sleep(500);   // a card, the film or a lab view is open: wait
+  if (!live()) return;
+  S.depth = want; $('ipe').value = want; S.depthWanted = 0;
+  toast(`Deeper stacks ready: the report now uses ${want} images per pass.`, 5000);
+  runAgents({ ra: S.field.ra, dec: S.field.dec, label }, { ...opts, skipNav: true, keepMode: true, deepen: true, band: S.userBand ? S.band : undefined });
 }
 
 /* ---------- Wait indicator (v0.15.2) ---------- */
@@ -3146,21 +3175,28 @@ function phoneSheet(s) {
 const PREWARM = [{ ra: 150.8, dec: 12.4 }, { ra: 265.2, dec: -28.9 }, { ra: 134, dec: 5.6 }, { ra: 326.25, dec: 7.25 }];
 async function prewarmRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('Prewarm runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const mine = (p.get('fields') || '').split(';').map(x => x.split(',').map(Number)).filter(([ra, dec]) => isFinite(ra) && isFinite(dec) && ra >= 0 && ra < 360 && Math.abs(dec) <= 90).map(([ra, dec]) => ({ ra, dec }));
   // v0.38: #prewarm=targets runs the five NASA challenge targets and the two examples through the SAME path a visitor's tap takes
   // (runChallenge / runExample), then loads the Gaia layer for each, so the answers a judge needs first are on the disk.
   const tg = p.get('prewarm') === 'targets' || p.has('targets');
-  const list = tg ? [...Object.keys(CHALLENGE).map(id => ({ ct: id, name: CHALLENGE[id].name })), ...Object.keys(EXAMPLES).map(id => ({ ex: id, name: EXAMPLES[id].label }))]
-    : mine.length ? mine : PREWARM, out = [];
+  const targets = () => [...Object.keys(CHALLENGE).map(id => ({ ct: id, name: CHALLENGE[id].name })), ...Object.keys(EXAMPLES).map(id => ({ ex: id, name: EXAMPLES[id].label }))];
+  // v0.56: #prewarm=start runs every place the start screen offers: the 18 test fields and 5 landmarks on the whole-sky map
+  // (with the same RA/Dec a click sends, so the same cache entries), then the NASA targets and the examples. Afterwards
+  // `node tools/pin-cache.js --newer-than <minutes>` keeps them in the cache for good.
+  let start = null;
+  if (p.get('prewarm') === 'start') { let rows = []; try { rows = (await (await fetch('/scorecard.json')).json()).rows || []; } catch { /* no test fields */ }
+    start = [...rows.map(r => ({ ra: r.ra, dec: r.dec, name: 'Test field ' + r.id })), ...LANDMARKS.map(m => ({ ra: m.ra, dec: m.dec, name: m.name })), ...targets()]; }
+  const list = start || (tg ? targets() : mine.length ? mine : PREWARM), out = [];
   for (const [i, f] of list.entries()) {
     const t0 = performance.now(), r = f.ct || f.ex ? { name: f.name } : { ra: f.ra, dec: f.dec };
     stat(`Prewarm ${i + 1} of ${list.length}: ${f.name || `RA ${f.ra}, Dec ${f.dec}`}`);
     try {
       const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout after 15 min')), 15 * 60e3));
-      const job = f.ct ? runChallenge(f.ct) : f.ex ? runExample(f.ex) : runAgents({ ra: f.ra, dec: f.dec, label: `Prewarm ${i + 1}` });
+      const job = f.ct ? runChallenge(f.ct) : f.ex ? runExample(f.ex) : runAgents({ ra: f.ra, dec: f.dec, label: f.name || `Prewarm ${i + 1}` });
       try { await Promise.race([job, timeout]); } catch (e) { S.run++; throw e; }
-      if (f.ct || f.ex) { try { GAIA.on = true; GAIA.key = null; await gaiaLoad(); r.gaia = !!(GAIA.data && GAIA.data.stars); } catch { r.gaia = false; } }
+      if (f.ct || f.ex || start) { try { GAIA.on = true; GAIA.key = null; await gaiaLoad(); r.gaia = !!(GAIA.data && GAIA.data.stars); } catch { r.gaia = false; } }
+      if (start) { try { await cwLoad(); r.catwise = !!CW.data; } catch { r.catwise = false; } }   // v0.56: the film's WISE movers too
       r.report = !!S.report; r.found = S.images.length; r.perEpoch = S.eps.map((_, e) => epochImgs(e).length); r.images = r.perEpoch.reduce((a, n) => a + n, 0);
       const bad = AGENTS.map(([k]) => S.ag[k] || {}).find(a => a.state === 'err'); if (bad) r.error = bad.msg;
     } catch (e) { r.error = e.message; }
@@ -3193,7 +3229,7 @@ const SCORE_GRID = (() => {
 })();
 async function scorecardRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('The scorecard runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const only = p.get('only'), from = +p.get('from') || 0;
   // #scorecard&test=1: the demo field only (its data ships in demo-cache), to check the runner without downloads
   const list = p.has('test') ? [{ id: 'TEST_demo', eclLon: null, eclLat: null, ra: 189.957, dec: -4.182, galLat: 58.6 }]
@@ -3289,7 +3325,7 @@ function nullSplit(a, b) {
 }
 async function nullRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('The false-alarm test runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const only = p.get('only'), from = +p.get('from') || 0;
   const list = p.has('test') ? [{ id: 'TEST_demo', eclLon: null, eclLat: null, ra: 189.957, dec: -4.182, galLat: 58.6 }]
     : only ? SCORE_GRID.filter(f => f.id === only) : SCORE_GRID.slice(from);
@@ -3356,7 +3392,7 @@ function brightTrial(stars, e, gain) {
 }
 async function brightRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('The brightness test runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const only = p.get('only'), from = +p.get('from') || 0;
   const list = p.has('test') ? [{ id: 'TEST_demo', eclLon: null, eclLat: null, ra: 189.957, dec: -4.182, galLat: 58.6 }]
     : only ? SCORE_GRID.filter(f => f.id === only) : SCORE_GRID.slice(from);
