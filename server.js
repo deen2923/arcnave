@@ -19,7 +19,7 @@ const PORT = +process.env.PORT || 8080;
 const ROOT = __dirname;
 const UA = 'ARCNAVE/0.4 (educational sky viewer)';
 const CACHE_DIR = process.env.SKYSHIFT_CACHE_DIR || path.join(ROOT, 'cache');
-const CACHE_MB = +process.env.SKYSHIFT_CACHE_MB || 2000;      // disk cache limit; oldest files are removed beyond it
+const CACHE_MB = +process.env.SKYSHIFT_CACHE_MB || 8000;      // disk cache limit; oldest files are removed beyond it (v0.56: 2000 → 8000, so fields opened before stay)
 const MAX_UPSTREAM = +process.env.SKYSHIFT_UPSTREAM || 8;     // parallel downloads from IRSA and the other services
 const SEED_DIR = process.env.SKYSHIFT_SEED_DIR || path.join(ROOT, 'demo-cache');   // real results shipped with the site (examples open instantly)
 const KEEP_HDUS = new Set(['PRIMARY', 'IMAGE', 'FLAGS', 'ZODI', 'WCS-WAVE']);
@@ -102,6 +102,8 @@ async function prune() {
     // never evict the shipped example files: seen live after the 18-field scorecard filled the cache past the limit,
     // the examples (and the guided tour on them) silently went back to downloading from IRSA
     let seeded = new Set(); try { seeded = new Set(await fs.promises.readdir(path.join(SEED_DIR, sub))); } catch { /* no seed folder */ }
+    // v0.56: the start screen's fields, prewarmed and pinned by tools/pin-cache.js (cache/pinned.json), are kept the same way
+    try { const pin = JSON.parse(await fs.promises.readFile(path.join(CACHE_DIR, 'pinned.json'), 'utf8')); for (const nm of pin[sub] || []) seeded.add(nm); } catch { /* nothing pinned */ }
     for (const n of names) { if (seeded.has(n)) continue; try { const s = await fs.promises.stat(path.join(dir, n)); files.push({ f: path.join(dir, n), size: s.size, t: s.mtimeMs }); } catch { /* gone */ } }
   }
   let total = files.reduce((a, x) => a + x.size, 0);
@@ -119,12 +121,22 @@ async function cacheInfo() {
 // JSON results: fresh from disk if younger than ttl; otherwise ask upstream; if upstream fails, serve the old copy
 // (marked stale) so a demo keeps working offline.
 // v0.55 U7: fresh = ask upstream now, past both caches (the "Check for new data" button); the answer replaces the cached one
+const REVALIDATING = new Set(), SWR_OFF = process.env.SKYSHIFT_SWR === '0';
 function cachedJSON(kind, key, ttlMs, fn, fresh = false) {
   const run = async () => {
     const file = path.join(CACHE_DIR, 'api', kind + '-' + hash(key) + '.json');
     const old = await diskRead(file);
     let saved = null; try { saved = old && JSON.parse(old.toString('utf8')); } catch { saved = null; }
     if (!fresh && saved && Date.now() - saved.savedAt < ttlMs) { stats.diskHits++; return saved.data; }
+    // v0.56: an answer past its time is still served at once (a field opened before must not wait 6-16 s for IRSA again
+    // after a day), and asked for again in the background; the next visit gets the new one. "Check for new data" (fresh)
+    // still waits for the archive.
+    if (!fresh && saved && !SWR_OFF) {
+      stats.staleRevalidate = (stats.staleRevalidate || 0) + 1;
+      if (!REVALIDATING.has(file)) { REVALIDATING.add(file);
+        fn().then(data => diskWrite(file, JSON.stringify({ savedAt: Date.now(), key, data }))).catch(() => { /* keep the old one */ }).finally(() => REVALIDATING.delete(file)); }
+      return saved.data;
+    }
     try {
       const data = await fn();
       await diskWrite(file, JSON.stringify({ savedAt: Date.now(), key, data }));
@@ -407,7 +419,7 @@ async function s3Cutout(key) {
   if (!s3) throw new Error('not an S3 file');
   const [ra, dec] = String(u.searchParams.get('center')).split(',').map(Number), size = +u.searchParams.get('size');
   try {
-    const c = await s3Limited(() => S3CUT.cutout((a, b) => s3Get(s3, a, b), ra, dec, size, S3.hint));
+    const c = await s3Limited(() => S3CUT.cutout((a, b) => s3Get(s3, a, b), ra, dec, size, S3.hint, { zodiRows: 9 }));   // v0.56: ZODI from 9 rows (lib/s3cut.js)
     S3.hint = c.offsets; stats.s3Cutouts = (stats.s3Cutouts || 0) + 1;
     return Buffer.from(c.fits.buffer, c.fits.byteOffset, c.fits.length);
   } catch (e) { e.s3 = true; stats.s3LastError = String(e.message || e).slice(0, 160); throw e; }

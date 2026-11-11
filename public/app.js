@@ -333,7 +333,7 @@ async function loadViaS3(im, fld) {
   while (S3B.active >= S3B.max) await new Promise(r => S3B.waiting.push(r));
   S3B.active++;
   try {
-    const c = await S3Cut.cutout((a, b) => s3Get(url, a, b, S3B.hosts[0] + u.slice(S3B.hosts[0].length)), +(+fld.ra).toFixed(5), +(+fld.dec).toFixed(5), +(+fld.size).toFixed(4), s3HintGet(u));
+    const c = await S3Cut.cutout((a, b) => s3Get(url, a, b, S3B.hosts[0] + u.slice(S3B.hosts[0].length)), +(+fld.ra).toFixed(5), +(+fld.dec).toFixed(5), +(+fld.size).toFixed(4), s3HintGet(u), { zodiRows: 9 });   // v0.56: ZODI from 9 rows, a third fewer bytes (lib/s3cut.js)
     s3HintSet(u, c.offsets); S3B.fails = 0; S3B.ok++;
     return c.fits;
   } catch (e) {
@@ -351,6 +351,7 @@ async function loadFrame(im) {
     r = await fetch(`/api/spherex/cutout?${qs}&cached=1`);
     if (S.field !== fld) throw new Error('cancelled');
     if (r.status === 204) {
+      S.netLoads = (S.netLoads || 0) + 1;   // v0.56: not in the cache: this field is new (runAgents then reports early)
       const f = r.headers.get('X-Arcnave-Server-S3') === '1' ? null : await loadViaS3(im, fld);   // server reads S3 itself on a public host
       if (S.field !== fld) throw new Error('cancelled');
       if (f) {
@@ -1087,6 +1088,9 @@ function frame(ts) {
   let key = '';
   try { const c = S.al.getRaDec(), f = S.al.getFov(); key = `${c[0].toFixed(6)},${c[1].toFixed(6)},${f[0].toFixed(6)},${W},${H},${S.mode},${S.lab}`; } catch { /* draw anyway */ }
   if (S.mode === 'blink' || S.mode === 'time') key += ',' + Math.floor(ts / (S.mode === 'blink' && !multi() ? 700 : 650));
+  // v0.56: the film's glide, lock-on ring and "from here to there" callout are drawn at ~30 frames a second while a pass
+  // changes (and 10 a second for the pulse after), instead of the 5 a second that made the glide jump
+  if (MOVIE.on) key += ',' + Math.floor(ts / (ts - MOVIE.t0 < MOVIE.step ? 33 : 100));
   if (key && key === lastKey && ts > busyUntil && ts - lastDraw < 200) return;
   lastKey = key; lastDraw = ts;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H); S.hits = [];
@@ -2260,7 +2264,7 @@ function writeHash() {
   if (!S.al) return;
   // the whole-sky view is the front page: no link for it (a saved fov=360 in the north-up projection showed a broken half sky)
   if (allSky()) { try { if (location.hash && !/tour|guide|ex=/.test(location.hash)) history.replaceState(null, '', location.pathname + location.search); } catch { /* ignore */ } return; }
-  try { const [ra, dec] = S.al.getRaDec(); history.replaceState(null, '', `#ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&fov=${S.al.getFov()[0].toFixed(3)}&b=${S.band.toFixed(2)}&m=${S.mode}&e=${S.ei}&sz=${$('csize').value}&ipe=${S.depth}${S.field ? `&load=1&fra=${S.field.ra.toFixed(5)}&fdec=${S.field.dec.toFixed(5)}` : ''}`); } catch { /* ignore */ }
+  try { const [ra, dec] = S.al.getRaDec(); history.replaceState(null, '', `#ra=${ra.toFixed(4)}&dec=${dec.toFixed(4)}&fov=${S.al.getFov()[0].toFixed(3)}&b=${S.band.toFixed(2)}&m=${S.mode}&e=${S.ei}&sz=${$('csize').value}&ipe=${S.depthWanted || S.depth}${S.field ? `&load=1&fra=${S.field.ra.toFixed(5)}&fdec=${S.field.dec.toFixed(5)}` : ''}`); } catch { /* ignore */ }
 }
 const embedUrl = () => location.origin + location.pathname + '?embed=1' + location.hash;
 const embedCode = () => `<iframe src="${embedUrl()}" width="640" height="420" style="border:0" loading="lazy" allowfullscreen title="ARCNAVE: this patch of sky in NASA SPHEREx images"></iframe>`;
@@ -2322,6 +2326,8 @@ async function runAgents(target, opts = {}) {
   if (!S.al) return;
   closeIntro();   // a search typed while the welcome screen is open must not leave it over the results (seen live)
   const run = ++S.run, live = () => run === S.run;
+  // v0.56: a run that is not the background deepening starts from the depth the user chose
+  if (!opts.deepen) { S.netLoads = 0; if (S.depthWanted) { S.depth = S.depthWanted; $('ipe').value = S.depth; } S.depthWanted = 0; }
   S.ag = {}; S.cands = []; S.known = []; S.report = null; S.sel = null; S.ct = opts.ct || null; renderAgents(); $('agents').open = true;
   let cur = 'nav';
   const skipAfter = id => { let on = false; for (const [k] of AGENTS) { if (k === id) on = true; else if (on) S.ag[k] = { state: 'skip', msg: 'Skipped' }; } renderAgents(); };
@@ -2381,6 +2387,11 @@ async function runAgents(target, opts = {}) {
     await Promise.all(idx.map(i => ensureFrame(i))); if (!live()) return;
     await flight; if (!live()) return;   // show the preview only once the camera is there
     waitEnd();
+    // v0.56 quick first report: a NEW field (its first images came from NASA, not the cache) at 8 images per pass costs
+    // ~120 MB, about 50 s on a 2.4 MB/s line after the archive search. So the report comes first from 3 per pass (3/8 of the
+    // bytes; measured: about 50 s with 4), and the other 5 per pass download afterwards and the report is redone with all 8 (runAgents deepen). Prewarm
+    // and the validation runs (S.noQuick) and any other depth always load everything first.
+    if (!opts.deepen && !S.noQuick && S.depth === 8 && S.netLoads > 0 && E > 1) { S.depthWanted = S.depth; S.depth = 3; }
     // Several images per epoch: the colour may have changed while loading, so rebuild the slots, then load them all.
     buildSlotsNow(); renderStrip();
     // v0.17: ask which known objects were there now, while the images download (it used to start after all 24 had arrived
@@ -2470,10 +2481,31 @@ async function runAgents(target, opts = {}) {
     if (!multi()) prefetchEpochs(run);
     if (opts.focus) focusExample(opts.focus);
     stat(`Agents finished: ${E > 1 ? 'Difference view of epoch 1 vs ' + E : 'single epoch'}.`);
+    if (S.depthWanted) deepenLater(run, label, opts);   // v0.56: the quick report is out; now the rest, in the background
   } catch (e) {
     if (!live() || e.message === 'cancelled') return;
     waitEnd(); setAgent(cur, 'err', e.message); skipAfter(cur); stat(e.message, true);
   }
+}
+
+/* v0.56: after a quick first report (4 images per pass on a new field), download the images the chosen depth adds, without
+   touching what is on screen, then redo the run at that depth: every image is then in memory, so the agents take a few
+   seconds and the report comes back with the deeper stacks. Waits while a card or the film is open, so nothing the user is
+   looking at is pulled away. Any newer run (another field, a new colour) cancels it. */
+async function deepenLater(run, label, opts) {
+  const want = S.depthWanted, live = () => run === S.run; if (!want || !S.field) return;
+  const keep = { depth: S.depth, slots: S.slots, extra: S.extra, seq: S.seq, slotDLam: S.slotDLam };
+  S.depth = want; buildSlotsNow(); const ims = S.seq.map(x => x.im);
+  Object.assign(S, keep);   // the screen keeps the quick run's images and order
+  const todo = ims.filter(im => !S.frames.get(im.url)); let done = ims.length - todo.length;
+  const say = () => { if (live()) setAgent('rep', 'done', `Report ready from ${keep.depth} images per pass. Deepening to ${want} per pass in the background: ${done} of ${ims.length} images...`); };
+  say();
+  await Promise.all(todo.map(im => ensureImg(im).then(() => { done++; say(); }, () => { /* the redo reports what is missing */ })));
+  for (let k = 0; k < 600 && live() && ((S.sel && !S.sel.report) || MOVIE.on || S.lab); k++) await sleep(500);   // a card, the film or a lab view is open: wait
+  if (!live()) return;
+  S.depth = want; $('ipe').value = want; S.depthWanted = 0;
+  toast(`Deeper stacks ready: the report now uses ${want} images per pass.`, 5000);
+  runAgents({ ra: S.field.ra, dec: S.field.dec, label }, { ...opts, skipNav: true, keepMode: true, deepen: true, band: S.userBand ? S.band : undefined });
 }
 
 /* ---------- Wait indicator (v0.15.2) ---------- */
@@ -3144,21 +3176,28 @@ function phoneSheet(s) {
 const PREWARM = [{ ra: 150.8, dec: 12.4 }, { ra: 265.2, dec: -28.9 }, { ra: 134, dec: 5.6 }, { ra: 326.25, dec: 7.25 }];
 async function prewarmRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('Prewarm runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const mine = (p.get('fields') || '').split(';').map(x => x.split(',').map(Number)).filter(([ra, dec]) => isFinite(ra) && isFinite(dec) && ra >= 0 && ra < 360 && Math.abs(dec) <= 90).map(([ra, dec]) => ({ ra, dec }));
   // v0.38: #prewarm=targets runs the five NASA challenge targets and the two examples through the SAME path a visitor's tap takes
   // (runChallenge / runExample), then loads the Gaia layer for each, so the answers a judge needs first are on the disk.
   const tg = p.get('prewarm') === 'targets' || p.has('targets');
-  const list = tg ? [...Object.keys(CHALLENGE).map(id => ({ ct: id, name: CHALLENGE[id].name })), ...Object.keys(EXAMPLES).map(id => ({ ex: id, name: EXAMPLES[id].label }))]
-    : mine.length ? mine : PREWARM, out = [];
+  const targets = () => [...Object.keys(CHALLENGE).map(id => ({ ct: id, name: CHALLENGE[id].name })), ...Object.keys(EXAMPLES).map(id => ({ ex: id, name: EXAMPLES[id].label }))];
+  // v0.56: #prewarm=start runs every place the start screen offers: the 18 test fields and 5 landmarks on the whole-sky map
+  // (with the same RA/Dec a click sends, so the same cache entries), then the NASA targets and the examples. Afterwards
+  // `node tools/pin-cache.js --newer-than <minutes>` keeps them in the cache for good.
+  let start = null;
+  if (p.get('prewarm') === 'start') { let rows = []; try { rows = (await (await fetch('/scorecard.json')).json()).rows || []; } catch { /* no test fields */ }
+    start = [...rows.map(r => ({ ra: r.ra, dec: r.dec, name: 'Test field ' + r.id })), ...LANDMARKS.map(m => ({ ra: m.ra, dec: m.dec, name: m.name })), ...targets()]; }
+  const list = start || (tg ? targets() : mine.length ? mine : PREWARM), out = [];
   for (const [i, f] of list.entries()) {
     const t0 = performance.now(), r = f.ct || f.ex ? { name: f.name } : { ra: f.ra, dec: f.dec };
     stat(`Prewarm ${i + 1} of ${list.length}: ${f.name || `RA ${f.ra}, Dec ${f.dec}`}`);
     try {
       const timeout = new Promise((_, rej) => setTimeout(() => rej(new Error('timeout after 15 min')), 15 * 60e3));
-      const job = f.ct ? runChallenge(f.ct) : f.ex ? runExample(f.ex) : runAgents({ ra: f.ra, dec: f.dec, label: `Prewarm ${i + 1}` });
+      const job = f.ct ? runChallenge(f.ct) : f.ex ? runExample(f.ex) : runAgents({ ra: f.ra, dec: f.dec, label: f.name || `Prewarm ${i + 1}` });
       try { await Promise.race([job, timeout]); } catch (e) { S.run++; throw e; }
-      if (f.ct || f.ex) { try { GAIA.on = true; GAIA.key = null; await gaiaLoad(); r.gaia = !!(GAIA.data && GAIA.data.stars); } catch { r.gaia = false; } }
+      if (f.ct || f.ex || start) { try { GAIA.on = true; GAIA.key = null; await gaiaLoad(); r.gaia = !!(GAIA.data && GAIA.data.stars); } catch { r.gaia = false; } }
+      if (start) { try { await cwLoad(); r.catwise = !!CW.data; } catch { r.catwise = false; } }   // v0.56: the film's WISE movers too
       r.report = !!S.report; r.found = S.images.length; r.perEpoch = S.eps.map((_, e) => epochImgs(e).length); r.images = r.perEpoch.reduce((a, n) => a + n, 0);
       const bad = AGENTS.map(([k]) => S.ag[k] || {}).find(a => a.state === 'err'); if (bad) r.error = bad.msg;
     } catch (e) { r.error = e.message; }
@@ -3191,7 +3230,7 @@ const SCORE_GRID = (() => {
 })();
 async function scorecardRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('The scorecard runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const only = p.get('only'), from = +p.get('from') || 0;
   // #scorecard&test=1: the demo field only (its data ships in demo-cache), to check the runner without downloads
   const list = p.has('test') ? [{ id: 'TEST_demo', eclLon: null, eclLat: null, ra: 189.957, dec: -4.182, galLat: 58.6 }]
@@ -3287,7 +3326,7 @@ function nullSplit(a, b) {
 }
 async function nullRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('The false-alarm test runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const only = p.get('only'), from = +p.get('from') || 0;
   const list = p.has('test') ? [{ id: 'TEST_demo', eclLon: null, eclLat: null, ra: 189.957, dec: -4.182, galLat: 58.6 }]
     : only ? SCORE_GRID.filter(f => f.id === only) : SCORE_GRID.slice(from);
@@ -3394,7 +3433,7 @@ function brightTrial(stars, e, gain) {
 }
 async function brightRun(p) {
   if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('The brightness test runs only on a local copy.', true); return; }
-  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  $('intro').hidden = true; S.depth = 8; S.noQuick = true; $('ipe').value = '8'; $('csize').value = '0.5';
   const only = p.get('only'), from = +p.get('from') || 0;
   const list = p.has('test') ? [{ id: 'TEST_demo', eclLon: null, eclLat: null, ra: 189.957, dec: -4.182, galLat: 58.6 }]
     : only ? SCORE_GRID.filter(f => f.id === only) : SCORE_GRID.slice(from);
@@ -3653,7 +3692,7 @@ function wrapText(g, s, x, y, max, lh) {
   for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > max && line) { g.fillText(line, x, y); y += lh; line = w; } else line = t; }
   if (line) g.fillText(line, x, y); return y + lh;
 }
-function drawCardFrame(g, plan, i) {
+function drawCardFrame(g, plan, i, an = { k: 1, lock: 1 }) {   // v0.56 an: the film's glide (k) and lock-on ring (lock), 0..1
   const { W: CW, H: CH, X, Y, S: SZ } = CARD, f = plan.frames[i], n = S.field.n, half = plan.half, k = SZ / (2 * half);
   const sx = plan.cx + 0.5 - half, sy = plan.cy + 0.5 - half;   // canvas coords of the crop's corner (pixel x spans x..x+1)
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#05070f'; g.fillRect(0, 0, CW, CH);
@@ -3671,11 +3710,42 @@ function drawCardFrame(g, plan, i) {
   g.save(); g.beginPath(); g.rect(X, Y, SZ, SZ); g.clip();
   if (x1 > x0 && y1 > y0) { g.imageSmoothingEnabled = k < 14; g.imageSmoothingQuality = 'high'; g.drawImage(f.fr.canvas, x0, y0, x1 - x0, y1 - y0, X + (x0 - sx) * k, Y + (y0 - sy) * k, (x1 - x0) * k, (y1 - y0) * k); }
   const toC = p => [X + (p.x + 0.5 - sx) * k, Y + (p.y + 0.5 - sy) * k];
+  const st = f.stage, ease = an.k * an.k * (3 - 2 * an.k), cur = st && toC(st.cur); let pv = st && st.prev && toC(st.prev), Fx = 1;
+  // a shift of a few ″ is a pixel or two here: as in the film, the step is drawn longer by a stated factor (the ring stays
+  // on the star in this pass; the dashed circle goes back along the measured direction)
+  if (pv) { const dd = Math.hypot(pv[0] - cur[0], pv[1] - cur[1]); if (dd < 50) { Fx = dd > 0.05 ? Math.min(300, Math.round(56 / dd)) : 1; pv = [cur[0] + (pv[0] - cur[0]) * Fx, cur[1] + (pv[1] - cur[1]) * Fx]; } }
+  const head = st && (pv ? [pv[0] + (cur[0] - pv[0]) * ease, pv[1] + (cur[1] - pv[1]) * ease] : cur);
+  if (st) {   // v0.56 spotlight: the crop dims away from the mover, a soft beam falls on it from above
+    const R = 46, rg = g.createRadialGradient(head[0], head[1], R * 0.8, head[0], head[1], R * 2.6);
+    rg.addColorStop(0, 'rgba(2,4,10,0)'); rg.addColorStop(1, 'rgba(2,4,10,.6)'); g.fillStyle = rg; g.fillRect(X, Y, SZ, SZ);
+    const src = [head[0] * 0.6 + (X + SZ / 2) * 0.4, Y - 30], bx = head[0] - src[0], by = head[1] - src[1], bl = Math.hypot(bx, by) || 1, nx = -by / bl, ny = bx / bl;
+    g.globalCompositeOperation = 'lighter'; const lg = g.createLinearGradient(src[0], src[1], head[0], head[1]); lg.addColorStop(0, 'rgba(255,244,214,0)'); lg.addColorStop(1, 'rgba(255,244,214,.12)');
+    g.fillStyle = lg; g.beginPath(); g.moveTo(src[0] - nx * 5, src[1] - ny * 5); g.lineTo(src[0] + nx * 5, src[1] + ny * 5); g.lineTo(head[0] + nx * 30, head[1] + ny * 30); g.lineTo(head[0] - nx * 30, head[1] - ny * 30); g.closePath(); g.fill();
+    g.globalCompositeOperation = 'source-over';
+  }
   for (const m of f.marks) {
     const [px, py] = toC(m); g.strokeStyle = m.color; g.lineWidth = 2.5;
     if (m.plus) { g.beginPath(); g.moveTo(px - 12, py); g.lineTo(px - 4, py); g.moveTo(px + 4, py); g.lineTo(px + 12, py); g.moveTo(px, py - 12); g.lineTo(px, py - 4); g.moveTo(px, py + 4); g.lineTo(px, py + 12); g.stroke(); }
     else { g.setLineDash([6, 4]); g.beginPath(); g.arc(px, py, Math.max(14, 2.2 * k), 0, 7); g.stroke(); g.setLineDash([]); }
     if (m.label) { g.fillStyle = m.color; g.font = font(650, 13); g.fillText(m.label, px + Math.max(18, 2.2 * k + 4), py - 10); }
+  }
+  if (st) {   // v0.56 on stage: was here (dashed, dated) → the glide → a ring locking on → the dated callout
+    const out = (t, x, y, c, al) => { g.textAlign = al || 'left'; g.lineWidth = 3; g.strokeStyle = 'rgba(2,4,10,.9)'; g.strokeText(t, x, y); g.fillStyle = c; g.fillText(t, x, y); g.textAlign = 'left'; };
+    if (pv) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.6; g.setLineDash([5, 4]); g.beginPath(); g.arc(pv[0], pv[1], 17, 0, 7); g.stroke(); g.setLineDash([]);
+      g.font = font(600, 12); const [lx, ly, la] = awayLabel(pv, cur, 24); out(`was here · ${st.prev.date}`, lx, ly, 'rgba(255,255,255,.9)', la);
+      g.strokeStyle = st.col; g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(pv[0], pv[1]); g.lineTo(head[0], head[1]); g.stroke(); g.lineCap = 'butt'; }
+    if (an.k < 1) { g.strokeStyle = st.col; g.lineWidth = 1.6; g.setLineDash([5, 5]); g.beginPath(); g.arc(head[0], head[1], 26, 0, 7); g.stroke(); g.setLineDash([]); }
+    else { const r = 15 + 20 * (1 - an.lock) ** 2, a0 = -Math.PI / 2;
+      g.save(); g.shadowColor = st.col; g.shadowBlur = 12; g.strokeStyle = '#ffffff'; g.lineWidth = 2.4; g.beginPath(); g.arc(head[0], head[1], r, a0, a0 + 2 * Math.PI * Math.max(0.02, an.lock)); g.stroke(); g.restore();
+      if (an.lock >= 1) { g.lineWidth = 1.8; g.strokeStyle = '#ffffff'; for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { g.beginPath(); g.moveTo(head[0] + ux * 18, head[1] + uy * 18); g.lineTo(head[0] + ux * 25, head[1] + uy * 25); g.stroke(); } } }
+    // the callout, kept inside the image (below the scale bar, above the caption strip)
+    const lines = Fx > 1 ? [...st.lines, [`step drawn ${Fx}x longer to be seen`, '#8e98ae']] : st.lines;
+    const lh = 17, pad = 9; let wmax = 0; for (const [t, , fw] of lines) { g.font = fw ? font(720, 13) : font(600, 12); wmax = Math.max(wmax, g.measureText(t).width); }
+    const bw = Math.min(SZ - 16, wmax + 2 * pad), bh = lines.length * lh + pad + 2;
+    let bx = head[0] + 34, by = head[1] - bh - 22; if (bx + bw > X + SZ - 8) bx = head[0] - 34 - bw; if (bx < X + 8) bx = X + 8; if (by < Y + 46) by = head[1] + 40; if (by + bh > Y + SZ - 60) by = Y + SZ - 60 - bh;
+    g.globalAlpha = Math.min(1, 0.3 + an.k); g.fillStyle = 'rgba(5,8,15,.88)'; g.fillRect(bx, by, bw, bh); g.strokeStyle = st.col; g.lineWidth = 1; g.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
+    lines.forEach(([t, c, fw], j) => { g.font = fw ? font(720, 13) : font(600, 12); g.fillStyle = c; cardText(g, t, bx + pad, by + pad + 10 + j * lh, bw - 2 * pad); });
+    g.globalAlpha = 1;
   }
   // scale bar: 1 arcminute (or 30″ when zoomed in)
   const pxArc = S.field.s * 3600, arc = 2 * half * pxArc > 240 ? 60 : 30, bar = arc / pxArc * k;
@@ -5416,6 +5486,8 @@ function movieMovers() {
   const nameOf = fl => fl.label === 'target' ? fl.target : fl.gaia && fl.label === 'known' ? 'Gaia DR3 ' + fl.gaia.id : fl.cw && fl.label === 'known' ? 'CatWISE ' + fl.cw.name : null;
   const add = (name, label, src, passes, mu, dir, fl) => {
     if (!passes || passes.length < 2) return; const p0 = passes[0], cd = Math.cos(p0.dec * Math.PI / 180);
+    // v0.56: a track whose passes all sit on the very same place (seen on Barnard's field: a 🔍 track of 0″/yr) moved nothing
+    if (!(fl && fl.slow) && passes.every(q => Math.hypot((q.ra - p0.ra) * cd, q.dec - p0.dec) * 3600 < 0.001)) return;
     if (list.some(m => Math.hypot((m.passes[0].ra - p0.ra) * cd, m.passes[0].dec - p0.dec) * 3600 < 9)) return;   // the same star from another search
     list.push({ name: name || `Moving star ${list.length + 1}`, label, src, mu, dir, cw: fl && fl.cw, cwNear: fl && fl.cwNear, pm: fl && fl.pm, how: (fl && fl.how) || 'measured', catPm: fl && fl.catPm, slow: fl && fl.slow,
       // v0.55 U4: a search's own error (its frame-by-frame fit) and its Gaia match, for the SPHEREx vs catalogue row
@@ -5428,8 +5500,20 @@ function movieMovers() {
   const okFF = ff => ff && !ff.fail && ff.fit && ff.passes && ff.passes.length >= 2;
   if (DS.res && DS.res.run === S.run) DS.res.flagged.forEach(fl => okFF(fl.ff) && add(nameOf(fl), fl.label, '🔭', fl.ff.passes, fl.ff.fit.mu, fl.ff.fit.dir, fl));
   if (DF.res && DF.res.run === S.run) DF.res.flagged.forEach(fl => okFF(fl.fff) && add(nameOf(fl), fl.label, '◐', fl.fff.passes, fl.fff.fit.mu, fl.fff.fit.dir, fl));
+  // v0.56: a 🎯 find with no catalogue behind it, within 4 pixels (25″) of a saturated star's blank core in any pass, sits
+  // in that star's glare: its peak moves with the glare, not as a star (Epsilon Indi field: a peak 17″ from saturated
+  // Epsilon Indi A, "4.7″/yr north" while A moves south-east; A's core is blank only in the pass where it is saturated in
+  // most images). The scan only skips a blank core within 2 pixels. On that field 10 of 367 scanned sources lie this close.
+  const glareOf = fl => { if (fl.label === 'known' || fl.label === 'target') return false; const n = f.n, X = Math.round(fl.s.x), Y = Math.round(fl.s.y); let hit = 0, tot = 0;
+    for (let e = 0; e < S.eps.length; e++) { const fr = frameOf(e); if (!fr) continue; tot++; let blank = 0;
+      for (let j = -4; j <= 4; j++) for (let i = -4; i <= 4; i++) { if (i * i + j * j > 16) continue; const x = X + i, y = Y + j; if (x >= 0 && y >= 0 && x < n && y < n && !(fr.flat[y * n + x] === fr.flat[y * n + x])) blank++; }
+      if (blank >= 4) hit++; }
+    return hit > 0; };
   if (TSC.res && TSC.res.run === S.run) TSC.res.flagged.forEach(fl => {
-    if (okFF(fl.fff)) return add(nameOf(fl), fl.label, '🎯', fl.fff.passes, fl.fff.fit.mu, fl.fff.fit.dir, fl);
+    if (glareOf(fl)) return;
+    // the frame-by-frame track only where it agreed with the scan; "scan only" means it was too faint or too uncertain
+    // there (Epsilon Indi field: 32 ± 5″/yr against the scan's 4.7), so the scan's own path is shown
+    if (okFF(fl.fff) && fl.check !== 'scan only') return add(nameOf(fl), fl.label, '🎯', fl.fff.passes, fl.fff.fit.mu, fl.fff.fit.dir, fl);
     add(nameOf(fl), fl.label, '🎯', TSC.res.PS.map(q => { const sk = F.gridToSky(fl.x + fl.muE * q.dt / arc, fl.y - fl.muN * q.dt / arc, grid); return { e: q.e, ra: sk[0], dec: sk[1] }; }), fl.mu, fl.dir, fl); });
   if (MS.res && MS.res.run === S.run) MS.res.flagged.forEach(fl => {
     const known = fl.gaia && fl.label === 'known', o = known ? gaiaObj(fl.gaia) : { ra0: fl.ra, dec0: fl.dec, ep: epMid(MS.res.passes[0]), pmra: 0, pmdec: 0, noCat: true };
@@ -5489,15 +5573,18 @@ function movieShowPass(e) {
 }
 function movieStep(d) {
   const P = S.eps.length, was = MOVIE.e; MOVIE.e = ((MOVIE.e + d) % P + P) % P; MOVIE.t0 = performance.now();
-  if (MOVIE.follow && d > 0 && MOVIE.e < was) MOVIE.fi++;   // v0.55: after a full run through the passes, the next mover
+  if (d > 0 && MOVIE.e < was) MOVIE.fi++;   // v0.55: after a full run through the passes, the next mover (v0.56: on stage too, not only when following)
   movieShowPass(MOVIE.e); movieTiles(); if (MOVIE.follow) movieFollow();
 }
 // v0.55 follow: the view centres on one mover, zoomed so its whole track fills about a third of the screen
 function movieFollow(first) {
-  const ms = MOVIE.movers.filter(m => m.passes.length >= 2); if (!ms.length || !S.al) return;
-  const m = ms[MOVIE.fi % ms.length], ra = m.passes.map(q => q.ra), de = m.passes.map(q => q.dec), cd = Math.cos(de[0] * Math.PI / 180);
+  const m = movieStageMover(); if (!m || !S.al) return;   // v0.56: the mover on stage
+  const ra = m.passes.map(q => q.ra), de = m.passes.map(q => q.dec), cd = Math.cos(de[0] * Math.PI / 180);
   const span = Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de));
-  try { S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2, (Math.max(...de) + Math.min(...de)) / 2); S.al.setFov(Math.max(0.025, Math.min(0.2, span * 3))); } catch { /* keep the view */ }
+  try { const fov = Math.max(0.025, Math.min(0.2, span * 3)); S.al.setFov(fov);
+    // v0.56: on a wide screen the card covers the left side, so the mover goes in the middle of the sky that is left
+    const cr = $('card') && !$('card').hidden && innerWidth > 700 ? $('card').getBoundingClientRect() : null, shift = cr && cr.left < 60 && cr.right < innerWidth * 0.6 ? cr.right / 2 : 0;
+    S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2 + shift * (S.al.getFov()[0] / innerWidth) / cd, (Math.max(...de) + Math.min(...de)) / 2); } catch { /* keep the view */ }
   const lab = document.getElementById('mvlab'); if (lab && first !== undefined) lab.dataset.follow = m.name;
   refreshSoon();
 }
@@ -5520,11 +5607,13 @@ async function movieStart() {
   if (!S.field || S.eps.length < 2) { toast('An animation needs at least two passes of this field.', 5000); return; }
   movieStop(true);
   const c = $('card'), run = S.run;
-  const anyRun = [MS, DS, DF, TSC].some(R => R.res && R.res.run === S.run);
-  if (!anyRun) {
-    c.replaceChildren(h('h3', {}, '🎬 Finding the moving stars first'), h('p', {}, 'Running 🔍 Find moving stars and 🔭 Deep search on every pass of this field, then the film starts.')); c.hidden = false;
+  // v0.56: every search the film needs runs first, unless it already ran on this field: 🔍 bright stars, 🔭 deep search and
+  // 🎯 motion scan (faint movers, all images added up along 625 trial motions), so bright and faint movers share one film
+  const ran = R => R.res && R.res.run === S.run, todo = [[MS, '🔍 Find moving stars', motionSearch], [DS, '🔭 Deep search', deepSearch], [TSC, '🎯 Motion scan (faint stars)', motionScan]].filter(([R]) => !ran(R));
+  if (todo.length) {
+    c.replaceChildren(h('h3', {}, '🎬 Finding the moving stars first'), h('p', {}, `Running ${todo.map(t => t[1]).join(', then ')} on every pass of this field, then the film starts with every mover they find.`)); c.hidden = false;
     if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card');
-    await motionSearch(); if (run !== S.run || MS.stop) return; await deepSearch(); if (run !== S.run || DS.stop) return;   // v0.55 U9: Cancel stops the film too
+    for (const [R, , fn] of todo) { await fn(); if (run !== S.run || R.stop) return; }   // v0.55 U9: Cancel stops the film too
   }
   // v0.54: the Gaia and WISE movers join the film, so both catalogues must be here (at most 45 s; without them the film
   // shows what the searches measured)
@@ -5644,16 +5733,21 @@ function filmPlan() {
   half = Math.min(n / 2, half);
   const short = m => m.name.replace(/^Gaia DR3 (\d{4})\d+/, 'Gaia $1…').replace(/ \(.*\)$/, '');
   const frames = S.eps.map((_, e) => { const fr = frameOf(e), im = chosen(e); if (!fr || !im) return null;
+    // v0.56: the main mover is on stage, as in the film: spotlight, the pass before as a dashed ghost with its date, a
+    // ring locking on to this pass's place and the dated "here → there" callout
+    const ci = main ? main.passes.findIndex(q => q.e === e && q.g) : -1, pq = ci > 0 && main.passes[ci - 1].g ? main.passes[ci - 1] : null;
+    const stage = ci >= 0 ? { col: movieCol(main), cur: { x: main.passes[ci].g[0], y: main.passes[ci].g[1] }, prev: pq && { x: pq.g[0], y: pq.g[1], date: movieDate(pq) },
+      lines: movieStageLines(main, ci, pq ? ci - 1 : -1, short(main), movieCol(main)) } : null;
     const marks = ms.flatMap(m => { const now = m.passes.find(q => q.e === e && q.g), col = movieCol(m);
-      return [...m.passes.filter(q => q.e < e && q.g).map(q => ({ x: q.g[0], y: q.g[1], color: col, plus: true })), ...(now ? [{ x: now.g[0], y: now.g[1], color: col, label: m === main || ms.length <= 3 ? short(m) : null }] : [])]; });
-    return { fr, top: `Pass ${e + 1}`, sub: `${fmtMonth(S.eps[e].t0)} · ${lamOf(im).toFixed(2)} µm` + (fr.stack ? ` · median of ${fr.stack} images` : ''), marks, mjd: im.mjd, lam: lamOf(im) }; }).filter(Boolean);
+      return [...m.passes.filter(q => q.e < e && q.g).map(q => ({ x: q.g[0], y: q.g[1], color: col, plus: true })), ...(now && !(stage && m === main) ? [{ x: now.g[0], y: now.g[1], color: col, label: ms.length <= 3 ? short(m) : null }] : [])]; });
+    return { stage, fr, top: `Pass ${e + 1}`, sub: `${fmtMonth(S.eps[e].t0)} · ${lamOf(im).toFixed(2)} µm` + (fr.stack ? ` · median of ${fr.stack} images` : ''), marks, mjd: im.mjd, lam: lamOf(im) }; }).filter(Boolean);
   const c = main && movieCat(main), cmp = c && catCmp(c), sky = F.gridToSky(cx, cy, cardGrid());
   const badge = !main ? ['Nothing here moves enough to see', '#9b8cff'] : main.label === 'target' ? ['✓ Known mover: the NASA target', '#5ff0a0'] : main.how === 'predicted' ? ['Catalogue prediction: too small to measure here', '#93c5fd']
     : cmp ? (cmp.result === 'agrees' ? [`✓ Measured; ${c.cat || 'the catalogue'} agrees`, '#5ff0a0'] : [`Measured; ${c.cat || 'the catalogue'} differs`, '#ffb05a']) : ['Unconfirmed candidate', '#9b8cff'];
   return { title: main ? main.name : 'SPHEREx sky over time', badge, cx, cy, half, frames, ra: sky[0], dec: sky[1], slug: 'film-' + (main ? main.name : 'field'),
     credit: 'Images: NASA SPHEREx via IRSA · Motions: ARCNAVE, Gaia DR3, CatWISE2020 · False colour',
     fact: main ? `${main.mu.toFixed(2)}${main.smu ? ' ± ' + main.smu.toFixed(2) : ''}″ per year toward the ${main.dir} · ${ms.length} mover${ms.length === 1 ? '' : 's'} in the film` : `${frames.length} passes · no mover`,
-    note: 'Real SPHEREx images, one per pass. Ring: where each mover was in this pass; +: where it was in the passes before.' + (main && main.how === 'predicted' ? ' Positions are the catalogue\'s prediction, not a measurement.' : '') + ' Not a discovery claim.' };
+    note: 'Real SPHEREx images, one per pass. Spotlight: dashed circle = the pass before, ring = this pass, both dated. Other rings: this pass; +: passes before.' + (main && main.how === 'predicted' ? ' Positions are the catalogue\'s prediction, not a measurement.' : '') + ' Not a discovery claim.' };
 }
 async function filmFrames(plan) {
   try { await document.fonts.ready; } catch { /* fallback fonts */ }
@@ -5664,7 +5758,11 @@ async function filmGif() {
   if (!plan || plan.frames.length < 2) { toast('The film needs at least two passes with images loaded.'); return; }
   EXP.busy = true; toast('Making the film GIF...', 8000);
   try { const { g } = await filmFrames(plan), frames = [];
-    for (let i = 0; i < plan.frames.length; i++) { drawCardFrame(g, plan, i); frames.push({ rgba: g.getImageData(0, 0, CARD.W, CARD.H).data, delay: i === plan.frames.length - 1 ? 1700 : 1000 }); }
+    // v0.56: between passes the spotlit mover glides (3 short frames) and its ring locks on (2), then the pass holds
+    const push = delay => frames.push({ rgba: g.getImageData(0, 0, CARD.W, CARD.H).data, delay });
+    for (let i = 0; i < plan.frames.length; i++) { const tw = i > 0 && plan.frames[i].stage && plan.frames[i].stage.prev;
+      if (tw) { for (const k of [0, 0.35, 0.7]) { drawCardFrame(g, plan, i, { k, lock: 0 }); push(120); } for (const lock of [0.35, 0.7]) { drawCardFrame(g, plan, i, { k: 1, lock }); push(90); } }
+      drawCardFrame(g, plan, i); push(i === plan.frames.length - 1 ? 1700 : 1000); }
     const gif = await encodeGif({ width: CARD.W, height: CARD.H, frames });
     showCardDialog(plan, new Blob([gif], { type: 'image/gif' })); $('toast').hidden = true;
     EXP.last = { name: CARD.last && CARD.last.name, size: gif.length, type: 'image/gif', frames: plan.frames.length };
@@ -5681,7 +5779,11 @@ async function filmWebm() {
     rec.ondataavailable = ev => { if (ev.data && ev.data.size) parts.push(ev.data); };
     const done = new Promise(r => { rec.onstop = r; });
     drawCardFrame(g, plan, 0); rec.start(250);
-    for (let loop = 0; loop < 2; loop++) for (let i = 0; i < plan.frames.length; i++) { drawCardFrame(g, plan, i); await sleep(i === plan.frames.length - 1 ? 1700 : 1000); }
+    for (let loop = 0; loop < 2; loop++) for (let i = 0; i < plan.frames.length; i++) {
+      // v0.56: the glide and the lock-on drawn in real time (~30 frames a second), then the pass holds
+      const tw = i > 0 && plan.frames[i].stage && plan.frames[i].stage.prev, t0 = performance.now(), A = 450, B = 300;
+      if (tw) for (let t = 0; t < A + B; t = performance.now() - t0) { drawCardFrame(g, plan, i, { k: Math.min(1, t / A), lock: Math.max(0, (t - A) / B) }); await sleep(33); }
+      drawCardFrame(g, plan, i); await sleep(i === plan.frames.length - 1 ? 1700 : 1000); }
     rec.stop(); await done;
     saveBlob(new Blob(parts, { type: 'video/webm' }), `arcnave-${expSlug(plan.slug)}-${plan.ra.toFixed(3)}_${plan.dec.toFixed(3)}.webm`);
     EXP.last.frames = plan.frames.length;
@@ -5726,7 +5828,7 @@ if ($('pngb')) $('pngb').onclick = () => skyPng();
 function movieTiles() {
   const lab = document.getElementById('mvlab'), e = MOVIE.e, P = S.eps.length;
   if (lab) lab.textContent = `Pass ${e + 1} of ${P} · ${fmtMonth(S.eps[e].t0)}` + (e ? ` · ${Math.round(epMid(e) - epMid(0))} days after the first` : ' · the start') +
-    (MOVIE.follow ? (() => { const fl = MOVIE.movers.filter(m => m.passes.length >= 2); return fl.length ? ` · following ${fl[MOVIE.fi % fl.length].name}` : ''; })() : '');
+    (() => { const sm = movieStageMover(); return sm ? ` · ${MOVIE.follow ? 'following' : 'in the spotlight'}: ${sm.name}` : ''; })();
   // v0.55: the line of epochs marks the pass on screen
   document.querySelectorAll('#card .epc circle[data-e]').forEach(c => { const on = +c.dataset.e === e; c.setAttribute('r', on ? 5.6 : 3.6); c.setAttribute('stroke', on ? '#ffffff' : 'rgba(2,4,10,.9)'); c.setAttribute('stroke-width', on ? 2 : 1); });
   const fr = frameOf(e), n = S.field.n; if (!fr) return;
@@ -5747,6 +5849,71 @@ function movieTiles() {
     g.fillStyle = 'rgba(5,7,14,.7)'; g.fillRect(0, 0, SZ, 16); g.fillStyle = '#e6fffb'; g.font = '600 10px Inter,system-ui,sans-serif'; g.fillText(`Pass ${e + 1} · ${fmtMonth(S.eps[e].t0)}`, 4, 11);
   }
 }
+/* v0.56 on stage: the film tells one mover's story at a time, "here on this date, and by the next pass it had gone there".
+   A spotlight beam falls on it, the place of the pass before stays as a dashed ghost circle with its date, the marker
+   glides to the new place and a ring locks on to it, and a callout gives both dates and the true shift (″, measured
+   positions; the drawn path may be stretched, the numbers never are). */
+// the order on stage: the NASA target, then what SPHEREx measured, then catalogue predictions (the film's own order otherwise)
+function movieStageList() { const rk = m => m.label === 'target' ? 0 : m.how === 'predicted' ? 2 : 1; return MOVIE.movers.filter(m => m.passes.length >= 2).map((m, j) => [m, j]).sort((a, b) => rk(a[0]) - rk(b[0]) || a[1] - b[1]).map(x => x[0]); }
+function movieStageMover() { const ms = movieStageList(); return ms.length ? ms[MOVIE.fi % ms.length] : null; }
+function movieShift(a, b) {   // from pass a to pass b of one mover, on the sky: ″, direction, days
+  const cd = Math.cos(a.dec * Math.PI / 180), dE = (b.ra - a.ra) * cd * 3600, dN = (b.dec - a.dec) * 3600, d = Math.hypot(dE, dN);
+  return { d, dir: COMPASS[Math.round(((Math.atan2(dE, dN) * 180 / Math.PI + 360) % 360) / 45) % 8], days: Math.round((b.mjd ?? epMid(b.e)) - (a.mjd ?? epMid(a.e))) };
+}
+const movieDate = q => fmtDay(q.mjd ?? epMid(q.e));
+const fmtShift = d => d.toFixed(d < 1 ? 2 : 1) + '″';
+// where the "was here" label goes: beside the old place, on the side away from the new one, so the ring never covers it
+function awayLabel(p, to, r) {
+  const dx = p[0] - to[0], dy = p[1] - to[1], d = Math.hypot(dx, dy), ux = d > 2 ? dx / d : 0, uy = d > 2 ? dy / d : 1;
+  return Math.abs(ux) > 0.5 ? [p[0] + ux * r, p[1] + uy * r + 4, ux > 0 ? 'left' : 'right'] : [p[0], p[1] + uy * (r + 6) + 4, 'center'];
+}
+// the callout's lines for pass index ci of mover m (pi: the pass before, -1 on its first pass): [text, colour, font?]
+function movieStageLines(m, ci, pi, title, col) {
+  const ps = m.passes, cur = ps[ci], last = ps[ps.length - 1], first = ps[0], lines = [[title, col, '700 12px']];
+  if (pi >= 0) { const s = movieShift(ps[pi], cur);
+    lines.push([`P${ps[pi].e + 1} · ${movieDate(ps[pi])}: here (dashed circle)`, 'rgba(230,236,245,.9)'], [`P${cur.e + 1} · ${movieDate(cur)}: there (ring)`, '#ffffff'],
+      [`moved ${fmtShift(s.d)} toward the ${s.dir} in ${s.days} days`, col]); }
+  else { const s = movieShift(first, last);
+    lines.push([`P${first.e + 1} · ${movieDate(first)}: it starts here`, '#ffffff'], [`by P${last.e + 1} · ${movieDate(last)}: ${fmtShift(s.d)} to the ${s.dir}`, col]); }
+  if (m.how === 'predicted') lines.push(['catalogue prediction, not measured here', 'rgba(147,197,253,.95)']);
+  return lines;
+}
+function movieStage(g, now, k) {
+  const { m, i, col, qs, es, head, ci, pi } = g, dpr = window.devicePixelRatio || 1, cw = ctx.canvas.width / dpr, ch = ctx.canvas.height / dpr;
+  const lock = Math.max(0, Math.min(1, (now - MOVIE.t0 - 0.45 * MOVIE.step) / (0.3 * MOVIE.step))), arrived = k >= 1;
+  ctx.save();
+  // 1. the spotlight beam: a soft cone from above the screen onto the mover, and a pool of light around it
+  if (MOVIE.spot && !MOVIE.mo) {
+    const src = [head[0] * 0.55 + cw * 0.225, -60], bx = head[0] - src[0], by = head[1] - src[1], bl = Math.hypot(bx, by) || 1, nx = -by / bl, ny = bx / bl, R = 34;
+    ctx.globalCompositeOperation = 'lighter';
+    const lg = ctx.createLinearGradient(src[0], src[1], head[0], head[1]); lg.addColorStop(0, 'rgba(255,244,214,0)'); lg.addColorStop(0.75, 'rgba(255,244,214,.05)'); lg.addColorStop(1, 'rgba(255,244,214,.11)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(src[0] - nx * 6, src[1] - ny * 6); ctx.lineTo(src[0] + nx * 6, src[1] + ny * 6); ctx.lineTo(head[0] + nx * R, head[1] + ny * R); ctx.lineTo(head[0] - nx * R, head[1] - ny * R); ctx.closePath(); ctx.fill();
+    const rg = ctx.createRadialGradient(head[0], head[1], 0, head[0], head[1], R * 1.25); rg.addColorStop(0, 'rgba(255,244,214,.16)'); rg.addColorStop(1, 'rgba(255,244,214,0)');
+    ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(head[0], head[1], R * 1.25, 0, 7); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // 2. where it was in the pass before: a dashed ghost circle with that pass's date
+  const lab = (t, x, y, c, al = 'left') => { ctx.textAlign = al; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.9)'; ctx.strokeText(t, x, y); ctx.fillStyle = c; ctx.fillText(t, x, y); ctx.textAlign = 'start'; };
+  ctx.font = '600 11px Inter,system-ui,sans-serif';
+  if (pi >= 0) { const p = qs[pi]; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.4; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(p[0], p[1], 15, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    const [lx, ly, la] = awayLabel(p, qs[ci], 22); lab(`was here · ${movieDate(m.passes[pi])}`, lx, ly, 'rgba(255,255,255,.85)', la); }
+  // 3. the marker on its way, then a ring that locks on to the new place (an arc that closes and tightens, with ticks)
+  if (!arrived) { ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.setLineDash([5, 5]); ctx.lineDashOffset = -now / 40; ctx.beginPath(); ctx.arc(head[0], head[1], 26, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0; }
+  else { const r = 13 + 20 * (1 - lock) * (1 - lock), a0 = -Math.PI / 2;
+    ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 14; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(head[0], head[1], r, a0, a0 + 2 * Math.PI * Math.max(0.02, lock)); ctx.stroke(); ctx.restore();
+    if (lock >= 1) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6; for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { ctx.beginPath(); ctx.moveTo(head[0] + ux * 16, head[1] + uy * 16); ctx.lineTo(head[0] + ux * 22, head[1] + uy * 22); ctx.stroke(); } } }
+  // 4. the callout: name, both dates and the true shift between them
+  const lines = movieStageLines(m, ci, pi, `${i + 1} ${m.name}`, col);
+  const fade = Math.min(1, 0.25 + k * 1.2), lh = 15, pad = 8;
+  ctx.font = '600 11px Inter,system-ui,sans-serif'; let wmax = 0; for (const [t, , f] of lines) { ctx.font = (f || '600 11px') + ' Inter,system-ui,sans-serif'; wmax = Math.max(wmax, ctx.measureText(t).width); }
+  const bw = wmax + 2 * pad, bh = lines.length * lh + pad + 2;
+  let bx = head[0] + 30, by = head[1] - bh - 18; if (bx + bw > cw - 8) bx = head[0] - 30 - bw; if (bx < 8) bx = 8; if (by < 96) by = head[1] + 28; if (by + bh > ch - 8) by = ch - 8 - bh;
+  ctx.globalAlpha = fade; ctx.fillStyle = 'rgba(5,8,15,.86)'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
+  const ax = Math.max(bx, Math.min(bx + bw, head[0])), ay = by + bh < head[1] ? by + bh : by;   // a leader line to the ring
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(head[0] + (ax - head[0]) * 14 / (Math.hypot(ax - head[0], ay - head[1]) || 1), head[1] + (ay - head[1]) * 14 / (Math.hypot(ax - head[0], ay - head[1]) || 1)); ctx.stroke();
+  lines.forEach(([t, c, f], j) => { ctx.font = (f || '600 11px') + ' Inter,system-ui,sans-serif'; ctx.fillStyle = c; ctx.fillText(t, bx + pad, by + pad + 9 + j * lh); });
+  ctx.restore();
+}
 function drawMovie() {
   if (!MOVIE.on) return; if (MOVIE.run !== S.run) { movieStop(true); return; }
   const ms = MOVIE.movers, e = MOVIE.e, k = Math.min(1, (performance.now() - MOVIE.t0) / (0.45 * MOVIE.step)), ease = k * k * (3 - 2 * k);
@@ -5762,8 +5929,11 @@ function drawMovie() {
     const from = ci >= 0 && pi >= 0 && ci > 0 ? qs[pi] : ci >= 0 ? qs[ci] : null, to = ci >= 0 ? qs[ci] : null;
     const head = to ? [from[0] + (to[0] - from[0]) * ease, from[1] + (to[1] - from[1]) * ease] : null;
     const upto = qs.filter((_, j) => es[j] < e); if (head) upto.push(head);
-    return { m, i, col: movieCol(m), qs, es, head, upto };
+    return { m, i, col: movieCol(m), qs, es, head, upto, ci, pi: ci > 0 ? pi : -1 };
   }).filter(Boolean);
+  // v0.56: one mover is "on stage" at a time (the followed one, else the next one after each full run): it gets the
+  // spotlight beam, the lock-on ring and the dated "was here → now here" callout
+  const stage = geo.length ? (geo.find(g => g.m === movieStageMover()) || geo[0]) : null;
   // v0.55 motion only: the sky is hidden, so what is left is what moved: the measured places, their errors and the tracks
   if (MOVIE.mo) { const dp = window.devicePixelRatio || 1; ctx.fillStyle = 'rgba(1,2,6,.94)'; ctx.fillRect(0, 0, ctx.canvas.width / dp, ctx.canvas.height / dp); }
   // one ″ on screen (for the error circles, which are drawn Fx larger like the paths, so they stay true to them)
@@ -5813,8 +5983,9 @@ function drawMovie() {
     if (head) { const pulse = 0.5 + 0.5 * Math.sin(now / 260);
       ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(head[0], head[1], 9, 0, 7); ctx.stroke(); ctx.restore();
       ctx.strokeStyle = col; ctx.globalAlpha = 0.55 * (1 - pulse); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(head[0], head[1], 11 + 12 * pulse, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
-      ctx.font = '700 12px Inter,system-ui,sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.85)'; ctx.strokeText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); ctx.fillStyle = col; ctx.fillText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); }
+      if (g !== stage) { ctx.font = '700 12px Inter,system-ui,sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.85)'; ctx.strokeText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); ctx.fillStyle = col; ctx.fillText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); } }
   }
+  if (stage && stage.head) movieStage(stage, now, k);
   // caption
   let txt = `🎬 Pass ${e + 1} of ${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (MOVIE.mo ? ' · motion only (sky hidden)' : '') + (Fx > 1 ? ` · paths drawn ${Fx}x longer to be seen (zoom in for true scale)` : '');
   ctx.font = '600 12px Inter,system-ui,sans-serif'; const cw = ctx.canvas.width / (window.devicePixelRatio || 1);
