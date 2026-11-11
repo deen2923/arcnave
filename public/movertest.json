@@ -1,0 +1,2082 @@
+{
+ "built": "2026-11-11T06:49:37.735Z",
+ "summary": {
+  "fields": 18,
+  "measured": 15,
+  "SNR": [
+   3,
+   6,
+   12,
+   25
+  ],
+  "MU": [
+   1,
+   2,
+   4,
+   8
+  ],
+  "all": {
+   "fields": 15,
+   "cells": [
+    [
+     {
+      "n": 28,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 28,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 26,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 25,
+      "meas": 6,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 28,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 28,
+      "meas": 3,
+      "blind": 2
+     },
+     {
+      "n": 26,
+      "meas": 15,
+      "blind": 11
+     },
+     {
+      "n": 25,
+      "meas": 22,
+      "blind": 11
+     }
+    ],
+    [
+     {
+      "n": 28,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 27,
+      "meas": 15,
+      "blind": 14
+     },
+     {
+      "n": 26,
+      "meas": 22,
+      "blind": 20
+     },
+     {
+      "n": 25,
+      "meas": 25,
+      "blind": 20
+     }
+    ],
+    [
+     {
+      "n": 28,
+      "meas": 4,
+      "blind": 6
+     },
+     {
+      "n": 27,
+      "meas": 20,
+      "blind": 23
+     },
+     {
+      "n": 26,
+      "meas": 21,
+      "blind": 24
+     },
+     {
+      "n": 25,
+      "meas": 25,
+      "blind": 24
+     }
+    ]
+   ],
+   "pullRms": 1.03,
+   "empty": 323,
+   "emptyFalse": 0,
+   "extra": 1
+  },
+  "plane": {
+   "fields": 3,
+   "cells": [
+    [
+     {
+      "n": 5,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 5,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 4,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 4,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 5,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 5,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 4,
+      "meas": 2,
+      "blind": 0
+     },
+     {
+      "n": 4,
+      "meas": 2,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 5,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 4,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 4,
+      "meas": 2,
+      "blind": 0
+     },
+     {
+      "n": 4,
+      "meas": 4,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 5,
+      "meas": 0,
+      "blind": 2
+     },
+     {
+      "n": 4,
+      "meas": 1,
+      "blind": 3
+     },
+     {
+      "n": 4,
+      "meas": 1,
+      "blind": 2
+     },
+     {
+      "n": 4,
+      "meas": 4,
+      "blind": 3
+     }
+    ]
+   ],
+   "pullRms": 1.32,
+   "empty": 20,
+   "emptyFalse": 0,
+   "extra": 0
+  },
+  "rest": {
+   "fields": 12,
+   "cells": [
+    [
+     {
+      "n": 23,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 23,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 22,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 21,
+      "meas": 5,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 23,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 23,
+      "meas": 3,
+      "blind": 2
+     },
+     {
+      "n": 22,
+      "meas": 13,
+      "blind": 11
+     },
+     {
+      "n": 21,
+      "meas": 20,
+      "blind": 11
+     }
+    ],
+    [
+     {
+      "n": 23,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 23,
+      "meas": 14,
+      "blind": 14
+     },
+     {
+      "n": 22,
+      "meas": 20,
+      "blind": 20
+     },
+     {
+      "n": 21,
+      "meas": 21,
+      "blind": 20
+     }
+    ],
+    [
+     {
+      "n": 23,
+      "meas": 4,
+      "blind": 4
+     },
+     {
+      "n": 23,
+      "meas": 19,
+      "blind": 20
+     },
+     {
+      "n": 22,
+      "meas": 20,
+      "blind": 22
+     },
+     {
+      "n": 21,
+      "meas": 21,
+      "blind": 21
+     }
+    ]
+   ],
+   "pullRms": 0.97,
+   "empty": 303,
+   "emptyFalse": 0,
+   "extra": 1
+  },
+  "planeDeg": 5,
+  "days": 396,
+  "method": "fake moving stars of known speed and brightness added to the real images of each field, then measured at their known place and searched for blind by the deep search; images restored afterwards"
+ },
+ "rows": [
+  {
+   "id": "L000B-40",
+   "ra": 18.4577,
+   "dec": -36.139,
+   "eclLon": 0,
+   "eclLat": -40,
+   "galLat": -79.8,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 363,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 1.013,
+   "empty": 32,
+   "emptyFalse": 0,
+   "emptyWander": 4,
+   "extra": 0,
+   "dsFlagged": 2,
+   "why": null,
+   "measuredAt": "2026-11-11T06:42:29.038Z"
+  },
+  {
+   "id": "L060B-40",
+   "ra": 66.1004,
+   "dec": -19.0174,
+   "eclLon": 60,
+   "eclLat": -40,
+   "galLat": -40.7,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 364,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 0.971,
+   "empty": 32,
+   "emptyFalse": 0,
+   "emptyWander": 4,
+   "extra": 0,
+   "dsFlagged": 2,
+   "why": null,
+   "measuredAt": "2026-11-11T06:43:13.777Z"
+  },
+  {
+   "id": "L120B-40",
+   "ra": 113.8996,
+   "dec": -19.0174,
+   "eclLon": 120,
+   "eclLat": -40,
+   "galLat": 0.7,
+   "status": "too-few-passes",
+   "epochs": 2,
+   "fakes": null,
+   "nImg": null,
+   "days": null,
+   "floor": null,
+   "cells": null,
+   "pulls": 0,
+   "pullRms": null,
+   "empty": null,
+   "emptyFalse": null,
+   "emptyWander": null,
+   "extra": null,
+   "dsFlagged": null,
+   "why": "fewer than three passes so far",
+   "measuredAt": "2026-11-11T06:44:19.234Z"
+  },
+  {
+   "id": "L180B-40",
+   "ra": 161.5423,
+   "dec": -36.139,
+   "eclLon": 180,
+   "eclLat": -40,
+   "galLat": 20.2,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 374,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 1.088,
+   "empty": 30,
+   "emptyFalse": 0,
+   "emptyWander": 6,
+   "extra": 1,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:44:39.613Z"
+  },
+  {
+   "id": "L240B-40",
+   "ra": 222.6629,
+   "dec": -58.6095,
+   "eclLon": 240,
+   "eclLat": -40,
+   "galLat": 0.7,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 16,
+   "nImg": 24,
+   "days": 361,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 1
+     }
+    ]
+   ],
+   "pulls": 24,
+   "pullRms": 0.844,
+   "empty": 8,
+   "emptyFalse": 0,
+   "emptyWander": 0,
+   "extra": 0,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:45:44.202Z"
+  },
+  {
+   "id": "L300B-40",
+   "ra": 317.3371,
+   "dec": -58.6095,
+   "eclLon": 300,
+   "eclLat": -40,
+   "galLat": -40.7,
+   "status": "ok",
+   "epochs": 4,
+   "fakes": 28,
+   "nImg": 30,
+   "days": 512,
+   "floor": 1.313,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 1
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 2
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 1
+     }
+    ]
+   ],
+   "pulls": 42,
+   "pullRms": 0.356,
+   "empty": 5,
+   "emptyFalse": 0,
+   "emptyWander": 0,
+   "extra": 0,
+   "dsFlagged": 1,
+   "why": null,
+   "measuredAt": "2026-11-11T06:47:16.676Z"
+  },
+  {
+   "id": "L000B+00",
+   "ra": 0,
+   "dec": 0,
+   "eclLon": 0,
+   "eclLat": 0,
+   "galLat": -60.2,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 353,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 1.11,
+   "empty": 32,
+   "emptyFalse": 0,
+   "emptyWander": 4,
+   "extra": 0,
+   "dsFlagged": 1,
+   "why": null,
+   "measuredAt": "2026-11-11T06:29:26.113Z"
+  },
+  {
+   "id": "L060B+00",
+   "ra": 57.8187,
+   "dec": 20.1504,
+   "eclLon": 60,
+   "eclLat": 0,
+   "galLat": -25.7,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 362,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 0.812,
+   "empty": 32,
+   "emptyFalse": 0,
+   "emptyWander": 3,
+   "extra": 0,
+   "dsFlagged": 1,
+   "why": null,
+   "measuredAt": "2026-11-11T06:30:28.741Z"
+  },
+  {
+   "id": "L120B+00",
+   "ra": 122.1813,
+   "dec": 20.1504,
+   "eclLon": 120,
+   "eclLat": 0,
+   "galLat": 25.7,
+   "status": "too-few-passes",
+   "epochs": 2,
+   "fakes": null,
+   "nImg": null,
+   "days": null,
+   "floor": null,
+   "cells": null,
+   "pulls": 0,
+   "pullRms": null,
+   "empty": null,
+   "emptyFalse": null,
+   "emptyWander": null,
+   "extra": null,
+   "dsFlagged": null,
+   "why": "fewer than three passes so far",
+   "measuredAt": "2026-11-11T06:31:31.581Z"
+  },
+  {
+   "id": "L180B+00",
+   "ra": 180,
+   "dec": 0,
+   "eclLon": 180,
+   "eclLat": 0,
+   "galLat": 60.2,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 388,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 0.881,
+   "empty": 32,
+   "emptyFalse": 0,
+   "emptyWander": 2,
+   "extra": 0,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:31:49.014Z"
+  },
+  {
+   "id": "L240B+00",
+   "ra": 237.8187,
+   "dec": -20.1504,
+   "eclLon": 240,
+   "eclLat": 0,
+   "galLat": 25.7,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 366,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 0.99,
+   "empty": 22,
+   "emptyFalse": 0,
+   "emptyWander": 3,
+   "extra": 0,
+   "dsFlagged": 1,
+   "why": null,
+   "measuredAt": "2026-11-11T06:32:54.040Z"
+  },
+  {
+   "id": "L300B+00",
+   "ra": 302.1813,
+   "dec": -20.1504,
+   "eclLon": 300,
+   "eclLat": 0,
+   "galLat": -25.7,
+   "status": "ok",
+   "epochs": 4,
+   "fakes": 8,
+   "nImg": 26,
+   "days": 522,
+   "floor": 0.119,
+   "cells": [
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 0,
+      "meas": 0,
+      "blind": 0
+     }
+    ]
+   ],
+   "pulls": 12,
+   "pullRms": 0.787,
+   "empty": 1,
+   "emptyFalse": 0,
+   "emptyWander": 0,
+   "extra": 0,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:34:04.164Z"
+  },
+  {
+   "id": "L000B+40",
+   "ra": 341.5423,
+   "dec": 36.139,
+   "eclLon": 0,
+   "eclLat": 40,
+   "galLat": -20.2,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 365,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 1.185,
+   "empty": 21,
+   "emptyFalse": 0,
+   "emptyWander": 4,
+   "extra": 0,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:35:42.895Z"
+  },
+  {
+   "id": "L060B+40",
+   "ra": 42.6629,
+   "dec": 58.6095,
+   "eclLon": 60,
+   "eclLat": 40,
+   "galLat": -0.7,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 22,
+   "nImg": 24,
+   "days": 365,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 1,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 1,
+      "meas": 1,
+      "blind": 1
+     }
+    ]
+   ],
+   "pulls": 32,
+   "pullRms": 1.367,
+   "empty": 3,
+   "emptyFalse": 0,
+   "emptyWander": 0,
+   "extra": 0,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:36:45.536Z"
+  },
+  {
+   "id": "L120B+40",
+   "ra": 137.3371,
+   "dec": 58.6095,
+   "eclLon": 120,
+   "eclLat": 40,
+   "galLat": 40.7,
+   "status": "too-few-passes",
+   "epochs": 2,
+   "fakes": null,
+   "nImg": null,
+   "days": null,
+   "floor": null,
+   "cells": null,
+   "pulls": 0,
+   "pullRms": null,
+   "empty": null,
+   "emptyFalse": null,
+   "emptyWander": null,
+   "extra": null,
+   "dsFlagged": null,
+   "why": "fewer than three passes so far",
+   "measuredAt": "2026-11-11T06:38:00.025Z"
+  },
+  {
+   "id": "L180B+40",
+   "ra": 198.4577,
+   "dec": 36.139,
+   "eclLon": 180,
+   "eclLat": 40,
+   "galLat": 79.8,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 368,
+   "floor": 0,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 0.906,
+   "empty": 32,
+   "emptyFalse": 0,
+   "emptyWander": 4,
+   "extra": 0,
+   "dsFlagged": 2,
+   "why": null,
+   "measuredAt": "2026-11-11T06:38:21.976Z"
+  },
+  {
+   "id": "L240B+40",
+   "ra": 246.1004,
+   "dec": 19.0174,
+   "eclLon": 240,
+   "eclLat": 40,
+   "galLat": 40.7,
+   "status": "ok",
+   "epochs": 3,
+   "fakes": 32,
+   "nImg": 24,
+   "days": 367,
+   "floor": 0.054,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 2
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 1.043,
+   "empty": 32,
+   "emptyFalse": 0,
+   "emptyWander": 9,
+   "extra": 0,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:39:21.488Z"
+  },
+  {
+   "id": "L300B+40",
+   "ra": 293.8996,
+   "dec": 19.0174,
+   "eclLon": 300,
+   "eclLat": 40,
+   "galLat": -0.7,
+   "status": "ok",
+   "epochs": 4,
+   "fakes": 32,
+   "nImg": 32,
+   "days": 507,
+   "floor": 1.212,
+   "cells": [
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 1,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 0
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 0
+     }
+    ],
+    [
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 0,
+      "blind": 2
+     },
+     {
+      "n": 2,
+      "meas": 2,
+      "blind": 1
+     }
+    ]
+   ],
+   "pulls": 48,
+   "pullRms": 1.472,
+   "empty": 9,
+   "emptyFalse": 0,
+   "emptyWander": 2,
+   "extra": 0,
+   "dsFlagged": 0,
+   "why": null,
+   "measuredAt": "2026-11-11T06:40:36.408Z"
+  }
+ ]
+}

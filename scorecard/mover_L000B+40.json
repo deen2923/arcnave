@@ -1,0 +1,130 @@
+{
+ "id": "mover_L000B+40",
+ "eclLon": 0,
+ "eclLat": 40,
+ "ra": 341.5423,
+ "dec": 36.139,
+ "galLat": -20.2,
+ "field": "L000B+40",
+ "version": "0.55",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-11-11T06:35:42.895Z",
+ "epochs": 3,
+ "dsFlagged": 0,
+ "status": "ok",
+ "fakes": 32,
+ "nImg": 24,
+ "days": 365,
+ "SNR": [
+  3,
+  6,
+  12,
+  25
+ ],
+ "MU": [
+  1,
+  2,
+  4,
+  8
+ ],
+ "floor": 0,
+ "cells": [
+  [
+   {
+    "n": 2,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 2,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 2,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 2,
+    "meas": 0,
+    "blind": 0
+   }
+  ],
+  [
+   {
+    "n": 2,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 2,
+    "meas": 1,
+    "blind": 0
+   },
+   {
+    "n": 2,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 2,
+    "meas": 2,
+    "blind": 0
+   }
+  ],
+  [
+   {
+    "n": 2,
+    "meas": 1,
+    "blind": 1
+   },
+   {
+    "n": 2,
+    "meas": 1,
+    "blind": 1
+   },
+   {
+    "n": 2,
+    "meas": 2,
+    "blind": 2
+   },
+   {
+    "n": 2,
+    "meas": 2,
+    "blind": 2
+   }
+  ],
+  [
+   {
+    "n": 2,
+    "meas": 1,
+    "blind": 1
+   },
+   {
+    "n": 2,
+    "meas": 2,
+    "blind": 2
+   },
+   {
+    "n": 2,
+    "meas": 2,
+    "blind": 2
+   },
+   {
+    "n": 2,
+    "meas": 2,
+    "blind": 2
+   }
+  ]
+ ],
+ "pulls": 48,
+ "pullRms": 1.185,
+ "empty": 21,
+ "emptyFalse": 0,
+ "emptyWander": 4,
+ "extra": 0,
+ "totalSecs": 63,
+ "savedAt": "2026-11-11T06:36:45.533Z"
+}

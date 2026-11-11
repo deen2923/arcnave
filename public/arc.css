@@ -1647,3 +1647,26 @@ html.landing,html.landing body,#landing{background:#000}
 #card .mttab td.mtok{background:rgba(74,222,128,.16)}
 #card .mttab td.mtpart{background:rgba(251,191,36,.14)}
 #card .mttab td.mtno{background:rgba(148,163,184,.08);color:var(--fg-3)}
+/* v0.55 Tested: in one look, and the mover test tables */
+#tdrawer .tlook{margin:.6rem 0 1rem;padding:.75rem .9rem;border-radius:var(--r2);background:var(--ir-dim);border:1px solid var(--ir-line)}
+#tdrawer .tlook h3{margin:0 0 .35rem;font:600 .7rem/1.3 var(--f-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--ir-3)}
+#tdrawer .tlook .olk{margin:0;padding-left:1.1rem;font-size:var(--t-sm);line-height:1.55}
+#tdrawer .tlook .olk li{margin:.25rem 0}
+#tdrawer .mvt caption{caption-side:top;text-align:left;font-weight:600;font-size:.8rem;margin:.7rem 0 .25rem}
+#tdrawer .mvt td.good{color:#4ade80}
+/* v0.55 Planet X: what SPHEREx can catch, in one line */
+.pxlook{margin:.45rem 0 .2rem;font-size:var(--t-xs);line-height:1.55;color:var(--fg-2)}
+.pxlook b{color:var(--fg)}
+.linkb{display:inline;min-height:0;padding:0;border:0;background:none;color:var(--ir-2);text-decoration:underline;font:inherit;cursor:pointer}
+.linkb:hover{color:var(--ir-3);background:none}
+/* v0.55 first impression: the 90-second story first (landing hero, and the top of the Beginner panel) */
+.lp-story,.begstory{display:flex;align-items:center;gap:.7rem;width:fit-content;max-width:100%;margin:.9rem 0 .2rem;padding:.5rem .95rem .5rem .55rem;border-radius:var(--rf);border:1px solid var(--ir-line);background:var(--ir-dim);color:var(--fg);text-align:left;cursor:pointer;font:inherit}
+.lp-story:hover,.begstory:hover{background:rgba(45,212,191,.22)}
+.lp-story b,.begstory b{font-weight:650}
+.lp-story small,.begstory small{color:var(--fg-2);font-size:.8rem}
+.lps-play{flex:none;display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--ir-grad);color:var(--on-ir);font-size:.75rem;box-shadow:0 0 0 0 rgba(45,212,191,.5);animation:lpsPulse 2.4s infinite}
+@keyframes lpsPulse{0%{box-shadow:0 0 0 0 rgba(45,212,191,.45)}70%{box-shadow:0 0 0 10px rgba(45,212,191,0)}100%{box-shadow:0 0 0 0 rgba(45,212,191,0)}}
+@media (prefers-reduced-motion:reduce){.lps-play{animation:none}}
+.begstory{display:none;margin:.2rem 14px .7rem;width:calc(100% - 28px);border-radius:var(--r2)}
+.begstory span:last-child{display:grid;gap:.1rem}
+body:not(.adv) .begstory{display:flex}

@@ -107,6 +107,7 @@
             <button class="hbtn" type="button" data-launch><svg class="ic" aria-hidden="true"><use href="#i-play"/></svg><span data-i18n="cta.launch">Launch ARCNAVE</span></button>
             <button class="alt" type="button" data-launch-ct="barnard"><svg class="ic" aria-hidden="true"><use href="#i-star"/></svg><span data-i18n="cta.barnard">Try Barnard's Star</span></button>
           </div>
+          <button class="lp-story rv d3" type="button" data-launch-tour="story"><span class="lps-play" aria-hidden="true">▶</span><span><b data-i18n="cta.story">90-second story</b><small> · new here? start with this: from Tombaugh's Pluto to a real asteroid in SPHEREx</small></span></button>
           <form class="lp-q rv d3" id="lpq" role="search" aria-label="Go straight to a place in the sky">
             <label for="lpqi" data-i18n="v5.q.l">Or go straight to a place</label>
             <div class="lp-qrow"><svg class="ic" aria-hidden="true"><use href="#i-search"/></svg>
@@ -359,6 +360,8 @@
     <button type="button" class="pcol" id="pcol" aria-label="Hide the controls" title="Hide the controls"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg></button>
   </div>
 
+  <button type="button" class="begstory only-beg" data-tour title="A narrated 90-second story: how Pluto was found by blinking two photos, why a far Planet X is so hard to see, and a real asteroid caught moving in SPHEREx"><span class="lps-play" aria-hidden="true">▶</span><span><b>New here? The 90-second story</b><small>Pluto, Planet X, then a real asteroid moving in SPHEREx</small></span></button>
+
   <div class="grp step" data-g="where" id="g-where">
     <h2 class="gh"><span class="gi"><svg class="ic" aria-hidden="true"><use href="#i-pin"/></svg></span><span class="only-beg">Pick a spot or a target</span><span class="only-adv">Pick a spot</span><small>Where to look</small></h2>
     <div class="loadrow">
@@ -471,6 +474,7 @@
       <button role="tab" data-m="lab" aria-selected="false" class="adv">Motion lab</button>
     </div>
     <p class="pxnote">A sensitivity test, not a search: you hide a FAKE planet and see if the agents catch it. Planet X is hypothetical.</p>
+    <p class="pxlook" id="pxlook" hidden></p>
     <div id="pxp" class="pxp" hidden>
       <div class="row"><label for="pxd">Distance</label><input id="pxd" type="range" min="0" max="10" step="1" value="6"><output id="pxdo" for="pxd"></output></div>
       <div class="row"><label for="pxm">Brightness</label><input id="pxm" type="range" min="10" max="21" step="0.25" value="15"><output id="pxmo" for="pxm"></output></div>
@@ -543,7 +547,8 @@
 <aside id="tdrawer" aria-label="Tested" aria-hidden="true">
   <button id="tc">Close</button>
   <h2>How far can you trust it?</h2>
-  <p>Two tests on the same 18 sky fields, picked on a grid before the run (along the ecliptic every 60°, on it and 40° above and below). Nothing was left out: fields where ARCNAVE does badly are in the tables too.</p>
+  <p>Four tests on the same 18 sky fields, picked on a grid before the runs (along the ecliptic every 60°, on it and 40° above and below). Nothing was left out: fields where ARCNAVE does badly are in the tables too.</p>
+  <div id="tlook" class="tlook"></div>
   <h2>1. Can it find a faint, slow planet?</h2>
   <p>We hid fake planets in the real images and let the agents' detector look for them, with the plain stacks and with a motion-following stack.</p>
   <div id="scv"><p>Loading the validation scorecard...</p></div>
@@ -553,6 +558,9 @@
   <h2>3. Does it notice a star getting brighter?</h2>
   <p>We made real stars brighter by a known amount in every image of the last pass and checked whether the Changes view reports them. The rule is that a star must gain at least a quarter of its light, so +10 % should not be reported and +50 % should.</p>
   <div id="btv"><p>Loading the brightness test...</p></div>
+  <h2>4. Can it find a star that moves?</h2>
+  <p>We added fake moving stars of known speed and brightness to the real images of each field (in every image, at the place their motion had taken them by that date), measured them, and let the deep search look for them without knowing where they were. The images were put back exactly afterwards.</p>
+  <div id="mtv"><p>Loading the mover test...</p></div>
   <h2>What the labels mean</h2>
   <dl>
     <dt>Confirmed known asteroid</dt><dd>Position, brightness and shape all match an asteroid the Minor Planet Center already knows. The only label you can rely on.</dd>

@@ -1,0 +1,17 @@
+{
+ "id": "mover_L120B-40",
+ "eclLon": 120,
+ "eclLat": -40,
+ "ra": 113.8996,
+ "dec": -19.0174,
+ "galLat": 0.7,
+ "field": "L120B-40",
+ "version": "0.55",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-11-11T06:44:19.234Z",
+ "epochs": 2,
+ "status": "too-few-passes",
+ "totalSecs": 20,
+ "savedAt": "2026-11-11T06:44:39.609Z"
+}
