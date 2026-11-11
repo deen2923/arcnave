@@ -1523,7 +1523,7 @@ async function spectrumAt(ra, dec, opts = {}) {
   if (mine !== SPEC.run) return;
   sp.eps = groupEpochs(imgs);
   if (!sp.eps.length) { sp.msg = 'No SPHEREx images cover this spot yet.'; showSpectrum(); return; }
-  if (opts.lcOnly) { sp.msg = null; await lightCurve(sp, opts.lcOnly, mine, opts.lcForce || null); return; }
+  if (opts.lcOnly) { sp.msg = null; sp.lcOnly = true; await lightCurve(sp, opts.lcOnly, mine, opts.lcForce || null); return; }
   // catalogue positions are of their own dates: 2MASS about 2000, AllWISE about 2010 (matters for fast-moving stars)
   const pc = sp.posAt(51544.5), pw = sp.posAt(55400), same = Math.hypot(pc[0] - pw[0], pc[1] - pw[1]) * 3600 < 2;
   const ask = p => api(`/api/photcat?ra=${p[0].toFixed(5)}&dec=${p[1].toFixed(5)}&r=12`);
@@ -1777,7 +1777,7 @@ function showSpectrum() {
   const sp = SPEC.sp; if (!sp || !(S.sel && S.sel.spec)) return;
   const c = $('card'); c.replaceChildren(); c.hidden = false;
   const q = `${sp.ra.toFixed(5)} ${sp.dec >= 0 ? '+' : ''}${sp.dec.toFixed(5)}`;
-  c.append(h('h3', {}, sp.name ? 'Spectrum of ' + sp.name : 'Spectrum of this star'), h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'RA, Dec ' + q));
+  c.append(h('h3', {}, (sp.lcOnly ? 'Light curve of ' : 'Spectrum of ') + (sp.name || 'this star')), h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'RA, Dec ' + q));
   if (sp.msg) { c.append(h('p', {}, sp.msg)); return; }
   if (sp.lc) c.append(...lcBlock(sp));
   if (!sp.passes.size) { c.append(h('button', { onclick: () => { SPEC.run++; SPEC.sp = null; S.sel = null; S.report ? showReport() : (c.hidden = true); refreshSoon(); } }, 'Close')); return; }
@@ -2695,7 +2695,7 @@ function analyse(a, b, E) {
         const inE = c.kind === 'gone' ? a : b, outE = c.kind === 'gone' ? b : a;
         repeat = { ...cnt(inE), epoch: inE, other: c.kind === 'pair' ? null : { ...cnt(outE), epoch: outE } };
       }
-      const proof = makeProof(c, best, arc, shape, repeat);
+      const proof = makeProof(c, best, arc, shape, repeat, glareAt(fa, fb, f.n, sp.x, sp.y));
       return { id: i + 1, kind: c.kind, from, to, sepArcsec: sep, baselineDays: dt, rateArcsecPerYear: dt > 0 ? sep / (dt / 365.25) : null, snr: c.snr,
         epochs: [a, b], status: proof.status, proof, knownMatch: proof.status === 'confirmed' ? proof.near.name : null };
     });
@@ -2722,7 +2722,21 @@ function analyse(a, b, E) {
   }
 }
 
-function makeProof(c, best, arc, shape, repeat) {
+/* v0.56 glare: a very bright star is blank (saturated) at its centre. When it brightens or fades between the epochs (R
+   Draconis, a Mira variable, at 0.85 µm: 2 blank pixels in one epoch, 71 in the other), the halo around it changes too,
+   and its rim breaks up into many "new" or "gone" spots (all 50 changes of that field lay 16 to 37 pixels from it). So: the
+   saturated-core pixels within 45 pixels (4.6′), counted in each epoch; if that count differs by 15 or more, the spot is
+   in a changing glare. Only blank pixels with valid data 10 pixels away on all four sides count as a core, so the blank
+   edges of the footprint (which also differ between epochs) do not. Checked on R Draconis: 32 of 289 test spots flagged,
+   all within 46 pixels of the star; 50 of its 50 changes. Returns null when there is no such glare. */
+function glareAt(fa, fb, n, x, y) {
+  if (!fa || !fb) return null;
+  const ok = (fr, X, Y) => X >= 0 && Y >= 0 && X < n && Y < n && fr.flat[Y * n + X] === fr.flat[Y * n + X];
+  const core = fr => { let s = 0; for (let j = -45; j <= 45; j++) for (let i = -45; i <= 45; i++) { if (i * i + j * j > 2025) continue; const X = Math.round(x) + i, Y = Math.round(y) + j;
+    if (X < 0 || Y < 0 || X >= n || Y >= n || ok(fr, X, Y)) continue; if (ok(fr, X + 10, Y) && ok(fr, X - 10, Y) && ok(fr, X, Y + 10) && ok(fr, X, Y - 10)) s++; } return s; };
+  const A = core(fa), B = core(fb); return Math.abs(A - B) >= 15 ? { a: A, b: B } : null;
+}
+function makeProof(c, best, arc, shape, repeat, glare) {
   const sharpOk = shape && shape.value != null && shape.stars ? shape.value >= PROOF.sharpFrac * shape.stars : null;
   const shapeCheck = { name: 'Shape', ok: sharpOk, text: sharpOk == null ? 'Not enough bright stars to compare its shape'
     : sharpOk ? `As blurred as a real star (${shape.value.toFixed(2)}; stars here ${shape.stars.toFixed(2)})`
@@ -2731,8 +2745,9 @@ function makeProof(c, best, arc, shape, repeat) {
   const need = repeat ? Math.max(2, Math.ceil(repeat.of / 2)) : 0, repOk = repeat && repeat.of > 1 ? repeat.seen >= need : null;
   const repCheck = repOk == null ? null : { name: 'Repeat', ok: repOk, text: `Seen in ${repeat.seen} of ${repeat.of} images of epoch ${repeat.epoch + 1}` +
     (repeat.other ? `, in ${repeat.other.seen} of ${repeat.other.of} images of epoch ${repeat.other.epoch + 1}` : '') + (repOk ? '' : `. A real object would be in at least ${need}`) };
-  const base = [shapeCheck, repCheck].filter(Boolean);
-  if (sharpOk === false || repOk === false) return { status: 'artefact', checks: base, shape: shapeInfo, repeat, near: best ? nearInfo(best, arc) : null };
+  const glareCheck = glare ? { name: 'Glare', ok: false, text: `In the glare of a very bright star whose saturated centre changed size between the epochs (${glare.a} and ${glare.b} blank pixels nearby): the star brightened or faded, so its halo changed, not a new object` } : null;
+  const base = [shapeCheck, repCheck, glareCheck].filter(Boolean);
+  if (sharpOk === false || repOk === false || glare) return { status: 'artefact', reason: glare ? 'glare' : sharpOk === false ? 'sharp' : 'repeat', checks: base, shape: shapeInfo, repeat, near: best ? nearInfo(best, arc) : null };
   if (!best) return { status: 'unconfirmed', checks: base, shape: shapeInfo, repeat, near: null };
   const it = best.it, off = best.dPx * arc, tol = PROOF.matchArcsec + (Number.isFinite(it.err) ? Math.min(it.err, 30) : 0);
   const vOk = Number.isFinite(it.vmag) ? it.vmag <= PROOF.vLimit : null;
@@ -2784,7 +2799,7 @@ function showReport() {
     r.candidates.slice(0, 10).forEach(k => c.append(h('button', { class: 'mv', onclick: () => { S.al.gotoRaDec(k.to.ra, k.to.dec); S.al.setFov(0.12); showCand(k); } },
       h('b', {}, `C${k.id} ${k.kind === 'pair' ? 'moved' : k.kind === 'new' ? 'appears' : 'vanishes'}`),
       h('small', {}, (k.kind === 'pair' ? `${k.sepArcsec.toFixed(0)}″ (${fmtRate(k.rateArcsecPerYear)}) · ` : '') + `${k.snr.toFixed(0)}σ · ` +
-        (k.status === 'confirmed' ? '✓ known asteroid ' + k.knownMatch : k.status === 'artefact' ? 'likely artefact (too sharp)' : k.status === 'near' ? 'near ' + k.proof.near.name + ', not a match' : 'unconfirmed')))));
+        (k.status === 'confirmed' ? '✓ known asteroid ' + k.knownMatch : k.status === 'artefact' ? (k.proof && k.proof.reason === 'glare' ? 'glare of a bright star that changed' : 'likely artefact (too sharp)') : k.status === 'near' ? 'near ' + k.proof.near.name + ', not a match' : 'unconfirmed')))));
   }
   if (S.inside) {
     const ins = S.inside, conf = ins.asteroids.filter(x => x.confirmed);
@@ -2936,7 +2951,7 @@ function showCand(k) {
   } else c.append(h('p', {}, h('b', {}, 'Known object: '), 'none within 49″ (orbit catalogue)'));
   c.append(h('p', { style: 'font-size:.8rem;color:var(--dust)' }, st === 'confirmed'
       ? 'This change is a known asteroid seen by SPHEREx: it sits where the orbit catalogue predicts and is bright enough. Not a new discovery.'
-      : st === 'artefact' ? 'ARCNAVE does not count this as a change. Checking several images from the same epoch would settle it: a cosmic ray is in only one of them.'
+      : st === 'artefact' && k.proof && k.proof.reason === 'glare' ? 'ARCNAVE does not count this as a change: a very bright star next to it changed brightness, so the glare around it changed. Look in Blink: the whole halo grows or shrinks.' : st === 'artefact' ? 'ARCNAVE does not count this as a change. Checking several images from the same epoch would settle it: a cosmic ray is in only one of them.'
       : 'Unconfirmed. It could be a real change, a variable star, or an image artefact. Look at both epochs in Blink view before believing it.'),
     h('button', { class: 'hbtn', onclick: () => { S.al.gotoRaDec(k.to.ra, k.to.dec); S.al.setFov(0.08); } }, 'Zoom here'), ' ', h('button', { class: 'cardb', onclick: makeCard }, 'Discovery card (GIF)'), ' ', h('button', { onclick: showReport }, 'Back to report'));
 }
@@ -3656,7 +3671,7 @@ function cardPlan() {
       frames, ra: p.ra ?? k.to.ra, dec: p.dec ?? k.to.dec,
       fact: k.kind === 'pair' ? `Moved ${k.sepArcsec.toFixed(0)}″ over ${k.baselineDays.toFixed(0)} days · ${k.snr.toFixed(0)}σ` : `${{ new: 'Appears only in the later epoch', gone: 'Only in the first epoch' }[k.kind]} · ${k.snr.toFixed(0)}σ`,
       note: st === 'confirmed' ? 'A known asteroid seen by SPHEREx, matched with ' + (viaMpc() ? 'the Minor Planet Center checker' : 'IMCCE SkyBoT') + '. Not a new discovery.'
-        : st === 'artefact' ? 'Most likely an image artefact (a cosmic ray or a hot pixel), not a real object.'
+        : st === 'artefact' && k.proof && k.proof.reason === 'glare' ? 'The glare of a very bright star that changed brightness between the epochs, not a new object.' : st === 'artefact' ? 'Most likely an image artefact (a cosmic ray or a hot pixel), not a real object.'
         : 'Unconfirmed: could be a real change, a variable star or an image artefact. Not a discovery claim.', slug: 'change-' + k.id };
   }
   if (sel.it) {   // a known mover (SkyBoT ring): one frame per epoch, a + where the orbit puts it at each epoch's time
@@ -5489,6 +5504,16 @@ function movieMovers() {
     // v0.56: a track whose passes all sit on the very same place (seen on Barnard's field: a 🔍 track of 0″/yr) moved nothing
     if (!(fl && fl.slow) && passes.every(q => Math.hypot((q.ra - p0.ra) * cd, q.dec - p0.dec) * 3600 < 0.001)) return;
     if (list.some(m => Math.hypot((m.passes[0].ra - p0.ra) * cd, m.passes[0].dec - p0.dec) * 3600 < 9)) return;   // the same star from another search
+    // v0.56: the field's NASA target (or its named companion, Epsilon Indi A) by its own name, whichever search or catalogue
+    // found it: where it should be in the first pass (within 15″, saturated stars are measured less precisely) and moving
+    // the same way. Barnard's Star was shown as "Gaia DR3 4472832130942575872".
+    const T = S.ct && CHALLENGE[S.ct], t0 = p0.mjd ?? epMid(p0.e), pL = passes[passes.length - 1], tL = pL.mjd ?? epMid(pL.e);
+    for (const o of T ? [T, T.companion].filter(x => x && x.pmra != null) : []) {
+      const q = ctAt(o, t0), qL = ctAt(o, tL);
+      const dE = (pL.ra - p0.ra) * cd * 3600, dN = (pL.dec - p0.dec) * 3600, eE = (qL[0] - q[0]) * cd * 3600, eN = (qL[1] - q[1]) * 3600;
+      if (Math.hypot((q[0] - p0.ra) * cd, q[1] - p0.dec) * 3600 < 15 && Math.hypot(dE - eE, dN - eN) < Math.max(2, 0.35 * Math.hypot(eE, eN))) {
+        name = o.name; if (o === T && label !== 'predicted') label = 'target'; break; }
+    }
     list.push({ name: name || `Moving star ${list.length + 1}`, label, src, mu, dir, cw: fl && fl.cw, cwNear: fl && fl.cwNear, pm: fl && fl.pm, how: (fl && fl.how) || 'measured', catPm: fl && fl.catPm, slow: fl && fl.slow,
       // v0.55 U4: a search's own error (its frame-by-frame fit) and its Gaia match, for the SPHEREx vs catalogue row
       smu: fl ? (fl.smu ?? (fl.ff && fl.ff.fit ? fl.ff.fit.smu : fl.fff && fl.fff.fit ? fl.fff.fit.smu : fl.smu)) : undefined, gaia: fl && fl.gaia,
@@ -5524,6 +5549,11 @@ function movieMovers() {
     const cat = known ? { gaia: fl.gaia, pm: gPm(fl.gaia) } : null;   // v0.55 U4: its Gaia match, for the SPHEREx vs catalogue row
     // v0.55: saturated in most images (Epsilon Indi A: 13 of 17): neither track can be trusted, so Gaia's motion is shown
     // (dashed, "predicted") and the card says why
+    // v0.56: unless 🔍's own pass-by-pass track of it (measured on the star's glow) agrees with Gaia in speed (15 %) and
+    // direction: then that track is shown as measured (Barnard's Star: 9.6″ in 359 days, 9.8″/yr against Gaia's 10.39)
+    if (known && satShare(tr.ff) > 0.5 && tr.pts && tr.pts.length >= 2 && tr.days > 0) { const muP = tr.total / (tr.days / 365.25), g = gPm(fl.gaia), a = tr.pts[0], z = tr.pts[tr.pts.length - 1], cdA = Math.cos(a.dec * Math.PI / 180);
+      const vE = (z.ra - a.ra) * cdA * 3600, vN = (z.dec - a.dec) * 3600, cos = (vE * (fl.gaia.pmra || 0) + vN * (fl.gaia.pmdec || 0)) / (Math.hypot(vE, vN) * Math.hypot(fl.gaia.pmra || 0, fl.gaia.pmdec || 0) || 1);
+      if (Math.abs(muP - g) < 0.15 * g && cos > 0.9) return add('Gaia DR3 ' + fl.gaia.id, fl.label, '🔍', tr.pts, muP, tr.dir, { ...cat, how: 'measured' }); }
     if (known && satShare(tr.ff) > 0.5) { const pa = Math.atan2(fl.gaia.pmra || 0, fl.gaia.pmdec || 0) * 180 / Math.PI;
       const exp = S.eps.map((_, e) => { if (!frameOf(e)) return null; const p = ctAt(o, epMid(e)); return { e, ra: p[0], dec: p[1] }; }).filter(Boolean);
       return add('Gaia DR3 ' + fl.gaia.id, 'predicted', '★ Gaia', exp, gPm(fl.gaia), COMPASS[Math.round(((pa + 360) % 360) / 45) % 8], { ...cat, how: 'predicted', catPm: gPm(fl.gaia), satNote: `${tr.ff.nSat} of ${tr.ff.nKept} images` }); }
