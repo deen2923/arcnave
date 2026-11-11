@@ -4267,7 +4267,7 @@ function drawMotionSearch() {
       weights, and their scatter gives an honest error. One straight line (start + motion x time) is fitted through the
       passes, after taking off Gaia's parallax when it is known. Motion, its error and a chi-square test. "Motion measured"
       only at 5 sigma; with two passes no straight-line test is possible, and the card says so. Never a discovery claim. */
-const FT = { reg: new Map(), fitter: 'hybrid' };   // v0.55 Phase 2: fitter 'hybrid' (default), 'gauss' or 'epsf' (fitStar)
+const FT = { reg: new Map(), fitter: 'hybrid', epsfMode: 'image', epsfGroups: new Map() };   // v0.55: fitter 'hybrid' (default), 'gauss' or 'epsf' (fitStar); epsfMode 'image' or 'stack'
 function erf(x) { const t = 1 / (1 + 0.3275911 * Math.abs(x)), y = 1 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x); return x >= 0 ? y : -y; }
 function solveN(A, b) {
   const n = b.length, M = A.map((r, i) => [...r, b[i]]);
@@ -4333,9 +4333,20 @@ function psfFit(a, n, gx, gy, H = 4, search = 2) {
    fitted with it: position by least squares, flux and background solved at each trial position. Pixels that are blank
    (a saturated core, a flag) are simply left out, so a saturated star is fitted on its wings with the true wing shape. */
 function epsfOf(fr) {
+  if (FT.epsfMode === 'stack') return epsfStack(fr);
   if (fr.epsf !== undefined) return fr.epsf; let P = null;
   try { const st = fr.st0 || (fr.st0 = F.robustStats(fr.flat0)); P = F.epsfGrid(fr.flat0, S.field.n, st, { half: 5, os: 4, minSnr: 25 }); } catch { P = null; }
   fr.epsf = P && P.nStars >= 8 ? P : null; return fr.epsf;
+}
+// v0.55: one ePSF from every loaded image of the same detector and colour (to 0.1 µm): the PSF is the same in them, and
+// together they give tens of times more stars than one image, so the 4x-oversampled model is far less noisy
+function epsfStack(fr) {
+  const lam = fr.lamReal ?? (fr.im && fr.im.lam), key = S.run + '|' + (fr.im && fr.im.det) + '|' + (lam != null ? lam.toFixed(1) : '?');
+  if (FT.epsfGroups.has(key)) return FT.epsfGroups.get(key);
+  const same = [...S.frames.values()].filter(f => f.flat0 && f.im && f.im.det === fr.im.det && Math.abs((f.lamReal ?? f.im.lam) - lam) < 0.05);
+  let P = null;
+  try { P = F.epsfGrid(same.map(f => ({ flat: f.flat0, st: f.st0 || (f.st0 = F.robustStats(f.flat0)) })), S.field.n, null, { half: 5, os: 4, minSnr: 25, maxStars: 40 }); } catch { P = null; }
+  P = P && P.nStars >= 8 ? Object.assign(P, { nImages: same.length }) : null; FT.epsfGroups.set(key, P); return P;
 }
 function epsfFit(a, n, gx, gy, P, H = 4, search = 2) {
   if (!Number.isFinite(gx) || !Number.isFinite(gy) || !P) return null;
@@ -4374,6 +4385,12 @@ function epsfFit(a, n, gx, gy, P, H = 4, search = 2) {
 // 1.87 against 4.71, the Gaussian 2.45 toward the wrong side), but for ordinary stars an ePSF built from the ~12 bright stars of
 // one image is too noisy at 4x oversampling (Gaia registration scatter 0.42″ → 0.91″, Epsilon Indi B χ² 5.7 → 9.3). So
 // 'hybrid' (the default): the Gaussian, and the ePSF where the centre is blank. 'gauss' and 'epsf' remain for tests.
+// Also tested (11 Nov 2026): one ePSF stacked from every image of a detector and colour (FT.epsfMode = 'stack', 100-330
+// stars instead of ~12). Better than the per-image ePSF, but the Gaussian still misses Gaia's places by least in 3 of 4
+// fields (reference stars, raw miss per pass: Barnard 0.118″ against 0.154″, RW Aurigae 0.146 / 0.216, R Draconis
+// 0.207 / 0.258; only Epsilon Indi 0.391 / 0.301), and on saturated stars it was worse (R Draconis, which does not move,
+// came out at 9.1 ± 2.5″/yr). The official SPHEREx PSF (FWHM 6.0-6.5″ on the native pixels, test/psf.official.test.js)
+// would need fitting on each image's native pixels rather than on ARCNAVE's resampled field grid: not done.
 function fitStar(fr, gx, gy, H, search) {
   const n = S.field.n; if (FT.fitter === 'gauss') return psfFit(fr.flat0, n, gx, gy, H, search);
   const g = FT.fitter === 'hybrid' ? psfFit(fr.flat0, n, gx, gy, H, search) : null;
@@ -4384,7 +4401,7 @@ function fitStar(fr, gx, gy, H, search) {
 // Rank 1: one image lined up on Gaia DR3 by itself (on its own grid, before ARCNAVE's star alignment). Cached per image.
 function gaiaReg(fr) {
   if (!GAIA.data || !fr || !fr.flat0 || !S.field) return null;
-  const key = fr.im.url + '|' + GAIA.key + '|' + FT.fitter; if (FT.reg.has(key)) return FT.reg.get(key);
+  const key = fr.im.url + '|' + GAIA.key + '|' + FT.fitter + '|' + FT.epsfMode; if (FT.reg.has(key)) return FT.reg.get(key);
   const f = S.field, n = f.n, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n }, arc = PX * 3600, mjd = fr.im.mjd, c = (n - 1) / 2, pairs = [];
   const cand = GAIA.data.stars.filter(s => s.pmra != null && s.g >= 10.5 && s.g <= 17).sort((p, q) => p.g - q.g);
   for (const s of cand) {
@@ -4443,7 +4460,7 @@ const CHI99 = { 2: 9.21, 4: 13.28, 6: 16.81, 8: 20.09 };
 const FLOOR = { key: null, res: null, busy: false };
 function fieldFloor() {
   if (!GAIA.data || !S.field || S.eps.length < 2) return null;
-  const key = S.run + ':' + S.frames.size + ':' + FT.fitter; if (FLOOR.key === key) return FLOOR.res; if (FLOOR.busy) return null;
+  const key = S.run + ':' + S.frames.size + ':' + FT.fitter + ':' + FT.epsfMode; if (FLOOR.key === key) return FLOOR.res; if (FLOOR.busy) return null;
   FLOOR.busy = true; let res = null;
   try {
     const f = S.field, n = f.n, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n };
@@ -4462,7 +4479,9 @@ function fieldFloor() {
     if (meas.length >= 5) {
       const K = meas.reduce((a, x) => a + x.k, 0), tot = s => meas.reduce((a, x) => a + chiWith(x.rs, s), 0);
       let lo = 0, hi = 3; if (tot(0) <= K) hi = 0; for (let i = 0; i < 50 && hi > 0; i++) { const s = (lo + hi) / 2; if (tot(s) > K) lo = s; else hi = s; }
-      res = { floor: (lo + hi) / 2, refs: meas.length, before: tot(0) / K };
+      // rms: the reference stars' raw miss per pass and axis (″), which does not depend on how big the errors are
+      const all = meas.flatMap(x => x.rs.flatMap(r => [r.rE, r.rN]));
+      res = { floor: (lo + hi) / 2, refs: meas.length, before: tot(0) / K, rms: Math.sqrt(all.reduce((a, v) => a + v * v, 0) / all.length) };
     }
   } catch (e) { console.warn('fieldFloor', e); }
   FLOOR.busy = false; FLOOR.key = key; FLOOR.res = res; return res;
