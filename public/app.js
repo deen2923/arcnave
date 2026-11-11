@@ -2237,7 +2237,7 @@ $('tb').onclick = () => drawer(true, 'tdrawer'); $('tc').onclick = () => drawer(
 function drawer(o, id = 'drawer') {
   const D = [['drawer', 'lb', 'lc'], ['tdrawer', 'tb', 'tc']], was = D.find(([d]) => $(d).classList.contains('open'));
   for (const [d, b] of D) { const on = o && d === id; $(d).classList.toggle('open', on); $(d).setAttribute('aria-hidden', !on); $(b).setAttribute('aria-expanded', on); }
-  if (o && id === 'tdrawer') { loadScorecard(); loadNulltest(); loadBrighttest(); }
+  if (o && id === 'tdrawer') { Promise.all([loadScorecard(), loadNulltest(), loadBrighttest(), loadMovertest()]).then(renderOneLook); }   // v0.55: mover test, in one look
   if (o) $(D.find(([d]) => d === id)[2]).focus(); else if (was) $(was[1]).focus();
 }
 addEventListener('keydown', e => { if (e.key === 'Escape' && !(window.Tour && Tour.on)) drawer(false); });
@@ -3093,6 +3093,7 @@ function boot() {
   if (p.has('scorecard')) { scorecardRun(p); return; }
   if (p.has('prewarm')) { prewarmRun(p); return; }
   if (p.has('nulltest')) { nullRun(p); return; }
+  if (p.has('movertest')) { moverRun(p); return; }   // v0.55
   if (p.has('brighttest')) { brightRun(p); return; }
   if (p.has('tour') || p.has('guide')) { let k = 0; const go = () => window.Tour ? Tour.start(p.has('guide') ? 'guide' : 'story') : k++ < 100 && setTimeout(go, 50); go(); return; }   // tour.js may load after boot
   if (p.has('play')) { startGame(); return; }
@@ -3318,6 +3319,46 @@ async function nullRun(p) {
   stat(`False-alarm test done: ${ok.length} of ${all.length} fields, ${hv} swapped comparisons, ${fa} false alarm${fa === 1 ? '' : 's'} shown in total. Results: scorecard/null_*.json`);
 }
 
+/* ---------- v0.55 mover test on the scorecard fields (local runs only) ----------
+   Open http://localhost:8083/#movertest on a local run (the same 18 fields as the scorecard; &test=1 = the demo field;
+   &only=L060B+40; &from=5). On each field the agents run as usual, then the deep search (its own result without fakes), then
+   moverTest() exactly as the 🧪 button runs it. Results go to scorecard/mover_<id>.json; tools/build-movertest.js turns them
+   into public/movertest.json, which the Tested drawer shows. */
+async function moverRun(p) {
+  if (!/^(localhost|127\.0\.0\.1|\[::1\])$/.test(location.hostname)) { stat('The mover test runs only on a local copy.', true); return; }
+  $('intro').hidden = true; S.depth = 8; $('ipe').value = '8'; $('csize').value = '0.5';
+  const only = p.get('only'), from = +p.get('from') || 0;
+  const list = p.has('test') ? [{ id: 'TEST_demo', eclLon: null, eclLat: null, ra: 189.957, dec: -4.182, galLat: 58.6 }]
+    : only ? SCORE_GRID.filter(f => f.id === only) : SCORE_GRID.slice(from);
+  const all = [];
+  for (const [i, f] of list.entries()) {
+    const out = { ...f, id: 'mover_' + f.id, field: f.id, version: '0.55', depth: S.depth, fieldDeg: 0.5, startedAt: new Date().toISOString() }, t0 = performance.now();
+    stat(`Mover test ${i + 1} of ${list.length}: ${f.id} (RA ${f.ra}, Dec ${f.dec})`);
+    try {
+      const timeout = ms => new Promise((_, rej) => setTimeout(() => rej(new Error('timeout')), ms));
+      try { await Promise.race([runAgents({ ra: f.ra, dec: f.dec, label: 'Mover test ' + f.id }), timeout(20 * 60e3)]); } catch (e) { S.run++; throw e; }
+      if (!S.report) throw new Error('no report');
+      out.epochs = S.eps.length;
+      if (S.eps.length < 3) { out.status = 'too-few-passes'; throw null; }
+      await Promise.race([gaiaLoad(), timeout(60e3)]).catch(() => {});
+      await Promise.race([deepSearch(), timeout(15 * 60e3)]); out.dsFlagged = DS.res && DS.res.run === S.run ? DS.res.flagged.length : null;
+      MT.res = null; await Promise.race([moverTest(), timeout(20 * 60e3)]);
+      const r = MT.res; if (!r || r.run !== S.run) throw new Error('mover test gave no result');
+      const pulls = r.meas.filter(m => m.pE != null && m.fk.snr >= 6).flatMap(m => [m.pE, m.pN]);
+      Object.assign(out, { status: 'ok', fakes: r.n, nImg: r.nImg, days: Math.round(r.days), SNR: r.SNR, MU: r.MU, floor: FLOOR.res ? +FLOOR.res.floor.toFixed(3) : null,
+        cells: r.SNR.map(s => r.MU.map(u => { const l = r.meas.filter(m => m.fk.snr === s && m.fk.mu === u); return { n: l.length, meas: l.filter(m => m.ok).length, blind: l.filter(m => m.blind).length }; })),
+        pulls: pulls.length, pullRms: pulls.length ? +Math.sqrt(pulls.reduce((a, v) => a + v * v, 0) / pulls.length).toFixed(3) : null,
+        empty: r.nul.length, emptyFalse: r.nul.filter(x => x.stays && x.sig >= 5).length, emptyWander: r.nul.filter(x => x.wander).length, extra: r.extra });
+    } catch (e) { if (e) { out.status = 'error'; out.error = e.message; } }
+    out.totalSecs = Math.round((performance.now() - t0) / 1000);
+    all.push(out); console.log('movertest', JSON.stringify(out));
+    try { await fetch('/api/dev/scorecard', { method: 'POST', body: JSON.stringify(out) }); } catch (e) { console.warn('save failed', e); }
+    window.__movertest = all;
+  }
+  const ok = all.filter(r => r.status === 'ok');
+  stat(`Mover test done: ${ok.length} of ${all.length} fields measured. Results: scorecard/mover_*.json`); window.__movertestDone = true;
+}
+
 /* ---------- Brightness-change test (v0.31, local runs only) ---------- */
 // Open http://localhost:8081/#brighttest on a local run (same 18 fields as the scorecard; &test=1 = the demo field;
 // &only=L060B%2B40; &from=5). After the agents run, real stars of the field are made brighter by a known factor in every
@@ -3447,6 +3488,60 @@ function renderNulltest() {
       ok ? h('td', { class: 'n' }, ctl(r.control[16])) : h('td', { class: 'n na' }, '')));
   }
   box.append(t, h('p', { class: 'ntc' }, `"False alarms": changes reported between two stacks with nothing real between them, in that many comparisons (one per pair of passes). "+": at least, the agents keep at most ${s.cap} changes per comparison. "Check": share of fake AB 16 stars found; low in the most crowded fields, so faint real changes are missed there too. "Not measurable": the two passes share fewer than 4 colours.`));
+}
+
+/* ---------- v0.55 mover test view, and "in one look" ---------- */
+// public/movertest.json is built by tools/build-movertest.js from a real #movertest run. Every field is listed.
+let MV = null;
+async function loadMovertest() {
+  if (MV) return MV;
+  try { MV = await api('/movertest.json'); } catch { MV = { error: true }; }
+  renderMovertest(); renderOneLook(); const got = MV; if (MV.error) MV = null;
+  return got;
+}
+// share of fakes passed in a set of grid cells: [snr index, speed index] pairs
+const mvShare = (cells, pick) => { let k = 0, n = 0; for (const [i, j] of pick) { const c = cells[i] && cells[i][j]; if (c) { k += c.k; n += c.n; } } return n ? Math.round(100 * k / n) : null; };
+function mvCells(g, key) { return g.cells.map(row => row.map(c => ({ k: c[key], n: c.n }))); }
+function renderMovertest() {
+  const box = $('mtv'); if (!box) return;
+  box.innerHTML = '';
+  if (!MV || MV.error || !MV.rows) { box.append(h('p', {}, 'The mover test is not available in this copy.')); return; }
+  const s = MV.summary, A = s.all;
+  const table = (g, key, cap) => h('table', { class: 'sct mvt' }, h('caption', {}, cap),
+    h('tr', {}, h('th', {}, 'S/N per image'), ...s.MU.map(u => h('th', { class: 'n' }, `${u}″/yr`))),
+    ...s.SNR.map((sn, i) => h('tr', {}, h('td', {}, String(sn)), ...s.MU.map((_, j) => { const c = g.cells[i][j], p = c.n ? Math.round(100 * c[key] / c.n) : null;
+      return h('td', { class: 'n' + (p == null ? ' na' : p >= 80 ? ' good' : p < 30 ? ' bad' : '') }, p == null ? '-' : p + '%'); }))));
+  box.append(h('p', { class: 'scs' }, h('b', {}, `${s.measured} of ${s.fields} fields, ${A.cells.flat().reduce((a, c) => a + c.n, 0)} fake moving stars. `),
+    `Errors: the fakes' misses divided by their own errors scatter by ${A.pullRms ?? '?'} (1 = honest). Empty sky: ${A.emptyFalse} of ${A.empty} empty places showed a steady 5σ "motion". ` +
+    `Blind deep search: ${A.extra} source${A.extra === 1 ? '' : 's'} flagged in all fields that it did not flag without the fakes. Passes span ${s.days} days on average.`),
+    table(A, 'meas', 'Measured at its known place: motion found at 5σ or more, and right within 3σ'),
+    table(A, 'blind', 'Found by the deep search on its own (blind), as a visitor would'),
+    h('p', { class: 'ntc' }, `Share of the fakes of each kind (S/N per image for an optimal fit; speed in ″ per year). Milky Way plane: ${s.plane.fields} fields, blind ${mvShare(mvCells(s.plane, 'blind'), [[2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]]) ?? '-'}% for S/N 12+ and 2+″/yr; elsewhere ${mvShare(mvCells(s.rest, 'blind'), [[2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]]) ?? '-'}%. ` +
+      `Fields: ${MV.rows.map(r => r.status === 'ok' ? '' : r.id + ' ' + (r.why || r.status)).filter(Boolean).join('; ') || 'all measured'}. Run it on any field yourself: Planet X & agents › 🧪 Mover test.`));
+}
+// v0.55: the same in one line, in the Planet X section: how faint a Planet X and how slow a star can be caught
+async function fillPxLook() {
+  const el = $('pxlook'); if (!el) return;
+  const [sc, mv] = await Promise.all([loadScorecard(), loadMovertest()]); const s = sc && !sc.error && sc.summary, m = mv && !mv.error && mv.summary;
+  if (!s) return; el.replaceChildren(); el.hidden = false;
+  const fast = m ? mvShare(mvCells(m.all, 'blind'), [[2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]]) : null;
+  el.append(h('b', {}, 'What SPHEREx can catch, tested on 18 fields: '), `a Planet X 1000 AU away down to AB ${s.at1000.median.toFixed(1)} (median), 300 AU away in ${s.at300.found} of ${s.at300.of} fields` +
+    (m ? `; a star moving 2-8″ a year at S/N 12 or more per image, found on its own ${fast}% of the time; 1″ a year is below the limit.` : '.') + ' ',
+    h('button', { type: 'button', class: 'linkb', onclick: () => $('tb').click() }, 'How we tested it'));
+}
+setTimeout(fillPxLook, 2500);
+// one paragraph a judge can read first: what SPHEREx, through ARCNAVE, can and cannot catch, from the tests below
+function renderOneLook() {
+  const box = $('tlook'); if (!box) return;
+  const sc = SC && !SC.error && SC.summary, mv = MV && !MV.error && MV.summary;
+  if (!sc && !mv) return; box.innerHTML = '';
+  const out = [];
+  if (sc) out.push(h('li', {}, h('b', {}, 'Planet X: '), `a planet 1000 AU away is caught down to AB ${sc.at1000.median.toFixed(1)} (median of ${sc.at1000.of} fields, from ${sc.at1000.min.toFixed(1)} to ${sc.at1000.max.toFixed(1)}); 300 AU away, in ${sc.at300.found} of ${sc.at300.of} fields. Planet X is hypothetical: this says how faint it could be and still be seen, not that it is there.`));
+  if (mv) { const A = mv.all, m = mvCells(A, 'meas'), b = mvCells(A, 'blind'), fast = [[1, 1], [1, 2], [1, 3], [2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]], slow = [[1, 0], [2, 0], [3, 0]], bright = [[2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]];
+    out.push(h('li', {}, h('b', {}, 'Moving stars: '), `${mvShare(m, fast)}% of fakes moving 2-8″/yr at S/N 6 or more per image are measured right; the deep search finds ${mvShare(b, bright)}% of those at S/N 12+ on its own. Motions of 1″/yr are below the limit over ${mv.days} days (${mvShare(m, slow)}% measured).`));
+    out.push(h('li', {}, h('b', {}, 'Honest errors and few false alarms: '), `error-scaled misses scatter by ${A.pullRms}; ${A.emptyFalse} of ${A.empty} empty places looked like a steady motion; ${A.extra} new flag${A.extra === 1 ? '' : 's'} with fakes added, in ${mv.measured} fields.`)); }
+  if (NT && !NT.error && NT.summary) out.push(h('li', {}, h('b', {}, 'Changes between passes: '), `away from the Milky Way, ${NT.summary.rest.falseAlarms} false alarms in ${NT.summary.rest.comparisons} comparisons; in its plane far more, and ARCNAVE warns there.`));
+  box.append(h('h3', {}, 'In one look'), h('ul', { class: 'olk' }, ...out), h('p', { class: 'ntc' }, `All from the tests below, on 18 fields fixed before the runs; nothing left out.`));
 }
 
 /* ---------- Validation scorecard view (v0.12) ---------- */

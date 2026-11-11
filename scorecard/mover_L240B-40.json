@@ -1,0 +1,130 @@
+{
+ "id": "mover_L240B-40",
+ "eclLon": 240,
+ "eclLat": -40,
+ "ra": 222.6629,
+ "dec": -58.6095,
+ "galLat": 0.7,
+ "field": "L240B-40",
+ "version": "0.55",
+ "depth": 8,
+ "fieldDeg": 0.5,
+ "startedAt": "2026-11-11T06:45:44.202Z",
+ "epochs": 3,
+ "dsFlagged": 0,
+ "status": "ok",
+ "fakes": 16,
+ "nImg": 24,
+ "days": 361,
+ "SNR": [
+  3,
+  6,
+  12,
+  25
+ ],
+ "MU": [
+  1,
+  2,
+  4,
+  8
+ ],
+ "floor": 0,
+ "cells": [
+  [
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 1,
+    "blind": 0
+   }
+  ],
+  [
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 1,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 1,
+    "blind": 0
+   }
+  ],
+  [
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 1,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 1,
+    "blind": 0
+   }
+  ],
+  [
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 0,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 1,
+    "blind": 0
+   },
+   {
+    "n": 1,
+    "meas": 1,
+    "blind": 1
+   }
+  ]
+ ],
+ "pulls": 24,
+ "pullRms": 0.844,
+ "empty": 8,
+ "emptyFalse": 0,
+ "emptyWander": 0,
+ "extra": 0,
+ "totalSecs": 92,
+ "savedAt": "2026-11-11T06:47:16.647Z"
+}
