@@ -1087,6 +1087,9 @@ function frame(ts) {
   let key = '';
   try { const c = S.al.getRaDec(), f = S.al.getFov(); key = `${c[0].toFixed(6)},${c[1].toFixed(6)},${f[0].toFixed(6)},${W},${H},${S.mode},${S.lab}`; } catch { /* draw anyway */ }
   if (S.mode === 'blink' || S.mode === 'time') key += ',' + Math.floor(ts / (S.mode === 'blink' && !multi() ? 700 : 650));
+  // v0.56: the film's glide, lock-on ring and "from here to there" callout are drawn at ~30 frames a second while a pass
+  // changes (and 10 a second for the pulse after), instead of the 5 a second that made the glide jump
+  if (MOVIE.on) key += ',' + Math.floor(ts / (ts - MOVIE.t0 < MOVIE.step ? 33 : 100));
   if (key && key === lastKey && ts > busyUntil && ts - lastDraw < 200) return;
   lastKey = key; lastDraw = ts;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H); S.hits = [];
@@ -5375,15 +5378,18 @@ function movieShowPass(e) {
 }
 function movieStep(d) {
   const P = S.eps.length, was = MOVIE.e; MOVIE.e = ((MOVIE.e + d) % P + P) % P; MOVIE.t0 = performance.now();
-  if (MOVIE.follow && d > 0 && MOVIE.e < was) MOVIE.fi++;   // v0.55: after a full run through the passes, the next mover
+  if (d > 0 && MOVIE.e < was) MOVIE.fi++;   // v0.55: after a full run through the passes, the next mover (v0.56: on stage too, not only when following)
   movieShowPass(MOVIE.e); movieTiles(); if (MOVIE.follow) movieFollow();
 }
 // v0.55 follow: the view centres on one mover, zoomed so its whole track fills about a third of the screen
 function movieFollow(first) {
-  const ms = MOVIE.movers.filter(m => m.passes.length >= 2); if (!ms.length || !S.al) return;
-  const m = ms[MOVIE.fi % ms.length], ra = m.passes.map(q => q.ra), de = m.passes.map(q => q.dec), cd = Math.cos(de[0] * Math.PI / 180);
+  const m = movieStageMover(); if (!m || !S.al) return;   // v0.56: the mover on stage
+  const ra = m.passes.map(q => q.ra), de = m.passes.map(q => q.dec), cd = Math.cos(de[0] * Math.PI / 180);
   const span = Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de));
-  try { S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2, (Math.max(...de) + Math.min(...de)) / 2); S.al.setFov(Math.max(0.025, Math.min(0.2, span * 3))); } catch { /* keep the view */ }
+  try { const fov = Math.max(0.025, Math.min(0.2, span * 3)); S.al.setFov(fov);
+    // v0.56: on a wide screen the card covers the left side, so the mover goes in the middle of the sky that is left
+    const cr = $('card') && !$('card').hidden && innerWidth > 700 ? $('card').getBoundingClientRect() : null, shift = cr && cr.left < 60 && cr.right < innerWidth * 0.6 ? cr.right / 2 : 0;
+    S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2 + shift * (S.al.getFov()[0] / innerWidth) / cd, (Math.max(...de) + Math.min(...de)) / 2); } catch { /* keep the view */ }
   const lab = document.getElementById('mvlab'); if (lab && first !== undefined) lab.dataset.follow = m.name;
   refreshSoon();
 }
@@ -5612,7 +5618,7 @@ if ($('pngb')) $('pngb').onclick = () => skyPng();
 function movieTiles() {
   const lab = document.getElementById('mvlab'), e = MOVIE.e, P = S.eps.length;
   if (lab) lab.textContent = `Pass ${e + 1} of ${P} · ${fmtMonth(S.eps[e].t0)}` + (e ? ` · ${Math.round(epMid(e) - epMid(0))} days after the first` : ' · the start') +
-    (MOVIE.follow ? (() => { const fl = MOVIE.movers.filter(m => m.passes.length >= 2); return fl.length ? ` · following ${fl[MOVIE.fi % fl.length].name}` : ''; })() : '');
+    (() => { const sm = movieStageMover(); return sm ? ` · ${MOVIE.follow ? 'following' : 'in the spotlight'}: ${sm.name}` : ''; })();
   // v0.55: the line of epochs marks the pass on screen
   document.querySelectorAll('#card .epc circle[data-e]').forEach(c => { const on = +c.dataset.e === e; c.setAttribute('r', on ? 5.6 : 3.6); c.setAttribute('stroke', on ? '#ffffff' : 'rgba(2,4,10,.9)'); c.setAttribute('stroke-width', on ? 2 : 1); });
   const fr = frameOf(e), n = S.field.n; if (!fr) return;
@@ -5633,6 +5639,62 @@ function movieTiles() {
     g.fillStyle = 'rgba(5,7,14,.7)'; g.fillRect(0, 0, SZ, 16); g.fillStyle = '#e6fffb'; g.font = '600 10px Inter,system-ui,sans-serif'; g.fillText(`Pass ${e + 1} · ${fmtMonth(S.eps[e].t0)}`, 4, 11);
   }
 }
+/* v0.56 on stage: the film tells one mover's story at a time, "here on this date, and by the next pass it had gone there".
+   A spotlight beam falls on it, the place of the pass before stays as a dashed ghost circle with its date, the marker
+   glides to the new place and a ring locks on to it, and a callout gives both dates and the true shift (″, measured
+   positions; the drawn path may be stretched, the numbers never are). */
+// the order on stage: the NASA target, then what SPHEREx measured, then catalogue predictions (the film's own order otherwise)
+function movieStageList() { const rk = m => m.label === 'target' ? 0 : m.how === 'predicted' ? 2 : 1; return MOVIE.movers.filter(m => m.passes.length >= 2).map((m, j) => [m, j]).sort((a, b) => rk(a[0]) - rk(b[0]) || a[1] - b[1]).map(x => x[0]); }
+function movieStageMover() { const ms = movieStageList(); return ms.length ? ms[MOVIE.fi % ms.length] : null; }
+function movieShift(a, b) {   // from pass a to pass b of one mover, on the sky: ″, direction, days
+  const cd = Math.cos(a.dec * Math.PI / 180), dE = (b.ra - a.ra) * cd * 3600, dN = (b.dec - a.dec) * 3600, d = Math.hypot(dE, dN);
+  return { d, dir: COMPASS[Math.round(((Math.atan2(dE, dN) * 180 / Math.PI + 360) % 360) / 45) % 8], days: Math.round((b.mjd ?? epMid(b.e)) - (a.mjd ?? epMid(a.e))) };
+}
+const movieDate = q => fmtDay(q.mjd ?? epMid(q.e));
+const fmtShift = d => d.toFixed(d < 1 ? 2 : 1) + '″';
+function movieStage(g, now, k) {
+  const { m, i, col, qs, es, head, ci, pi } = g, dpr = window.devicePixelRatio || 1, cw = ctx.canvas.width / dpr, ch = ctx.canvas.height / dpr;
+  const lock = Math.max(0, Math.min(1, (now - MOVIE.t0 - 0.45 * MOVIE.step) / (0.3 * MOVIE.step))), arrived = k >= 1;
+  ctx.save();
+  // 1. the spotlight beam: a soft cone from above the screen onto the mover, and a pool of light around it
+  if (MOVIE.spot && !MOVIE.mo) {
+    const src = [head[0] * 0.55 + cw * 0.225, -60], bx = head[0] - src[0], by = head[1] - src[1], bl = Math.hypot(bx, by) || 1, nx = -by / bl, ny = bx / bl, R = 34;
+    ctx.globalCompositeOperation = 'lighter';
+    const lg = ctx.createLinearGradient(src[0], src[1], head[0], head[1]); lg.addColorStop(0, 'rgba(255,244,214,0)'); lg.addColorStop(0.75, 'rgba(255,244,214,.05)'); lg.addColorStop(1, 'rgba(255,244,214,.11)');
+    ctx.fillStyle = lg; ctx.beginPath(); ctx.moveTo(src[0] - nx * 6, src[1] - ny * 6); ctx.lineTo(src[0] + nx * 6, src[1] + ny * 6); ctx.lineTo(head[0] + nx * R, head[1] + ny * R); ctx.lineTo(head[0] - nx * R, head[1] - ny * R); ctx.closePath(); ctx.fill();
+    const rg = ctx.createRadialGradient(head[0], head[1], 0, head[0], head[1], R * 1.25); rg.addColorStop(0, 'rgba(255,244,214,.16)'); rg.addColorStop(1, 'rgba(255,244,214,0)');
+    ctx.fillStyle = rg; ctx.beginPath(); ctx.arc(head[0], head[1], R * 1.25, 0, 7); ctx.fill();
+    ctx.globalCompositeOperation = 'source-over';
+  }
+  // 2. where it was in the pass before: a dashed ghost circle with that pass's date
+  const lab = (t, x, y, c, al = 'left') => { ctx.textAlign = al; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.9)'; ctx.strokeText(t, x, y); ctx.fillStyle = c; ctx.fillText(t, x, y); ctx.textAlign = 'start'; };
+  ctx.font = '600 11px Inter,system-ui,sans-serif';
+  if (pi >= 0) { const p = qs[pi]; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.4; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(p[0], p[1], 15, 0, 7); ctx.stroke(); ctx.setLineDash([]);
+    lab(`was here · ${movieDate(m.passes[pi])}`, p[0], p[1] + 30, 'rgba(255,255,255,.85)', 'center'); }
+  // 3. the marker on its way, then a ring that locks on to the new place (an arc that closes and tightens, with ticks)
+  if (!arrived) { ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.setLineDash([5, 5]); ctx.lineDashOffset = -now / 40; ctx.beginPath(); ctx.arc(head[0], head[1], 26, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0; }
+  else { const r = 13 + 20 * (1 - lock) * (1 - lock), a0 = -Math.PI / 2;
+    ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 14; ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2.2; ctx.beginPath(); ctx.arc(head[0], head[1], r, a0, a0 + 2 * Math.PI * Math.max(0.02, lock)); ctx.stroke(); ctx.restore();
+    if (lock >= 1) { ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 1.6; for (const [ux, uy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) { ctx.beginPath(); ctx.moveTo(head[0] + ux * 16, head[1] + uy * 16); ctx.lineTo(head[0] + ux * 22, head[1] + uy * 22); ctx.stroke(); } } }
+  // 4. the callout: name, both dates and the true shift between them
+  const cur = m.passes[ci], last = m.passes[m.passes.length - 1], first = m.passes[0];
+  const lines = [[`${i + 1} ${m.name}`, col, '700 12px']];
+  if (pi >= 0) { const s = movieShift(m.passes[pi], cur);
+    lines.push([`P${es[pi] + 1} · ${movieDate(m.passes[pi])}: here (dashed circle)`, 'rgba(230,236,245,.9)'], [`P${es[ci] + 1} · ${movieDate(cur)}: there (ring)`, '#ffffff'],
+      [`moved ${fmtShift(s.d)} toward the ${s.dir} in ${s.days} days`, col]); }
+  else { const s = movieShift(first, last);
+    lines.push([`P1 · ${movieDate(first)}: it starts here`, '#ffffff'], [`by P${last.e + 1} · ${movieDate(last)}: ${fmtShift(s.d)} to the ${s.dir}`, col]); }
+  if (m.how === 'predicted') lines.push(['catalogue prediction, not measured here', 'rgba(147,197,253,.95)']);
+  const fade = Math.min(1, 0.25 + k * 1.2), lh = 15, pad = 8;
+  ctx.font = '600 11px Inter,system-ui,sans-serif'; let wmax = 0; for (const [t, , f] of lines) { ctx.font = (f || '600 11px') + ' Inter,system-ui,sans-serif'; wmax = Math.max(wmax, ctx.measureText(t).width); }
+  const bw = wmax + 2 * pad, bh = lines.length * lh + pad + 2;
+  let bx = head[0] + 30, by = head[1] - bh - 18; if (bx + bw > cw - 8) bx = head[0] - 30 - bw; if (bx < 8) bx = 8; if (by < 96) by = head[1] + 28; if (by + bh > ch - 8) by = ch - 8 - bh;
+  ctx.globalAlpha = fade; ctx.fillStyle = 'rgba(5,8,15,.86)'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
+  const ax = Math.max(bx, Math.min(bx + bw, head[0])), ay = by + bh < head[1] ? by + bh : by;   // a leader line to the ring
+  ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(head[0] + (ax - head[0]) * 14 / (Math.hypot(ax - head[0], ay - head[1]) || 1), head[1] + (ay - head[1]) * 14 / (Math.hypot(ax - head[0], ay - head[1]) || 1)); ctx.stroke();
+  lines.forEach(([t, c, f], j) => { ctx.font = (f || '600 11px') + ' Inter,system-ui,sans-serif'; ctx.fillStyle = c; ctx.fillText(t, bx + pad, by + pad + 9 + j * lh); });
+  ctx.restore();
+}
 function drawMovie() {
   if (!MOVIE.on) return; if (MOVIE.run !== S.run) { movieStop(true); return; }
   const ms = MOVIE.movers, e = MOVIE.e, k = Math.min(1, (performance.now() - MOVIE.t0) / (0.45 * MOVIE.step)), ease = k * k * (3 - 2 * k);
@@ -5648,8 +5710,11 @@ function drawMovie() {
     const from = ci >= 0 && pi >= 0 && ci > 0 ? qs[pi] : ci >= 0 ? qs[ci] : null, to = ci >= 0 ? qs[ci] : null;
     const head = to ? [from[0] + (to[0] - from[0]) * ease, from[1] + (to[1] - from[1]) * ease] : null;
     const upto = qs.filter((_, j) => es[j] < e); if (head) upto.push(head);
-    return { m, i, col: movieCol(m), qs, es, head, upto };
+    return { m, i, col: movieCol(m), qs, es, head, upto, ci, pi: ci > 0 ? pi : -1 };
   }).filter(Boolean);
+  // v0.56: one mover is "on stage" at a time (the followed one, else the next one after each full run): it gets the
+  // spotlight beam, the lock-on ring and the dated "was here → now here" callout
+  const stage = geo.length ? (geo.find(g => g.m === movieStageMover()) || geo[0]) : null;
   // v0.55 motion only: the sky is hidden, so what is left is what moved: the measured places, their errors and the tracks
   if (MOVIE.mo) { const dp = window.devicePixelRatio || 1; ctx.fillStyle = 'rgba(1,2,6,.94)'; ctx.fillRect(0, 0, ctx.canvas.width / dp, ctx.canvas.height / dp); }
   // one ″ on screen (for the error circles, which are drawn Fx larger like the paths, so they stay true to them)
@@ -5699,8 +5764,9 @@ function drawMovie() {
     if (head) { const pulse = 0.5 + 0.5 * Math.sin(now / 260);
       ctx.save(); ctx.shadowColor = col; ctx.shadowBlur = 10; ctx.strokeStyle = col; ctx.lineWidth = 2.4; ctx.beginPath(); ctx.arc(head[0], head[1], 9, 0, 7); ctx.stroke(); ctx.restore();
       ctx.strokeStyle = col; ctx.globalAlpha = 0.55 * (1 - pulse); ctx.lineWidth = 1.6; ctx.beginPath(); ctx.arc(head[0], head[1], 11 + 12 * pulse, 0, 7); ctx.stroke(); ctx.globalAlpha = 1;
-      ctx.font = '700 12px Inter,system-ui,sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.85)'; ctx.strokeText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); ctx.fillStyle = col; ctx.fillText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); }
+      if (g !== stage) { ctx.font = '700 12px Inter,system-ui,sans-serif'; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.85)'; ctx.strokeText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); ctx.fillStyle = col; ctx.fillText(`${i + 1} ${m.name}`, head[0] + 14, head[1] - 10); } }
   }
+  if (stage && stage.head) movieStage(stage, now, k);
   // caption
   let txt = `🎬 Pass ${e + 1} of ${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (MOVIE.mo ? ' · motion only (sky hidden)' : '') + (Fx > 1 ? ` · paths drawn ${Fx}x longer to be seen (zoom in for true scale)` : '');
   ctx.font = '600 12px Inter,system-ui,sans-serif'; const cw = ctx.canvas.width / (window.devicePixelRatio || 1);
