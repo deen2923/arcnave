@@ -3601,7 +3601,7 @@ function drawCardFrame(g, plan, i, an = { k: 1, lock: 1 }) {   // v0.56 an: the 
   if (st) {   // v0.56 on stage: was here (dashed, dated) → the glide → a ring locking on → the dated callout
     const out = (t, x, y, c, al) => { g.textAlign = al || 'left'; g.lineWidth = 3; g.strokeStyle = 'rgba(2,4,10,.9)'; g.strokeText(t, x, y); g.fillStyle = c; g.fillText(t, x, y); g.textAlign = 'left'; };
     if (pv) { g.strokeStyle = 'rgba(255,255,255,.8)'; g.lineWidth = 1.6; g.setLineDash([5, 4]); g.beginPath(); g.arc(pv[0], pv[1], 17, 0, 7); g.stroke(); g.setLineDash([]);
-      g.font = font(600, 12); out(`was here · ${st.prev.date}`, pv[0], pv[1] + 33, 'rgba(255,255,255,.9)', 'center');
+      g.font = font(600, 12); const [lx, ly, la] = awayLabel(pv, cur, 24); out(`was here · ${st.prev.date}`, lx, ly, 'rgba(255,255,255,.9)', la);
       g.strokeStyle = st.col; g.lineWidth = 2.6; g.lineCap = 'round'; g.beginPath(); g.moveTo(pv[0], pv[1]); g.lineTo(head[0], head[1]); g.stroke(); g.lineCap = 'butt'; }
     if (an.k < 1) { g.strokeStyle = st.col; g.lineWidth = 1.6; g.setLineDash([5, 5]); g.beginPath(); g.arc(head[0], head[1], 26, 0, 7); g.stroke(); g.setLineDash([]); }
     else { const r = 15 + 20 * (1 - an.lock) ** 2, a0 = -Math.PI / 2;
@@ -5583,7 +5583,7 @@ function filmPlan() {
   return { title: main ? main.name : 'SPHEREx sky over time', badge, cx, cy, half, frames, ra: sky[0], dec: sky[1], slug: 'film-' + (main ? main.name : 'field'),
     credit: 'Images: NASA SPHEREx via IRSA · Motions: ARCNAVE, Gaia DR3, CatWISE2020 · False colour',
     fact: main ? `${main.mu.toFixed(2)}${main.smu ? ' ± ' + main.smu.toFixed(2) : ''}″ per year toward the ${main.dir} · ${ms.length} mover${ms.length === 1 ? '' : 's'} in the film` : `${frames.length} passes · no mover`,
-    note: 'Real SPHEREx images, one per pass. Spotlight: ' + (main ? short(main) : 'the main mover') + ', with its place in the pass before (dashed circle) and in this pass (ring), both dated. Other rings: where each mover was in this pass; +: in the passes before.' + (main && main.how === 'predicted' ? ' Positions are the catalogue\'s prediction, not a measurement.' : '') + ' Not a discovery claim.' };
+    note: 'Real SPHEREx images, one per pass. Spotlight: dashed circle = the pass before, ring = this pass, both dated. Other rings: this pass; +: passes before.' + (main && main.how === 'predicted' ? ' Positions are the catalogue\'s prediction, not a measurement.' : '') + ' Not a discovery claim.' };
 }
 async function filmFrames(plan) {
   try { await document.fonts.ready; } catch { /* fallback fonts */ }
@@ -5698,6 +5698,11 @@ function movieShift(a, b) {   // from pass a to pass b of one mover, on the sky:
 }
 const movieDate = q => fmtDay(q.mjd ?? epMid(q.e));
 const fmtShift = d => d.toFixed(d < 1 ? 2 : 1) + '″';
+// where the "was here" label goes: beside the old place, on the side away from the new one, so the ring never covers it
+function awayLabel(p, to, r) {
+  const dx = p[0] - to[0], dy = p[1] - to[1], d = Math.hypot(dx, dy), ux = d > 2 ? dx / d : 0, uy = d > 2 ? dy / d : 1;
+  return Math.abs(ux) > 0.5 ? [p[0] + ux * r, p[1] + uy * r + 4, ux > 0 ? 'left' : 'right'] : [p[0], p[1] + uy * (r + 6) + 4, 'center'];
+}
 // the callout's lines for pass index ci of mover m (pi: the pass before, -1 on its first pass): [text, colour, font?]
 function movieStageLines(m, ci, pi, title, col) {
   const ps = m.passes, cur = ps[ci], last = ps[ps.length - 1], first = ps[0], lines = [[title, col, '700 12px']];
@@ -5727,7 +5732,7 @@ function movieStage(g, now, k) {
   const lab = (t, x, y, c, al = 'left') => { ctx.textAlign = al; ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(2,4,10,.9)'; ctx.strokeText(t, x, y); ctx.fillStyle = c; ctx.fillText(t, x, y); ctx.textAlign = 'start'; };
   ctx.font = '600 11px Inter,system-ui,sans-serif';
   if (pi >= 0) { const p = qs[pi]; ctx.strokeStyle = 'rgba(255,255,255,.75)'; ctx.lineWidth = 1.4; ctx.setLineDash([4, 4]); ctx.beginPath(); ctx.arc(p[0], p[1], 15, 0, 7); ctx.stroke(); ctx.setLineDash([]);
-    lab(`was here · ${movieDate(m.passes[pi])}`, p[0], p[1] + 30, 'rgba(255,255,255,.85)', 'center'); }
+    const [lx, ly, la] = awayLabel(p, qs[ci], 22); lab(`was here · ${movieDate(m.passes[pi])}`, lx, ly, 'rgba(255,255,255,.85)', la); }
   // 3. the marker on its way, then a ring that locks on to the new place (an arc that closes and tightens, with ticks)
   if (!arrived) { ctx.strokeStyle = col; ctx.lineWidth = 1.4; ctx.setLineDash([5, 5]); ctx.lineDashOffset = -now / 40; ctx.beginPath(); ctx.arc(head[0], head[1], 26, 0, 7); ctx.stroke(); ctx.setLineDash([]); ctx.lineDashOffset = 0; }
   else { const r = 13 + 20 * (1 - lock) * (1 - lock), a0 = -Math.PI / 2;
