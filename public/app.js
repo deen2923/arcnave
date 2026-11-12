@@ -1859,11 +1859,15 @@ const gAt = (s, mjd) => ctAt({ ra0: s.ra, dec0: s.dec, ep: G_EPOCH, pmra: s.pmra
 const gPm = s => Math.hypot(s.pmra || 0, s.pmdec || 0) / 1000;   // arcsec per year
 async function gaiaLoad() {
   const f = S.field; if (!f) return;
-  const key = `${f.ra.toFixed(4)},${f.dec.toFixed(4)},${f.size}`; if (GAIA.key === key && (GAIA.data || GAIA.loading)) return;
+  // v0.56: a load in progress is awaited (it returned at once, so a search started then found no Gaia stars)
+  const key = `${f.ra.toFixed(4)},${f.dec.toFixed(4)},${f.size}`; if (GAIA.key === key && (GAIA.data || GAIA.loading)) return GAIA.loadP;
   GAIA.key = key; GAIA.data = null; GAIA.err = null; GAIA.loading = true; updGaiaNote();
-  try { const d = await api(`/api/gaia?ra=${f.ra.toFixed(5)}&dec=${f.dec.toFixed(5)}&r=${(f.size * 0.72).toFixed(3)}&g=18`); if (GAIA.key === key) GAIA.data = d; }
-  catch (e) { if (GAIA.key === key) GAIA.err = e.message; }
-  GAIA.loading = false; updGaiaNote(); refreshSoon();
+  GAIA.loadP = (async () => {
+    try { const d = await api(`/api/gaia?ra=${f.ra.toFixed(5)}&dec=${f.dec.toFixed(5)}&r=${(f.size * 0.72).toFixed(3)}&g=18`); if (GAIA.key === key) GAIA.data = d; }
+    catch (e) { if (GAIA.key === key) GAIA.err = e.message; }
+    if (GAIA.key === key) GAIA.loading = false; updGaiaNote(); refreshSoon();
+  })();
+  return GAIA.loadP;
 }
 function updGaiaNote() {
   const n = $('gaialeg'); if (!n) return; n.hidden = !GAIA.on;
@@ -2358,7 +2362,7 @@ async function runAgents(target, opts = {}) {
     if (!live()) return;
     waitEnd();
     if (!ok) throw new Error(S.lastErr || 'Archive search failed');
-    if (GAIA.on) gaiaLoad(); else GAIA.key = null;
+    if (GAIA.on) gaiaLoad(); else { GAIA.key = null; GAIA.data = null; }   // v0.56: never the last field's stars
     if (CW.on) cwLoad(); else { CW.key = null; CW.data = null; CW.src = []; }
     const E = S.eps.length, a = 0, b = E - 1, idx = E > 1 ? [a, b] : [a];
     const lamTxt = () => { const l = idx.map(i => lamOf(chosen(i))), d = Math.max(...l) - Math.min(...l);
@@ -4334,7 +4338,7 @@ async function motionSearch() {
     if (eps.length < 2) { say('The aligned images of two passes are not loaded yet. Run the agents first.'); return; }
     const A = eps[0].fr, later = eps.slice(1);
     say('Finding the bright stars of the first pass...');
-    if (!GAIA.data) { try { await gaiaLoad(); } catch { /* checked below */ } }
+    try { await gaiaLoad(); } catch { /* checked below */ }   // v0.56: always for THIS field (it kept the last field's stars)
     const peaks = F.detectPeaks(A.flat, n, A.st, 10, 300).filter(p => p.x > 16 && p.y > 16 && p.x < n - 17 && p.y < n - 17);
     const stars = peaks.filter((p, i) => !peaks.some((q, j) => j < i && Math.hypot(q.x - p.x, q.y - p.y) < 5)).slice(0, 120);   // isolated: no brighter star within 5 px
     const meas = [];
@@ -4834,7 +4838,11 @@ function dsGaia(fl, days) {
   // v0.53 (rank 7): not in Gaia (G < 18): CatWISE2020 sees cold brown dwarfs that Gaia cannot (WISE 0855)
   if (!g) { const m = cwMatch(p0.ra, p0.dec, p0.mjd, t.muE, t.muN, t.smu); return m && m.agrees ? { label: 'known', cw: m.cw, pm: m.pm } : { label: 'candidate', cwNear: m }; }
   const pE = (g.pmra || 0) / 1000, pN = (g.pmdec || 0) / 1000, pm = Math.hypot(pE, pN), diff = Math.hypot(pE - t.muE, pN - t.muN);
-  const label = g.pmra == null ? 'differs' : diff < Math.max(3 * t.smu, 0.3 * pm, 0.5) ? 'known' : pm < 0.1 ? 'fixed' : 'differs';
+  // v0.56: a measurement whose error is as large as the motion it claims agrees with anything within 3σ (Pleiades field:
+  // "7.4″/yr" at a G 7.3 star that Gaia gives 0.02″/yr was called a known mover). Too uncertain to agree: then Gaia, far
+  // more precise, decides (fixed or a different motion).
+  const loose = !(3 * t.smu < Math.max(1, Math.hypot(t.muE, t.muN)));
+  const label = g.pmra == null ? 'differs' : !loose && diff < Math.max(3 * t.smu, 0.3 * pm, 0.5) ? 'known' : pm < 0.1 ? 'fixed' : loose && diff < Math.max(0.3 * pm, 0.5) ? 'known' : 'differs';
   return { label, gaia: g, pm };
 }
 async function deepSearch() {
@@ -4844,7 +4852,7 @@ async function deepSearch() {
   const say = (txt, i, m) => { if ((run !== S.run || DS.stop)) return; srchSay(DS, '🔭 Deep search: working', txt, m ? `Measured ${i} of ${m} sources in every image...` : null, deepSearch); if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card'); };   // v0.55 U9
   try {
     say('Lining every image up on Gaia and stacking them all...'); await sleep(30);
-    if (!GAIA.data) { try { await gaiaLoad(); } catch { /* checked below */ } } const cwP = cwLoad();
+    try { await gaiaLoad(); } catch { /* checked below */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
     if (!GAIA.data) { say('Gaia DR3 did not answer, and every image is lined up on Gaia here. Try again in a minute.'); return; }
     const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded for a deep stack. Run the agents first (Images per epoch: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 5, 2000).filter(p => p.x > 12 && p.y > 12 && p.x < n - 13 && p.y < n - 13);
@@ -4910,7 +4918,7 @@ async function moverTest() {
   const restore = () => { if (restored) return; restored = true; for (const b of backup) { b.fr.flat0 = b.flat0; b.fr.flat = b.flat; } DS.res = savedDS; refreshSoon(); };
   try {
     say('Choosing empty places for the fakes...'); await sleep(30);
-    if (!GAIA.data) { try { await gaiaLoad(); } catch { /* registration needs Gaia; checked by the fits */ } }
+    try { await gaiaLoad(); } catch { /* registration needs Gaia; checked by the fits */ }   // v0.56: always for THIS field (it kept the last field's stars)
     const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Run the agents first (Images per epoch: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 4, 4000);
     let sd = 7; const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
@@ -5116,7 +5124,7 @@ async function diffSearch() {
   const say = (txt, i, m) => { if ((run !== S.run || DF.stop)) return; srchSay(DF, '◐ Difference search: working', txt, m ? `${i} of ${m} done...` : null, diffSearch); if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card'); };   // v0.55 U9
   try {
     say('Subtracting images of the same colour, pass by pass...'); await sleep(30);
-    if (!GAIA.data) { try { await gaiaLoad(); } catch { /* labels say unchecked */ } } const cwP = cwLoad();
+    try { await gaiaLoad(); } catch { /* labels say unchecked */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
     const slots = S.slots.length ? S.slots : [S.eps.map((_, i) => chosen(i))];
     // pairs: slot k, pass 1 against pass e
     const pairs = [];
@@ -5349,7 +5357,7 @@ async function motionScan() {
   const say = (txt, i, m) => { if ((run !== S.run || TSC.stop)) return; srchSay(TSC, '🎯 Motion scan: working', txt, m ? `${i} of ${m} sources scanned...` : null, motionScan); if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card'); };   // v0.55 U9
   try {
     say('Stacking every image and finding sources...'); await sleep(30);
-    if (!GAIA.data) { try { await gaiaLoad(); } catch { /* labels say unchecked */ } } const cwP = cwLoad();
+    try { await gaiaLoad(); } catch { /* labels say unchecked */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
     const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Run the agents first (Images per epoch: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 5, 2000).filter(p => p.x > 14 && p.y > 14 && p.x < n - 15 && p.y < n - 15);
     const blankNear = p => { const X = Math.round(p.x), Y = Math.round(p.y); for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (!(D.flat[(Y + j) * n + X + i] === D.flat[(Y + j) * n + X + i])) return true; return false; };
@@ -5501,6 +5509,9 @@ function movieMovers() {
   const nameOf = fl => fl.label === 'target' ? fl.target : fl.gaia && fl.label === 'known' ? 'Gaia DR3 ' + fl.gaia.id : fl.cw && fl.label === 'known' ? 'CatWISE ' + fl.cw.name : null;
   const add = (name, label, src, passes, mu, dir, fl) => {
     if (!passes || passes.length < 2) return; const p0 = passes[0], cd = Math.cos(p0.dec * Math.PI / 180);
+    // v0.56: Gaia measures it as not moving (far more precisely than SPHEREx can): whatever a search saw, it is not a mover
+    // (field 0, 0: a 🔭 deep-search star at "6.1 ± 1.2″/yr" that Gaia DR3 gives 0.04″/yr)
+    if (label === 'fixed') return;
     // v0.56: a track whose passes all sit on the very same place (seen on Barnard's field: a 🔍 track of 0″/yr) moved nothing
     if (!(fl && fl.slow) && passes.every(q => Math.hypot((q.ra - p0.ra) * cd, q.dec - p0.dec) * 3600 < 0.001)) return;
     if (list.some(m => Math.hypot((m.passes[0].ra - p0.ra) * cd, m.passes[0].dec - p0.dec) * 3600 < 9)) return;   // the same star from another search
