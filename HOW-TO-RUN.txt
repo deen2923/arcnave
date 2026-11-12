@@ -1,8 +1,9 @@
-ARCNAVE v0.38 - how to run it on any laptop
-=============================================
+ARCNAVE v0.55 - how to run it on another computer
+==================================================
 
 WINDOWS (nothing to install)
-1. Unzip ARCNAVE-v0.38.zip (right-click > Extract All).
+1. Unzip ARCNAVE-v0.55.zip (right-click > Extract All). It is large (about 3 GB unzipped) because it carries the
+   saved NASA images, so every test field opens fast. Unzip to a drive with 4 GB free.
 2. Open the ARCNAVE folder and double-click start.bat
    (if Windows says "Windows protected your PC": More info > Run anyway;
     if the firewall asks: Allow).
@@ -14,13 +15,24 @@ MAC / LINUX
 2. Unzip, open Terminal in the ARCNAVE folder, run:  sh start.sh
 3. Open http://localhost:8083
 
+WHAT IS INSIDE
+- ARCNAVE itself (the app and its small server), and a portable Node in the "node" folder (Windows).
+- The "cache" folder: everything the team PC had already downloaded from NASA/IPAC IRSA, ESA Gaia and the other
+  archives, about 2.2 GB: the 5 NASA test targets, the 18 fields of the "How far can you trust it?" tests
+  (scorecard, false alarms, brightness test, mover test), the examples and every other spot opened on the team PC.
+- "demo-cache": the shipped examples (copied into "cache" on the first start if missing).
+
 WHAT TO EXPECT
-- The 5 NASA targets and the 2 examples open in about 10-20 s (images are saved in demo-cache).
+- The 5 NASA targets, the examples and the 18 test fields open in seconds: their images are read from "cache".
+- The list of images of a place is asked again from NASA once a day (a few seconds, needs internet); without internet
+  the saved list is used, so everything in the cache still opens offline.
 - A NEW place in the sky downloads real SPHEREx images from NASA: 20-90 s, depending on the internet speed.
-- The first start copies the saved images into a "cache" folder (a few seconds, once).
+- Rerun the tests yourself (local copy only): http://localhost:8083/#movertest (the 18-field mover test, about
+  20 minutes), #nulltest, #brighttest, #scorecard.
 
 PROBLEMS
 - "address already in use": ARCNAVE is already running; just open http://localhost:8083
 - Want another port: open start.bat in Notepad and change 8083.
 - Other phones/laptops on the same WiFi can open http://<this laptop's IP>:8083 (ipconfig shows the IP;
   allow port 8083 in the Windows firewall).
+- Check that it runs and how much came from the cache: http://localhost:8083/api/health
