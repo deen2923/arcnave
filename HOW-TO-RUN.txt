@@ -1,8 +1,8 @@
-ARCNAVE v0.55 - how to run it on another computer
+ARCNAVE v0.56 - how to run it on another computer
 ==================================================
 
 WINDOWS (nothing to install)
-1. Unzip ARCNAVE-v0.55.zip (right-click > Extract All). It is large (about 3 GB unzipped) because it carries the
+1. Unzip ARCNAVE-v0.56.zip (right-click > Extract All). It is large (about 3 GB unzipped) because it carries the
    saved NASA images, so every test field opens fast. Unzip to a drive with 4 GB free.
 2. Open the ARCNAVE folder and double-click start.bat
    (if Windows says "Windows protected your PC": More info > Run anyway;
