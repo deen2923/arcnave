@@ -154,8 +154,9 @@ function buildSeq() {
   S.stacks.clear();
 }
 // Median stack of an epoch's loaded images, cached until anything is re-aligned.
+const stackKey = i => { const frs = matchedImgs(i).map(im => S.frames.get(im.url)).filter(Boolean); return { frs, key: i + '|' + frs.map(f => f.im.url).join(',') + '|' + S.alignVer }; };
 function stackOf(i) {
-  const frs = matchedImgs(i).map(im => S.frames.get(im.url)).filter(Boolean), key = i + '|' + frs.map(f => f.im.url).join(',') + '|' + S.alignVer;
+  const { frs, key } = stackKey(i);
   if (frs.length < 2) return rawOf(i);
   const c = S.stacks.get(i); if (c && c.key === key) return c.f;
   const n = S.field.n, ms = F.medianStack(frs.map(f => f.flat), n, { touched: frs.map(f => f.touched) });
@@ -164,6 +165,24 @@ function stackOf(i) {
   const base = rawOf(i) || frs[0], cv = document.createElement('canvas'); cv.width = cv.height = n;
   const f = { im: base.im, flat: ms.flat, flat0: ms.flat, touched, st, canvas: cv, rgb: base.rgb, shift: base.shift, lamReal: base.lamReal, mask: base.mask, check: base.check, stack: frs.length, frames: frs };
   paint(f); S.stacks.set(i, { key, f }); return f;
+}
+// v0.57.8: what the sky view draws. Every image that arrives changes an epoch's stack, and the view used to rebuild the
+// median stacks on the very next frame (0.05-0.2 s each, again for each of 250 images: a stutter all through loading).
+// While images keep arriving the view now shows the last stack and rebuilds at most once a second, one epoch per pause.
+// Measurements still call stackOf() and always get the up-to-date stack, as before.
+const VSTK = { t: 0, timer: 0, n: 0, built: -1 };
+function viewFrame(i) {
+  if (!S.eps[i] || !multi()) return frameOf(i);
+  const c = S.stacks.get(i);
+  if (!c) { if (VSTK.built === VSTK.n && rawOf(i)) return rawOf(i); VSTK.built = VSTK.n; return frameOf(i); }   // first stacks: one per frame
+  const { frs, key } = stackKey(i); if (frs.length < 2 || c.key === key) return frameOf(i);
+  if (performance.now() - VSTK.t > 1000) { VSTK.t = performance.now(); return frameOf(i); }
+  if (!VSTK.timer) VSTK.timer = setTimeout(async () => {
+    VSTK.timer = 0; const fld = S.field;
+    for (let e = 0; e < S.eps.length && S.field === fld; e++) { try { frameOf(e); } catch { /* drawn next frame */ } await yieldNow(); }
+    VSTK.t = performance.now();   // the sky redraws on its own within 0.2 s
+  }, 1000);
+  return c.f;
 }
 const seqAt = () => S.seq[Math.max(0, Math.min(S.ti, S.seq.length - 1))];
 const blinkList = () => S.bi < S.eps.length ? S.seq.filter(x => x.e === S.bi) : S.seq;
@@ -396,10 +415,18 @@ async function loadFrame(im) {
   const pc = await prepOffThread(buf, fld);
   if (S.field !== fld) throw new Error('cancelled');
   const f = buildFrame(buf, im, fld, pc);
+  // v0.57.8: building, lining up and listing an image were one block of 0.1-0.3 s per image (250 images: a stutter all
+  // through loading); now with a pause between the steps. An image other than the reference is lined up before it is
+  // listed, so nothing ever sees it half done; the reference is listed first, as before, since everything lines up on it.
+  const isRef = im.url === chosen(0).url;
+  await yieldNow(); if (S.field !== fld) throw new Error('cancelled');
+  if (!isRef && refFrame()) { alignFrame(f); await yieldNow(); if (S.field !== fld) throw new Error('cancelled'); }
   S.frames.set(im.url, f);
   while (S.frames.size > 110) S.frames.delete(S.frames.keys().next().value);
-  if (im.url === chosen(0).url) for (const o of S.frames.values()) alignFrame(o);   // new reference: re-register everything on it
-  else alignFrame(f);
+  if (im.url === chosen(0).url) {   // new reference: re-register everything on it (v0.57.8: with short pauses, same result)
+    for (const o of [...S.frames.values()]) { if (S.field !== fld) throw new Error('cancelled'); alignFrame(o); await breathe(); }
+    alignFrame(f);
+  } else alignFrame(f);   // already lined up above: returns at once (same reference); or lines it up now
   renderStrip();
   return f;
 }
@@ -464,7 +491,7 @@ function buildFrame(buf, im, fld, pcIn) {
 }
 // Shown as measured: OUTLIER-only pixels (the pipeline also flags moving asteroids with it) at their real values.
 const seeOf = f => f.flatKeep || f.flat;
-function paint(f) { const n = S.field.n; f.canvas.getContext('2d').putImageData(new ImageData(F.renderRGBA(seeOf(f), f.st, f.rgb, S.view), n, n), 0, 0); }
+function paint(f) { const n = S.field.n; f.pv = (f.pv || 0) + 1; f.canvas.getContext('2d').putImageData(new ImageData(F.renderRGBA(seeOf(f), f.st, f.rgb, S.view), n, n), 0, 0); }
 // v0.57.2: WiseView-style display controls (picture only: no measurement uses them). Contrast lifts faint things; Invert
 // draws dark stars on a light sky, the view many volunteers find easiest for spotting a faint moving dot.
 S.view = { gain: 1, invert: false };
@@ -1179,19 +1206,37 @@ function drawAsteroidPaths() {
   }
 }
 /* ---------- film strip: every image of every epoch ---------- */
+// v0.57.8: the strip used to be rebuilt from scratch after every image (250+ thumbnails redrawn each time, ~0.1-0.3 s per
+// image, so a 250-image spot froze the page for many seconds in total). Now, while the same images are listed, only the
+// thumbnails whose picture changed are redrawn (paint() counts versions); a new list still rebuilds it as before.
+const STRIP = { key: '', th: new Map() };
+const thTitle = x => `Epoch ${x.e + 1}, image ${x.pos} of ${x.n}: ${fmtDay(x.im.mjd)}, ${lamOf(x.im).toFixed(3)} µm, detector ${x.im.det}`;
+const thumbDraw = (cv, fr) => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.clearRect(0, 0, 40, 40); c.drawImage(fr.canvas, 0, 0, 40, 40); cv._pv = fr.pv; cv._fr = fr; };
 function renderStrip() {
   const box = $('strip'); if (!box) return;
-  box.replaceChildren(); box.hidden = !multi() || S.mode === 'change';
-  if (!multi()) return;
+  box.hidden = !multi() || S.mode === 'change';
+  if (!multi()) { box.replaceChildren(); STRIP.key = ''; return; }
   const astIn = new Set(); if (S.inside) for (const a of S.inside.asteroids) for (const sg of a.sightings) astIn.add(sg.im.url);
+  const key = S.eps.length + '|' + S.seq.map(x => x.i + ':' + x.im.url).join(',');
+  if (key === STRIP.key && box.childElementCount) {
+    for (const x of S.seq) {
+      const b = STRIP.th.get(x.i); if (!b) continue;
+      const fr = S.frames.get(x.im.url), cv = b.firstChild;
+      if (fr && (cv._fr !== fr || cv._pv !== fr.pv)) { if (cv._fr !== fr) b.title = thTitle(x); thumbDraw(cv, fr); }
+      b.classList.toggle('wait', !fr); b.classList.toggle('ast', astIn.has(x.im.url));
+    }
+    markStrip(); return;
+  }
+  STRIP.key = key; STRIP.th.clear(); box.replaceChildren();
   S.eps.forEach((ep, e) => {
     const g = h('div', { class: 'sg' }, h('span', { class: 'sgl' }, 'E' + (e + 1)));
     for (const x of S.seq.filter(y => y.e === e)) {
       const fr = S.frames.get(x.im.url), cv = document.createElement('canvas'); cv.width = cv.height = 40;
-      if (fr) { const c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.drawImage(fr.canvas, 0, 0, 40, 40); }
-      g.append(h('button', { class: 'th' + (fr ? '' : ' wait') + (astIn.has(x.im.url) ? ' ast' : ''), 'data-i': x.i,
-        title: `Epoch ${e + 1}, image ${x.pos} of ${x.n}: ${fmtDay(x.im.mjd)}, ${lamOf(x.im).toFixed(3)} µm, detector ${x.im.det}`,
-        'aria-label': `Show epoch ${e + 1} image ${x.pos}`, onclick: () => { S.ti = x.i; S.sel = null; setMode('time'); moversFor(x); markStrip(); } }, cv));
+      if (fr) thumbDraw(cv, fr);
+      const b = h('button', { class: 'th' + (fr ? '' : ' wait') + (astIn.has(x.im.url) ? ' ast' : ''), 'data-i': x.i,
+        title: thTitle(x),
+        'aria-label': `Show epoch ${e + 1} image ${x.pos}`, onclick: () => { S.ti = x.i; S.sel = null; setMode('time'); moversFor(x); markStrip(); } }, cv);
+      STRIP.th.set(x.i, b); g.append(b);
     }
     box.append(g);
   });
@@ -1222,6 +1267,7 @@ for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown', 'input', 'cl
 function frame(ts) {
   requestAnimationFrame(frame);
   if (!S.al) return;
+  VSTK.n++;
   let key = '';
   try { const c = S.al.getRaDec(), f = S.al.getFov(); key = `${c[0].toFixed(6)},${c[1].toFixed(6)},${f[0].toFixed(6)},${W},${H},${S.mode},${S.lab}`; } catch { /* draw anyway */ }
   if (S.mode === 'blink' || S.mode === 'time') key += ',' + Math.floor(ts / (S.mode === 'blink' && !multi() ? 700 : 650));
@@ -1233,7 +1279,7 @@ function frame(ts) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H); S.hits = [];
   const T = affine();
   if (T && S.eps.length && !allSky()) {   // on the whole-sky map the field is a dot: no image layers or captions
-    const { a, b } = view(), fa = frameOf(a), fb = frameOf(b), A = moversOf(a), B = moversOf(b);
+    const { a, b } = view(), fa = viewFrame(a), fb = viewFrame(b), A = moversOf(a), B = moversOf(b);
     const withEp = (s, i) => s && { ...s, ep: i };
     if (multi() && (S.mode === 'time' || S.mode === 'blink') && S.seq.length) {
       // one real image at a time: Time machine = the slider's image; Blink = flip-book through an epoch's images (or all)
@@ -2483,10 +2529,29 @@ const yieldNow = () => new Promise(r => { const c = new MessageChannel(); c.port
 let BREATHE_T = 0;
 const breathe = async () => { if (performance.now() - BREATHE_T > 50) { await yieldNow(); BREATHE_T = performance.now(); } };
 async function warmEpsf(live = () => true) {
+  // v0.57.8: one image's star shape takes 0.2-0.4 s (Barnard's Star: 24 of them in a row, the page frozen each time): they
+  // are now made in the worker pool, several at once, with the same function (lib/fits.js epsfGrid) and the same numbers
+  if (FT.epsfMode !== 'stack' && prepPool()) {
+    const todo = [...S.frames.values()].filter(fr => fr.flat0 && fr.epsf === undefined), n = S.field.n, opts = { half: 5, os: 4, minSnr: 25 };
+    await Promise.all(todo.map(async fr => {
+      const st = fr.st0 || (fr.st0 = F.robustStats(fr.flat0)), main = () => F.epsfGrid(fr.flat0, n, st, opts);
+      let P = null; try { P = F.epsfRevive(await workerJob('epsf', { flat: fr.flat0, n, st, opts }, main)); } catch { P = undefined; }
+      if (P !== undefined && fr.epsf === undefined) fr.epsf = P && P.nStars >= 8 ? P : null;   // not measured meanwhile on this thread
+    }));
+    if (!live()) return;
+  }
   for (const fr of [...S.frames.values()]) {
     if (!live()) return;
     if (!fr.flat0 || (FT.epsfMode !== 'stack' && fr.epsf !== undefined)) continue;
     try { epsfOf(fr); } catch { /* measured later, as before */ }
+    await yieldNow();
+  }
+  // v0.57.8: each image's Gaia line-up too (cached by gaiaReg itself, same result): the first measurement used to do all
+  // of them in one go (Epsilon Indi B: 28 images, a 2.4 s freeze)
+  if (GAIA.data) for (const fr of [...S.frames.values()]) {
+    if (!live()) return;
+    if (!fr.flat0) continue;
+    try { gaiaReg(fr); } catch { /* measured later, as before */ }
     await yieldNow();
   }
 }
@@ -4523,7 +4588,7 @@ async function motionSearch() {
     const stars = peaks.filter((p, i) => !peaks.some((q, j) => j < i && Math.hypot(q.x - p.x, q.y - p.y) < 5)).slice(0, 120);   // isolated: no brighter star within 5 px
     const meas = [];
     for (let i = 0; i < stars.length; i++) {
-      if ((run !== S.run || MS.stop)) return;
+      await breathe(); if ((run !== S.run || MS.stop)) return;   // v0.57.8: a pause every 50 ms (it was every 6th star)
       const s = stars[i], d = later.map(q => msShift(A, q.fr, s)); if (d.some(x => !x)) continue;
       meas.push({ s, d }); if (i % 6 === 0) { say(`Measuring every bright star in ${eps.length} passes (${eps.map(q => fmtMonth(S.eps[q.k].t0)).join(', ')}).`, i, stars.length); await sleep(0); }
     }
@@ -5145,6 +5210,7 @@ async function moverTest() {
     const meas = [], nul = [];
     for (let k = 0; k < fakes.length; k++) { const fk = fakes[k];
       if (k % 4 === 0) { say('Measuring every fake frame by frame, at its known place...', k, fakes.length); await sleep(0); if (run !== S.run || MT.stop) return; }
+      else await breathe();
       const ff = ffCore((e, fr, im) => { const q = ctAt(fk.obj, im.mjd), g = F.skyToGrid(q[0], q[1], grid); return g && toRaw(fr, g[0], g[1]); }, { H: 3, minSnr: 3 }), t = ff && !ff.fail && ff.fit;
       const pE = t ? (t.muE - fk.muE) / Math.max(t.sE, 1e-3) : null, pN = t ? (t.muN - fk.muN) / Math.max(t.sN, 1e-3) : null;
       meas.push({ fk, ok: !!t && t.sig >= 5 && Math.abs(pE) < 3 && Math.abs(pN) < 3, sig: t ? t.sig : 0, mu: t ? t.mu : null, smu: t ? t.smu : null, pE, pN }); }
@@ -5710,6 +5776,24 @@ function drawScan() {
    searches' own (known mover / unconfirmed candidate). */
 const MOVIE = { on: false, timer: 0, e: 0, t0: 0, step: 1400, movers: [], run: -1, prevMode: null, tiles: [], spot: true, off: null,
   mo: false, follow: false, fi: 0 };   // v0.55: mo = motion only (the sky hidden, the measured tracks alone); follow = the view goes mover by mover
+// v0.57.8: the film's tracks (trackAcross, 0.1-0.5 s each, for 🔍's stars and the catalogues' movers) are worked out one at
+// a time with pauses before the film starts; movieMovers() then reuses them. Same function on the same images and settings
+// (any re-alignment, new run or fitter change means they are worked out again).
+const TRK = { key: '', m: new Map() };
+const msObj = fl => fl.gaia && fl.label === 'known' ? gaiaObj(fl.gaia) : { ra0: fl.ra, dec0: fl.dec, ep: epMid(MS.res.passes[0]), pmra: 0, pmdec: 0, noCat: true };
+function trackOf(o) {
+  const ver = S.run + '|' + S.alignVer + '|' + S.frames.size + '|' + FT.fitter + '|' + FT.epsfMode; if (TRK.key !== ver) { TRK.key = ver; TRK.m.clear(); }
+  const k = [o.ra0, o.dec0, o.ep, o.pmra, o.pmdec, o.plx, o.noCat, o.cat, o.catSmu].join(','); if (TRK.m.has(k)) return TRK.m.get(k);
+  const tr = trackAcross(o); TRK.m.set(k, tr); return tr;
+}
+const filmTrack = (fl, o) => trackOf(o || msObj(fl));
+async function movieWarm(live) {
+  const P = S.eps.length, days = P > 1 ? epMid(P - 1) - epMid(0) : 0, objs = [];
+  if (MS.res && MS.res.run === S.run) for (const fl of MS.res.flagged) objs.push(msObj(fl));
+  if (P > 1 && GAIA.data) for (const st of GAIA.data.stars) if (st.pmra != null && gPm(st) * days / 365.25 >= 1.5) objs.push(gaiaObj(st));
+  if (P > 1 && CW.data) for (const st of CW.src) if (!st.twinOf && cwMover(st) && cwPm(st) * days / 365.25 >= 1.5) objs.push(cwObj(st));
+  for (const o of objs) { if (!live()) return; try { trackOf(o); } catch { /* done again in movieMovers */ } await yieldNow(); }
+}
 function movieMovers() {
   const f = S.field, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n: f.n }, arc = PX * 3600, list = [];
   const nameOf = fl => fl.label === 'target' ? fl.target : fl.gaia && fl.label === 'known' ? 'Gaia DR3 ' + fl.gaia.id : fl.cw && fl.label === 'known' ? 'CatWISE ' + fl.cw.name : null;
@@ -5758,8 +5842,8 @@ function movieMovers() {
     if (okFF(fl.fff) && fl.check !== 'scan only') return add(nameOf(fl), fl.label, '🎯', fl.fff.passes, fl.fff.fit.mu, fl.fff.fit.dir, fl);
     add(nameOf(fl), fl.label, '🎯', TSC.res.PS.map(q => { const sk = F.gridToSky(fl.x + fl.muE * q.dt / arc, fl.y - fl.muN * q.dt / arc, grid); return { e: q.e, ra: sk[0], dec: sk[1] }; }), fl.mu, fl.dir, fl); });
   if (MS.res && MS.res.run === S.run) MS.res.flagged.forEach(fl => {
-    const known = fl.gaia && fl.label === 'known', o = known ? gaiaObj(fl.gaia) : { ra0: fl.ra, dec0: fl.dec, ep: epMid(MS.res.passes[0]), pmra: 0, pmdec: 0, noCat: true };
-    const tr = trackAcross(o); if (!tr) return;
+    const known = fl.gaia && fl.label === 'known', o = msObj(fl);
+    const tr = filmTrack(fl, o); if (!tr) return;
     // the frame-by-frame track only when it agrees with 🔍's own measurement: a saturated star's fit can go astray (seen
     // on Epsilon Indi A: 2.5″/yr east); otherwise 🔍's pass-by-pass track
     const muMS = fl.shift / (MS.res.days / 365.25);
@@ -5787,7 +5871,7 @@ function movieMovers() {
     const exp = S.eps.map((_, e) => { if (!frameOf(e)) return null; const p = ctAt(o, epMid(e)); return { e, ra: p[0], dec: p[1] }; }).filter(Boolean);
     if (exp.length < 2 || !exp.every(q => inField(F.skyToGrid(q.ra, q.dec, grid)))) return;
     const expTot = pm * days / 365.25; let passes = exp, how = 'predicted', mu = pm, smu = null;
-    if (expTot >= 1.5) { const tr = trackAcross(o);
+    if (expTot >= 1.5) { const tr = trackOf(o);
       if (tr && satShare(tr.ff) > 0.5) extra = { ...extra, satNote: `${tr.ff.nSat} of ${tr.ff.nKept} images` };   // v0.55: saturated: stays "predicted"
       else if (tr && okFF(tr.ff) && Math.abs(tr.ff.fit.mu - pm) < Math.max(1, 0.3 * pm)) { passes = tr.ff.passes; how = 'measured'; mu = tr.ff.fit.mu; smu = tr.ff.fit.smu; }
       // the patch track only where the star is clearly there in every pass (S/N ≥ 5): its search starts at the catalogue
@@ -5865,6 +5949,7 @@ async function movieStart() {
   // v0.54: the Gaia and WISE movers join the film, so both catalogues must be here (at most 45 s; without them the film
   // shows what the searches measured)
   await Promise.race([Promise.all([Promise.resolve(gaiaLoad()).catch(() => {}), Promise.resolve(cwLoad()).catch(() => {})]), sleep(45000)]); if (run !== S.run) return;
+  await movieWarm(() => run === S.run); if (run !== S.run) return;
   Object.assign(MOVIE, { on: true, e: 0, t0: performance.now(), run: S.run, movers: movieMovers() });
   if (S.mode !== 'time') setMode('time');
   // zoom so that every mover is on screen (or the whole field when there is none)
@@ -6048,7 +6133,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.7', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.8', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
