@@ -177,6 +177,12 @@ const epLabel = i => `Epoch ${i + 1}, ${fmtMonth(S.eps[i].t0)}`;
 
 /* ---------- loading a field ---------- */
 // Archivist's search: list SPHEREx images for this spot and group them into epochs. Returns true on success.
+// v0.56.3: every SPHEREx archive search goes through here. A test field's list is frozen by the server (the list its quoted
+// numbers were measured on, opened from saved images); a spot switched to the archive's newest list ("Check for new data")
+// asks with latest=1. Same 0.001° key as the server's search cache.
+const spotKey = (ra, dec) => `${(+ra).toFixed(3)},${(+dec).toFixed(3)}`;
+S.latest = new Set();
+const searchUrl = (ra, dec) => `/api/spherex/search?ra=${ra.toFixed(5)}&dec=${dec.toFixed(5)}` + (S.latest.has(spotKey(ra, dec)) ? '&latest=1' : '');
 async function loadField(ra, dec, opts = {}) {
   if (!S.al) return false;
   const mine = ++S.load, size = +$('csize').value, n = Math.min(MAXN, Math.round(size / PX));
@@ -185,7 +191,7 @@ async function loadField(ra, dec, opts = {}) {
   S.field = { ra, dec, size, n, s: PX };
   $('load').disabled = true; stat('Searching the IRSA archive for SPHEREx images...');
   let r;
-  try { r = await api(`/api/spherex/search?ra=${ra.toFixed(5)}&dec=${dec.toFixed(5)}`); }
+  try { r = await api(searchUrl(ra, dec)); }
   catch (e) {
     if (mine !== S.load) return false;
     S.lastErr = 'IRSA search failed: ' + e.message; stat(S.lastErr, true); S.field = null; $('load').disabled = false; return false;
@@ -193,7 +199,7 @@ async function loadField(ra, dec, opts = {}) {
   if (mine !== S.load) return false;   // a newer search took over
   $('load').disabled = false;
   S.images = r.images; S.eps = groupEpochs(r.images); S.dropped = null;
-  S.search = { checkedAt: r.checkedAt || null, stale: !!r.stale, savedAt: r.savedAt || null, ra, dec };   // v0.55 U7: how old the image list is
+  S.search = { checkedAt: r.checkedAt || null, stale: !!r.stale, savedAt: r.savedAt || null, frozen: !!r.frozen, ra, dec };   // v0.55 U7: how old the image list is (v0.56.3: frozen, see searchUrl)
   if (opts.auto && S.eps.length) { S.band = bestBand(); $('band').value = S.band; }   // the colour from every pass (as before), so the shipped examples and landmarks keep their images
   // (v0.22.1 left a thin pass out; v0.23 keeps every pass and fills each with its own extra images instead)
   if (!S.eps.length) { S.lastErr = 'No SPHEREx images cover this spot in the archive yet. Try another position.'; stat(S.lastErr, true); S.field = null; return false; }
@@ -214,19 +220,20 @@ function relRender(msg) {
   if (!S.images || !S.images.length || !S.search) { box.replaceChildren(h('p', { class: 'gnote' }, 'Open a patch of sky first.')); return; }
   const by = {}; for (const im of S.images) { const k = releaseOf(im) || '?'; by[k] = (by[k] || 0) + 1; }
   const s = S.search, last = Math.max(...S.images.map(i => i.mjd));
-  box.replaceChildren(
+  box.replaceChildren(...[   // v0.56.3: empty slots left out (replaceChildren wrote them as the word "null")
     h('p', {}, h('b', {}, 'Releases: '), Object.entries(by).sort().map(([k, n]) => `${k === '?' ? 'unknown' : k} (${n} images)`).join(' + ') + ` · newest image ${fmtDay(last)}`),
     h('ul', { class: 'rellist' }, ...S.eps.map((ep, e) => h('li', {}, h('b', {}, `Pass ${e + 1}`), ` · ${fmtDay(ep.t0)} to ${fmtDay(ep.t1)} · ${ep.imgs.length} images` +
       ` (${[...new Set(ep.imgs.map(releaseOf).filter(Boolean))].join(', ') || '?'})`))),
+    s.frozen ? h('p', {}, h('b', {}, 'Kept as measured: '), 'this spot is one of ARCNAVE\'s test fields, so its image list is kept as it was when the numbers ARCNAVE quotes were measured, and it opens from saved images. NASA released SPHEREx Data Release 1 (DR1) in November 2026: "Check for new data" shows what IRSA lists now and can switch this spot to it.') : null,
     h('p', { class: s.stale ? 'relwarn' : '' }, h('b', {}, 'Archive asked: '), s.stale ? `IRSA did not answer, so this is the list saved ${fmtAge(s.savedAt)}.`
       : s.checkedAt ? `${fmtAge(s.checkedAt)}. ARCNAVE keeps the list a day; new images in between show after "Check for new data".` : 'time not recorded (a copy shipped with ARCNAVE, or saved before v0.55). "Check for new data" asks IRSA now.'),
-    msg ? h('p', { class: 'relmsg' }, ...[].concat(msg)) : null);
+    msg ? h('p', { class: 'relmsg' }, ...[].concat(msg)) : null].filter(Boolean));
 }
 async function relCheck() {
   if (!S.field || !S.search) { toast('Open a patch of sky first.'); return; }
   const b = $('relchk'); if (b) b.disabled = true; relRender('Asking the IRSA archive now...');
   try {
-    const { ra, dec } = S.search, r = await api(`/api/spherex/search?ra=${ra.toFixed(5)}&dec=${dec.toFixed(5)}&fresh=1`);
+    const { ra, dec } = S.search, r = await api(searchUrl(ra, dec) + '&fresh=1');
     if (!S.search || S.search.ra !== ra) return;   // another spot was opened meanwhile
     const have = new Set(S.images.map(im => im.url)), nw = r.images.filter(im => !have.has(im.url)), gone = S.images.length - (r.images.length - nw.length);
     S.relCheck = { at: Date.now(), stale: !!r.stale, count: r.count, new: nw.length, gone };
@@ -234,8 +241,10 @@ async function relCheck() {
     S.search.checkedAt = r.checkedAt || new Date().toISOString();
     if (!nw.length) { relRender(`Up to date: IRSA lists the same ${r.count} images.` + (gone > 0 ? ` (${gone} no longer listed.)` : '')); return; }
     const rels = [...new Set(nw.map(releaseOf).filter(Boolean))].join(', ') || 'a release', newest = fmtDay(Math.max(...nw.map(i => i.mjd)));
-    relRender([`${nw.length} new image${nw.length === 1 ? '' : 's'} at IRSA (${rels}, newest ${newest}). `,
-      h('button', { type: 'button', class: 'hbtn', onclick: () => runAgents({ ra: S.field.ra, dec: S.field.dec }) }, 'Run the agents again with them')]);
+    // v0.56.3: on a frozen spot the new list replaces the old one only when asked (its images are not saved yet: slower)
+    const frozen = !!r.frozenKept, swap = frozen ? ` IRSA now lists ${r.count} images; ${gone > 0 ? `${gone} of the ${S.images.length} shown here are no longer listed (replaced by the new release). ` : ''}Switching downloads them, so it is slower the first time.` : '';
+    relRender([`${nw.length} new image${nw.length === 1 ? '' : 's'} at IRSA (${rels}, newest ${newest}).${swap} `,
+      h('button', { type: 'button', class: 'hbtn', onclick: () => { if (frozen) S.latest.add(spotKey(S.field.ra, S.field.dec)); runAgents({ ra: S.field.ra, dec: S.field.dec }); } }, frozen ? 'Switch this spot to the new list' : 'Run the agents again with them')]);
   } catch (e) { relRender('Could not ask IRSA: ' + e.message); }
   finally { if (b) b.disabled = false; }
 }
@@ -1185,7 +1194,9 @@ const releaseOf = im => { const m = /\/spherex\/([a-z]+\d*)\//i.exec((im && im.u
 function dataNote() {
   if (!S.images || !S.images.length) return '';
   const rel = [...new Set(S.images.map(releaseOf).filter(Boolean))], last = Math.max(...S.images.map(i => i.mjd));
-  return ` Data: SPHEREx ${rel.length ? rel.join(' + ') : 'archive'} at NASA/IPAC IRSA, newest image here ${fmtDay(last)}. The archive is asked live, so new releases appear without any change to ARCNAVE.`;
+  return ` Data: SPHEREx ${rel.length ? rel.join(' + ') : 'archive'} at NASA/IPAC IRSA, newest image here ${fmtDay(last)}.` + (S.search && S.search.frozen
+    ? ' This test field keeps the image list its quoted numbers were measured on; NASA\'s newer DR1 is one click away (Releases: Check for new data).'
+    : ' The archive is asked live, so new releases appear without any change to ARCNAVE.');
 }
 // What the pipeline flagged in one image (counted in the image's own pixels, before it is put on the field grid)
 function flagText(fr) {
@@ -1519,7 +1530,7 @@ async function spectrumAt(ra, dec, opts = {}) {
   // the field's own image list when the star is inside the loaded field (no new archive search), else a search at the star
   let imgs = null;
   if (S.field && S.images.length && Math.hypot((ra - S.field.ra) * Math.cos(dec * Math.PI / 180), dec - S.field.dec) < S.field.size * 0.45) imgs = S.images;
-  else { try { imgs = (await api(`/api/spherex/search?ra=${ra.toFixed(5)}&dec=${dec.toFixed(5)}`)).images; } catch (e) { if (mine === SPEC.run) { sp.msg = 'IRSA search failed: ' + e.message; showSpectrum(); } return; } }
+  else { try { imgs = (await api(searchUrl(ra, dec))).images; } catch (e) { if (mine === SPEC.run) { sp.msg = 'IRSA search failed: ' + e.message; showSpectrum(); } return; } }
   if (mine !== SPEC.run) return;
   sp.eps = groupEpochs(imgs);
   if (!sp.eps.length) { sp.msg = 'No SPHEREx images cover this spot yet.'; showSpectrum(); return; }
@@ -2346,7 +2357,7 @@ async function runAgents(target, opts = {}) {
     }
     // v0.14.3: ask the archive NOW, while the camera flies (the server shares one in-flight query, so the Archivist's own
     // request below just picks up this answer). Measured live: the IRSA search alone takes about 20 s for a new spot.
-    api(`/api/spherex/search?ra=${ra.toFixed(5)}&dec=${dec.toFixed(5)}`).catch(() => { /* the Archivist reports errors */ });
+    api(searchUrl(ra, dec)).catch(() => { /* the Archivist reports errors */ });
     // v0.15: the camera flies while the Archivist and the Aligner already work (the flight took 3 s before anything started)
     const navDone = () => { if (live()) setAgent('nav', 'done', `${label ? label + ' · ' : ''}RA ${ra.toFixed(3)}°, Dec ${dec.toFixed(3)}°`); };
     const flight = opts.skipNav ? Promise.resolve() : flyTo(ra, dec, Math.max(0.6, +$('csize').value * 2)).catch(() => {});
@@ -5842,7 +5853,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.56.2', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.56.3', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
