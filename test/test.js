@@ -380,6 +380,13 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     const fzF = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4&fresh=1')).t);
     assert.ok(fzF.frozenKept === true && calls.length > nF, 'a fresh check on a frozen field asks IRSA and says the list was kept');
     assert.strictEqual(fs.readFileSync(path.join(cacheDir, sfile), 'utf8'), before, 'the frozen list must not be replaced');
+    // v0.57.3: while a fresh check is still asking IRSA, an ordinary visit gets the frozen list (not the pending new one)
+    S._test.clearMemory(); const rfS = global.fetch;
+    global.fetch = async (...a) => { await new Promise(r => setTimeout(r, 150)); return rfS(...a); };
+    const pend = get('/api/spherex/search?ra=190&dec=-4&fresh=1'); await new Promise(r => setTimeout(r, 30));
+    const during = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
+    assert.ok(during.frozen === true && !during.frozenKept, 'a visit during a fresh check gets the frozen list: ' + JSON.stringify(during).slice(0, 120));
+    await pend; global.fetch = rfS;
     await new Promise(r => setTimeout(r, 20));
     const fz2 = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
     assert.ok(fz2.frozen === true && !fz2.frozenKept, 'after a fresh check the next ordinary visit gets the frozen list again (not the fresh one from memory)');

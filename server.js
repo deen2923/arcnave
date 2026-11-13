@@ -163,11 +163,11 @@ function cachedJSON(kind, key, ttlMs, fn, fresh = false) {
     }
   };
   if (!fresh) return cached(kind + ':' + key, Math.min(ttlMs, 3600e3), run);
-  const p = run().catch(e => { cache.delete(kind + ':' + key); throw e; });
-  cache.set(kind + ':' + key, { exp: Date.now() + Math.min(ttlMs, 3600e3), p });
-  // v0.56.3: a frozen list's fresh check is shown once, never kept in memory in place of the frozen list (seen live: the
-  // next ordinary visit got the new list for an hour)
-  p.then(d => { if (d && d.frozenKept && cache.get(kind + ':' + key)?.p === p) cache.delete(kind + ':' + key); }, () => {});
+  // v0.57.3: the fresh answer goes into memory only once it is known not to be a frozen list's "shown, not saved" check:
+  // before, it sat there while IRSA was asked, so another visitor opening a test field in those seconds got the new list
+  // (review finding). A failed fresh check leaves memory as it was.
+  const p = run();
+  p.then(d => { if (!(d && d.frozenKept)) cache.set(kind + ':' + key, { exp: Date.now() + Math.min(ttlMs, 3600e3), p }); }, () => {});
   return p;
 }
 
@@ -259,7 +259,9 @@ async function hipsTile(req, res, pathname) {
   if (!body) {
     from = null;
     for (const base of bases) {
-      if ((HIPS_BAD.get(base) || 0) > Date.now()) continue;
+      // v0.57.3: SPHEREx frames have one source and 100 frames: a failure bans only that frame, not the other 99 (review finding)
+      const badKey = spx === null ? base : base + '|' + sky;
+      if ((HIPS_BAD.get(badKey) || 0) > Date.now()) continue;
       try {
         body = await hipsLimited(() => upstream(base + '/' + upRel, { timeout: 12000, retries: 0, binary: true, lim: f => f() }));
         if (rel === 'properties' ? !/hips_/.test(body.toString('latin1', 0, 4000)) : body.length < 100) throw Object.assign(new Error('not a HiPS file'), { status: 502 });
@@ -274,8 +276,8 @@ async function hipsTile(req, res, pathname) {
         from = new URL(base).hostname; break;
       } catch (e) {
         body = null;
-        if (e.status === 404) { if (rel === 'properties') HIPS_BAD.set(base, Date.now() + 3600000); else break; }   // a missing tile is missing everywhere (empty sky)
-        else HIPS_BAD.set(base, Date.now() + 120000);   // unreachable: try the next mirror, come back in 2 minutes
+        if (e.status === 404) { if (rel === 'properties') HIPS_BAD.set(badKey, Date.now() + 3600000); else break; }   // a missing tile is missing everywhere (empty sky)
+        else HIPS_BAD.set(badKey, Date.now() + (spx === null ? 120000 : 20000));   // unreachable: try the next mirror, come back in 2 minutes (one SPHEREx frame: 20 s)
       }
     }
     if (!body) { res.writeHead(404, { 'Cache-Control': 'no-store' }); return res.end(); }
@@ -820,13 +822,31 @@ function serveStatic(req, res, pathname) {
   const file = path.normalize(path.join(ROOT, rel));
   const allowed = [path.join(ROOT, 'public') + path.sep, path.join(ROOT, 'lib', 'fits.js'), path.join(ROOT, 'lib', 'wave.js'), path.join(ROOT, 'lib', 'slots.js'), path.join(ROOT, 'lib', 'planetx.js'), path.join(ROOT, 'lib', 's3cut.js'), path.join(ROOT, 'lib', 'spot.js')];
   if (!allowed.some(a => file === a || file.startsWith(a))) { res.writeHead(404); return res.end('Not found'); }
-  fs.readFile(file, (err, data) => {
-    if (err) { res.writeHead(404); return res.end('Not found'); }
-    if (path.extname(file) === '.html') data = Buffer.from(data.toString('utf8').split('%ORIGIN%').join(siteOrigin(req)));
-    const headers = { 'Content-Type': MIME[path.extname(file)] || 'application/octet-stream', 'Cache-Control': rel.startsWith('/public/vendor/') ? 'public, max-age=31536000, immutable' : 'no-cache', 'Vary': 'Accept-Encoding' };
-    if (data.length > 1024 && !['.mp3', '.gif', '.png', '.jpg'].includes(path.extname(file)) && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) { data = zlib.gzipSync(data, { level: 6 }); headers['Content-Encoding'] = 'gzip'; }
+  // v0.57.3: each file is read and gzipped once per version (was: gzipSync of e.g. the 600 kB app.js on EVERY request, blocking
+  // the server ~20-40 ms each time), and carries an ETag, so a returning visitor's browser gets "304 Not Modified" instead of
+  // ~1.1 MB of scripts again (no-cache = "ask first", which only helps when there is something to ask with).
+  fs.stat(file, async (err, st) => {
+    if (err || !st.isFile()) { res.writeHead(404); return res.end('Not found'); }
+    const ext = path.extname(file), html = ext === '.html', origin = html ? siteOrigin(req) : '';
+    const key = file + '|' + origin;
+    let e = STATIC.get(key);
+    if (!e || e.mtimeMs !== st.mtimeMs || e.size !== st.size) {
+      let data; try { data = await fs.promises.readFile(file); } catch { res.writeHead(404); return res.end('Not found'); }
+      if (html) data = Buffer.from(data.toString('utf8').split('%ORIGIN%').join(origin));
+      const zip = data.length > 1024 && !['.mp3', '.gif', '.png', '.jpg', '.webp', '.woff2'].includes(ext);
+      e = { mtimeMs: st.mtimeMs, size: st.size, raw: data, gz: zip ? await new Promise((ok, no) => zlib.gzip(data, { level: 6 }, (er, b) => er ? no(er) : ok(b))) : null,
+        etag: '"' + crypto.createHash('sha1').update(data).digest('base64url').slice(0, 20) + '"' };
+      STATIC.set(key, e); STATIC_BYTES += e.raw.length + (e.gz ? e.gz.length : 0);
+      while (STATIC_BYTES > 64e6 && STATIC.size > 1) { const [k0, v0] = STATIC.entries().next().value; STATIC.delete(k0); STATIC_BYTES -= v0.raw.length + (v0.gz ? v0.gz.length : 0); }   // oldest out first
+    }
+    const gzipOk = !!e.gz && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''));
+    const headers = { 'Content-Type': MIME[ext] || 'application/octet-stream', 'Cache-Control': rel.startsWith('/public/vendor/') ? 'public, max-age=31536000, immutable' : 'no-cache', 'Vary': 'Accept-Encoding',
+      'ETag': gzipOk ? e.etag.replace(/"$/, '-gz"') : e.etag };
+    if (String(req.headers['if-none-match'] || '').split(/\s*,\s*/).includes(headers.ETag)) { res.writeHead(304, headers); return res.end(); }
+    const body = gzipOk ? e.gz : e.raw; if (gzipOk) headers['Content-Encoding'] = 'gzip';
+    headers['Content-Length'] = body.length;
     res.writeHead(200, headers);
-    res.end(data);
+    res.end(req.method === 'HEAD' ? undefined : body);
   });
 }
 
@@ -867,10 +887,14 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) { const seeded = seedCache(); if (seeded) console.log(`Demo data: ${seeded} files copied into the cache`); }
 server.seedCache = seedCache;
+const STATIC = new Map(); let STATIC_BYTES = 0;
 if (require.main === module) server.listen(PORT, () => {
   console.log(`ARCNAVE on http://localhost:${PORT}  (cache: ${CACHE_DIR}, ${MAX_UPSTREAM} parallel requests, ${IRSA_PARALLEL} IRSA image downloads at a time, ${RETRIES} retries)`);
   // v0.57.1: the release watcher, at start and once a day (a failure is quiet: the last list is kept)
-  const watch = () => releases().then(r => console.log(`SPHEREx releases at NASA: ${r.releases.join(', ')} (newest ${r.newest})${r.stale ? ', saved list (S3 not answering)' : ''}`)).catch(() => {});
+  // v0.57.3: the daily check asks S3 itself (fresh): from the cache, a day-old list was still "fresh" or came back stale,
+  // so a new release was logged 2-3 days late (review finding). The first check at start may use the saved list.
+  let watched = 0;
+  const watch = () => releases(watched++ ? { fresh: '1' } : {}).then(r => console.log(`SPHEREx releases at NASA: ${r.releases.join(', ')} (newest ${r.newest})${r.stale ? ', saved list (S3 not answering)' : ''}`)).catch(() => {});
   setTimeout(watch, 3000).unref(); setInterval(watch, DAY).unref();
 });
 module.exports = server;

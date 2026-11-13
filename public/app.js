@@ -253,6 +253,9 @@ async function relCheck() {
     const have = new Set(S.images.map(im => im.url)), nw = r.images.filter(im => !have.has(im.url)), gone = S.images.length - (r.images.length - nw.length);
     S.relCheck = { at: Date.now(), stale: !!r.stale, count: r.count, new: nw.length, gone };
     if (r.stale) { relRender('IRSA did not answer just now; nothing changed. Try again later.'); return; }
+    // v0.57.3: the server asks IRSA at most once a minute per spot; inside that minute a test field answers with its kept
+    // list, which is not "IRSA lists the same images" (review finding)
+    if (r.frozen && !r.frozenKept) { relRender('IRSA was asked for this spot less than a minute ago. Try again in a minute.'); return; }
     S.search.checkedAt = r.checkedAt || new Date().toISOString();
     if (!nw.length) { relRender(`Up to date: IRSA lists the same ${r.count} images.` + (gone > 0 ? ` (${gone} no longer listed.)` : '')); return; }
     const rels = [...new Set(nw.map(releaseOf).filter(Boolean))].join(', ') || 'a release', newest = fmtDay(Math.max(...nw.map(i => i.mjd)));
@@ -455,6 +458,7 @@ function buildFrame(buf, im, fld, pcIn) {
   const cv = document.createElement('canvas'); cv.width = cv.height = fld.n;
   const f = { im, flat0: g, touched0: touched, flat: g, touched, st, canvas: cv, rgb, shift: null, lamReal, mask, check,
     keep0: pc.flatKeep, flatKeep: pc.flatKeep, hard0: pc.touchedHard, touchedHard: pc.touchedHard };
+  f.rawFlags = rawFlagsOf(buf);   // v0.57.3: the pipeline's own FLAGS of this cutout (~0.4 MB), for a candidate's flag check
   paint(f);
   return f;
 }
@@ -845,7 +849,7 @@ function reportBox(pk) {
    spot (SIMBAD 1′, VizieR motions), then report. ARCNAVE answers the first ones from what it already has; the rest are links. */
 function candChecklist(pk) {
   const x = pk.item, mjd = x && x.im ? x.im.mjd : (S.eps.length ? S.eps[S.eps.length - 1].t0 : 0), cosd = Math.cos(pk.dec * Math.PI / 180);
-  const sep = (p) => Math.hypot((p[0] - pk.ra) * cosd, p[1] - pk.dec) * 3600;
+  const sep = (p) => { let dra = p[0] - pk.ra; dra -= 360 * Math.round(dra / 360); return Math.hypot(dra * cosd, p[1] - pk.dec) * 3600; };   // v0.57.3: RA wraps at 0/360
   const near = (list, at) => { let best = null; for (const s of list || []) { const p = at(s); if (!p) continue; const d = sep(p); if (!best || d < best.d) best = { s, d }; } return best; };
   const g = GAIA.data ? near(GAIA.data.stars, s => gAt(s, mjd)) : null, w = CW.src && CW.src.length ? near(CW.src, s => cwAt(s, mjd)) : null;
   const row = (st, txt) => h('li', { class: 'ck ' + st }, h('span', { class: 'ckm', 'aria-hidden': 'true' }, st === 'ok' ? '✓' : st === 'bad' ? '✗' : '·'), ' ', txt);
@@ -882,16 +886,30 @@ const FLAGSAT = new Map();
 async function pipeFlagsAt(im, ra, dec) {
   const fld = S.field; if (!fld) return null;
   const key = `${im.url}|${ra.toFixed(5)}|${dec.toFixed(5)}`; if (FLAGSAT.has(key)) return FLAGSAT.get(key);
-  const r = await fetch(`/api/spherex/cutout?url=${encodeURIComponent(im.url)}&ra=${fld.ra}&dec=${fld.dec}&size=${fld.size}&cached=1`);
-  if (r.status !== 200) return null;
-  const buf = await r.arrayBuffer(), hd = F.parseFITS(buf), hi = F.findHDU(hd, 'IMAGE'), hf = F.findHDU(hd, 'FLAGS');
-  if (!hi || !hf) return null;
-  const fl = F.readFlags(buf, hf), p = F.sky2pix(F.makeWCS(hi.header), ra, dec); if (!p) return null;
-  const names = F.flagBitNames(hf.header), byBit = Object.keys(names).length ? Object.fromEntries(Object.entries(names).map(([n, b]) => [b, n])) : FLAG_DR1;
+  // v0.57.3: the FLAGS the page kept when it built the frame (buildFrame), so this also works on a public host, where the
+  // images the page read from S3 are not saved on the server (review finding); else the server's saved cutout
+  let src = S.frames.get(im.url) && S.frames.get(im.url).rawFlags;
+  if (!src) {
+    const r = await fetch(`/api/spherex/cutout?url=${encodeURIComponent(im.url)}&ra=${fld.ra}&dec=${fld.dec}&size=${fld.size}&cached=1`);
+    if (r.status !== 200) return null;
+    src = rawFlagsOf(await r.arrayBuffer());
+  }
+  if (!src) return null;
+  const fl = src.fl, p = F.sky2pix(src.wcs, ra, dec); if (!p) return null;
+  const names = src.names, byBit = Object.keys(names).length ? Object.fromEntries(Object.entries(names).map(([n, b]) => [b, n])) : FLAG_DR1;
   let bits = 0; const x0 = Math.round(p[0] - 1), y0 = Math.round(p[1] - 1);   // sky2pix is 1-based (FITS)
   for (let y = y0 - 1; y <= y0 + 1; y++) for (let x = x0 - 1; x <= x0 + 1; x++) if (x >= 0 && y >= 0 && x < fl.nx && y < fl.ny) bits |= fl.data[y * fl.nx + x];
   const out = { bits: bits >>> 0, names: Object.keys(byBit).map(Number).filter(b => (bits >>> b) & 1).map(b => byBit[b]) };
   FLAGSAT.set(key, out); return out;
+}
+// The FLAGS image of one cutout with its WCS and bit names; null unless it is a plain integer image the size of IMAGE (a
+// tile-compressed table read as pixels would give false flags: review finding)
+function rawFlagsOf(buf, hdIn) {
+  try {
+    const hd = hdIn || F.parseFITS(buf), hi = F.findHDU(hd, 'IMAGE'), hf = F.findHDU(hd, 'FLAGS');
+    if (!hi || !hf || hf.header.ZIMAGE || hf.header.XTENSION === 'BINTABLE' || hf.header.NAXIS1 !== hi.header.NAXIS1 || hf.header.NAXIS2 !== hi.header.NAXIS2) return null;
+    return { fl: F.readFlags(buf, hf), wcs: F.makeWCS(hi.header), names: F.flagBitNames(hf.header) };
+  } catch { return null; }
 }
 /* ---------- v0.57: this spot elsewhere: every resource the NASA challenge lists, and the archives volunteers use ----------
    NASA/IPAC IRSA (SPHEREx tools, tutorial notebooks, DR1), WiseView (the WISE tool the challenge names as a model), Gaia
@@ -2517,7 +2535,7 @@ async function runAgents(target, opts = {}) {
     // 2. Archivist
     cur = 'arc'; setAgent('arc', 'run', 'Searching the IRSA archive...');
     S.userBand = opts.band != null;
-    if (S.userBand) { S.band = opts.band; $('band').value = S.band; }
+    if (S.userBand) { S.band = opts.band; $('band').value = S.band; spxFollow(); }
     waitStart('search');
     const ok = await loadField(ra, dec, { auto: opts.band == null });   // a colour the user picked is kept, not replaced by the best-match colour
     if (!live()) return;
