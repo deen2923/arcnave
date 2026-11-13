@@ -15,6 +15,14 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.56.2: one honest number for Epsilon Indi B (13 Nov 2026)
+The start page said 5.03 ± 0.41″ a year (360 days); the target card said 4.4″ in a year. Re-measured twice today with the
+app's own film on the cached field (8 images per pass, all 4 passes, Apr 2025 to Sep 2026): **4.32 ± 0.27″ a year
+south-east** (🔭 deep search), 5.9″ in 515 days; the catalogue says 4.68″ a year (1.4σ away). The start page (all four
+languages) now says "4.3 ± 0.3″ a year over 4 passes (5.9″ in 515 days); the catalogue predicts 4.7″", and the target card
+adds the same 4-pass value beside its one-year 4.4″. The 5.03 ± 0.41 is withdrawn. Epsilon Indi A is saturated in 17 of 18
+images, so the film shows it as the catalogue predicts it, not as a measurement.
+
 ## v0.56.1: a calmer start page, a film that stays in view (13 Nov 2026)
 - **Start page:** the hero is centred, with the picture below the words (desktop and phone). The picture is now the
   Lindbloom blink only, playing as soon as the page shows; its caption says plainly that 3865 Lindbloom is a known

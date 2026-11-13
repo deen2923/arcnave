@@ -1395,7 +1395,7 @@ const CHALLENGE = {
   epsindb: { name: 'Epsilon Indi B', kind: 'motion', band: 4.6, ra0: 331.04383, dec0: -56.782694, ep: 51491.54, pmra: 3981.977, pmdec: -2466.832, plx: 274.84,   // plx: Gaia DR3 for Epsilon Indi A, the same system (v0.46)
     companion: { name: 'Epsilon Indi A', ra0: 330.840223, dec0: -56.786256, ep: 51544.5, pmra: 3966.661, pmdec: -2536.192 },
     what: 'A pair of brown dwarfs (too small to shine like stars) orbiting the star Epsilon Indi A, 12 light years away. They move 4.7″ per year.',
-    res: { badge: ['ok', '✓ Motion seen'], text: 'At 4.6 µm (brown dwarfs are bright there) it moved 4.4″ between Apr 2025 and Apr 2026, where its known motion predicts 4.7″. Its parent star Epsilon Indi A, 6.5′ away in the same images, moved 5.3″ the same way (predicted 4.7″); four other bright stars moved 0 to 0.9″. The two brown dwarfs (0.7″ apart) are one dot to SPHEREx. Its spectrum (button below, about 40 s): brightest near 4.1 µm, with deep dips near 1.4 µm and from 2.3 to 3.6 µm where water and methane absorb, as expected for a cool brown dwarf; at J and H it matches 2MASS within 7 %.' } },
+    res: { badge: ['ok', '✓ Motion seen'], text: 'At 4.6 µm (brown dwarfs are bright there) it moved 4.4″ between Apr 2025 and Apr 2026, where its known motion predicts 4.7″. Over all four passes (Apr 2025 to Sep 2026, 515 days) the film (🎬 Animate) measures 4.3 ± 0.3″ a year south-east. Its parent star Epsilon Indi A, 6.5′ away in the same images, moved 5.3″ the same way (predicted 4.7″); four other bright stars moved 0 to 0.9″. The two brown dwarfs (0.7″ apart) are one dot to SPHEREx. Its spectrum (button below, about 40 s): brightest near 4.1 µm, with deep dips near 1.4 µm and from 2.3 to 3.6 µm where water and methane absorb, as expected for a cool brown dwarf; at J and H it matches 2MASS within 7 %.' } },
   // WISE 0855 needs every image at 4.4-5 um (43 in a 0.25 deg field) and a fit that separates it from a background object
   // 4-11" away (bg: its position measured on 24 images at 1.2 um, where WISE 0855 is invisible; scatter 0.6").
   wise0855: { name: 'WISE 0855−0714', kind: 'motion', band: 4.7, depth: 30, size: '0.25', center: [133.79513, -7.24515], bg: [133.758127, -7.241136],
@@ -5842,7 +5842,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.56.1', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.56.2', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
