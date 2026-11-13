@@ -1,5 +1,5 @@
 # Makes deploy\out\arcnave-deploy.tgz (the app + demo-cache, without the local cache, backups and docs) to copy to the server.
-# Run in PowerShell from the ARCNAVE-REDESIGN folder:   powershell -ExecutionPolicy Bypass -File deploy\pack.ps1
+# Run in PowerShell from the repo folder "D:\ARCNAVE-SPHEREX\ARCNAVE SPHEREX":   powershell -ExecutionPolicy Bypass -File deploy\pack.ps1
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root

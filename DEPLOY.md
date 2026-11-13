@@ -65,7 +65,7 @@ PowerShell on your PC. The first command makes Windows accept the key file:
 
 ```powershell
 icacls "$HOME\.ssh\arcnave-oracle.key" /inheritance:r /grant:r "$($env:USERNAME):(R)"
-scp -i "$HOME\.ssh\arcnave-oracle.key" D:\ARCNAVE-SPHEREX\ARCNAVE-REDESIGN\deploy\oracle-setup.sh ubuntu@<PUBLIC-IP>:
+scp -i "$HOME\.ssh\arcnave-oracle.key" "D:\ARCNAVE-SPHEREX\ARCNAVE SPHEREX\deploy\oracle-setup.sh" ubuntu@<PUBLIC-IP>:
 ssh -i "$HOME\.ssh\arcnave-oracle.key" ubuntu@<PUBLIC-IP>
 ```
 
@@ -82,7 +82,7 @@ Log in again with the same `ssh` command, so Docker works without `sudo`.
 On your PC (PowerShell):
 
 ```powershell
-cd D:\ARCNAVE-SPHEREX\ARCNAVE-REDESIGN
+cd "D:\ARCNAVE-SPHEREX\ARCNAVE SPHEREX"   # the git repo (NOT the old ARCNAVE-REDESIGN copy, which is v0.55)
 powershell -ExecutionPolicy Bypass -File deploy\pack.ps1
 scp -i "$HOME\.ssh\arcnave-oracle.key" deploy\out\arcnave-deploy.tgz ubuntu@<PUBLIC-IP>:
 ```

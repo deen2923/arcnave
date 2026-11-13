@@ -15,6 +15,19 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.6: ready for the public server (13 Nov 2026)
+- **The 18 test fields stay as measured on the public server too.** Their image lists (QR2 + QR3, 0 DR1) are now in
+  `demo-cache/api` (2.3 MB), which goes into the Docker image; shipped lists are frozen like pinned ones. Before, only the 5
+  NASA targets and the examples were shipped, so a fresh server would have listed DR1 for the scorecard fields and
+  measured other numbers than the ones quoted. On a server near AWS the images themselves come from S3 in seconds.
+- **Three NASA targets' shipped lists were older than the measured ones** (29 Oct vs 12 Nov): Barnard 357 → 359 images,
+  **Epsilon Indi B 325 → 445** (the September 2026 pass was missing, so a fresh server would have shown 3 passes, not the
+  quoted 4 passes over 515 days), R Draconis 2454 → 2483. `demo-cache` now has the lists the numbers were measured on.
+  Checked on a fresh public-mode server with an empty cache: all 37 shipped lists frozen, no DR1, 2.5 s for all of them,
+  and no archive search needed (IRSA's TAP was not answering that evening).
+- **DEPLOY.md and deploy/pack.ps1 name the right folder** (`D:\ARCNAVE-SPHEREX\ARCNAVE SPHEREX`, the git repo). They still
+  named the old `ARCNAVE-REDESIGN` copy (v0.55), so following them would have deployed old code.
+
 ## v0.57.5: this spot as a Jupyter notebook (13 Nov 2026)
 "Copy Python" (v0.39) gave a short script: the archive query and the first and last images side by side. **Share → Python
 notebook** now downloads a Jupyter notebook (`public/notebook.js`, also as one `.py`) in the style of IRSA's SPHEREx tutorial
