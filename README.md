@@ -15,6 +15,22 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.4: NEOSSat's own pictures of the spot (13 Nov 2026)
+Of the challenge's four Canadian Space Agency resources, ARCNAVE only counted NEOSSat frames (v0.57). Now it shows them:
+- **Server:** `/api/neossat` also lists the nights NEOSSat looked (CADC TAP, raw frames; DARK/FLAT/BIAS frames have no sky
+  and are left out): up to 8, spread over the years, each with its middle frame. `/api/neossat/preview?id=…[&s=256]` fetches
+  CADC's own preview picture of that frame (`ws-cadc.canfar.net/minoc/files/cadc:NEOSSAT/<id>_raw_prev[_256].png`), only for
+  13-digit ids, and keeps it in `cache/neossat/` (counted in the cache limit), so a demo opens them offline.
+- **App:** "This spot elsewhere" shows the nights as thumbnails (date, frames that night); a click opens the large picture.
+  Barnard's Star: 652 frames, 14 nights with sky (2019-10-13 to 2022-11-14), 8 shown. New row "About NEOSSat": the CSA
+  mission page, the Python data tutorial and the open dataset, so all 8 challenge resources are linked from the app.
+- **Honest limits:** the frames are pointed and turned differently, and the 2019 Barnard frames are 728×256 sub-frames with
+  no sky coordinates (the 2022 one has only the pointing's), so ARCNAVE lines nothing up and measures nothing on them.
+- Tests: nights (grouping, middle frame, darks and junk ids dropped, at most 8 with first and last kept), previews (bad id
+  refused, saved, 404 when CADC has none, served offline).
+- v0.57.3 (committed just before): review fixes left by another session (test-field lists during a fresh check, SPHEREx
+  sky-tile bans per frame, static files gzipped once with ETags, candidate flags from the page's own FLAGS).
+
 ## v0.57.2: SPHEREx's own sky, NASA's flags on a candidate, a WiseView-style view (13 Nov 2026)
 Four upgrades from the challenge's resources, none of which changes a measured number:
 - **SPHEREx DR1 all-sky as the base sky** (Base sky → "SPHEREx DR1 all-sky (NASA, follows Color)"). IRSA released NASA's own
