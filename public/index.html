@@ -121,22 +121,15 @@
             <li><svg class="ic" aria-hidden="true"><use href="#i-phone"/></svg><span data-i18n="trust.phone">Works on phones</span></li>
           </ul>
         </div>
-        <figure class="lp-scope lp-media" id="lp-see">
-          <div class="sbar"><span class="rec" aria-hidden="true"><i></i>SPHEREx</span>
-            <span class="lp-mtabs" role="tablist" aria-label="What the picture shows">
-              <button type="button" role="tab" aria-selected="true" aria-controls="lpm-film" id="lpt-film" data-media="film" data-i18n="v5.m.film">Film</button>
-              <button type="button" role="tab" aria-selected="false" aria-controls="lpm-blink" id="lpt-blink" data-media="blink" data-i18n="v5.m.blink">Blink</button></span></div>
-          <div class="sview" id="lpm-film" role="tabpanel" aria-labelledby="lpt-film">
-            <img src="/img/hero/film-epsindi.jpg" width="800" height="504" fetchpriority="high" alt="A real ARCNAVE film frame of NASA's Epsilon Indi B field: numbered circles P1 to P4 mark where Epsilon Indi B and its bright partner Epsilon Indi A were in four SPHEREx passes, both moving south-east.">
-            <span class="stag" aria-hidden="true" data-i18n="start.real">Real SPHEREx images</span>
-          </div>
-          <div class="sview" id="lpm-blink" role="tabpanel" aria-labelledby="lpt-blink" hidden>
-            <img id="lpgif" src="/hero-still.png" data-anim="/hero-blink.gif" width="360" height="323" loading="lazy" alt="Real SPHEREx images of one patch of sky shown one after another: a faint dot, asteroid 3865 Lindbloom, moves while the stars stay still.">
+        <figure class="lp-scope lp-media lp-blinkonly" id="lp-see">
+          <div class="sbar"><span class="rec" aria-hidden="true"><i></i>SPHEREx</span><span class="lp-btag" data-i18n="v5.m.blink">Blink</span></div>
+          <div class="sview" id="lpm-blink">
+            <img id="lpgif" src="/hero-still.png" data-anim="/hero-blink.gif" width="360" height="323" fetchpriority="high" alt="Real SPHEREx images of one patch of sky shown one after another: a faint dot, the known asteroid 3865 Lindbloom, moves while the stars stay still.">
             <span class="ret" aria-hidden="true"></span>
             <span class="stag" aria-hidden="true" data-i18n="start.real">Real SPHEREx images</span>
           </div>
-          <div class="lp-ticks" aria-hidden="true" hidden><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
-          <figcaption><span class="cap-film" data-i18n="v5.m.filmcap">A real ARCNAVE film of NASA's Epsilon Indi B field: four SPHEREx passes, April 2025 to September 2026, a numbered circle for each. Epsilon Indi B moved 5.9″ south-east; its bright partner A moved too.</span><span class="cap-blink" hidden data-i18n="hero.cap">Real SPHEREx frames from ARCNAVE's built-in example: asteroid 3865 Lindbloom moves, the stars stay put.</span></figcaption>
+          <div class="lp-ticks" aria-hidden="true"><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+          <figcaption><span class="cap-blink" data-i18n="hero.cap">Real NASA SPHEREx images, blinked: ARCNAVE caught the known asteroid 3865 Lindbloom moving while the stars stay put.</span></figcaption>
         </figure>
       </div>
     </header>
@@ -282,7 +275,7 @@
           <li>NASA SPHEREx · NASA/IPAC IRSA</li><li>ESA Gaia DR3</li><li>NASA WISE · CatWISE2020 · AllWISE · 2MASS</li><li>IMCCE SkyBoT · Minor Planet Center</li><li>NASA JPL Horizons</li><li>CDS Aladin Lite, HiPS &amp; SIMBAD</li></ul></div>
         <div><h3 data-i18n="ft.tool">The tool</h3><ul>
           <li><a href="#" data-launch data-i18n="cta.launch">Launch ARCNAVE</a></li><li><a href="#lp-targets" data-i18n="nav.targets">Test targets</a></li><li><a href="/about.html#tested" data-i18n="ft.tested">How we tested it</a></li><li><a href="/about.html#limits" data-i18n="ft.limits">Limits, honestly</a></li><li><a href="#top" data-i18n="v5.top">Back to top</a></li></ul></div>
-        <p class="fine"><span data-i18n="ft.fine">Images are false-colour infrared. Planet X is hypothetical. No discovery is claimed.</span><span class="mono">v0.56.0</span></p>
+        <p class="fine"><span data-i18n="ft.fine">Images are false-colour infrared. Planet X is hypothetical. No discovery is claimed.</span><span class="mono">v0.56.1</span></p>
       </div>
     </footer>
   </div>
