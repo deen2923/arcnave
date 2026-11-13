@@ -350,6 +350,24 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     assert.ok(offF.stale === true && offF.count === 1, 'a fresh check offline should say the saved list is used: ' + JSON.stringify(offF).slice(0, 200));
     assert.strictEqual((await get('/api/spherex/search?ra=10&dec=10')).s, 502, 'never-seen field offline must fail honestly');
     global.fetch = realFetch;
+    // v0.56.3: a pinned search (a test field) is frozen: an old one is served as it is and never asked again in the
+    // background; "Check for new data" (fresh) shows IRSA's list without saving over it; latest=1 keeps its own list
+    fs.writeFileSync(path.join(process.env.SKYSHIFT_CACHE_DIR, 'pinned.json'), JSON.stringify({ api: [sfile], cutouts: [] }));
+    S._test.clearMemory();
+    const before = fs.readFileSync(path.join(cacheDir, sfile), 'utf8'), nF = calls.length;
+    const fz = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
+    await new Promise(r => setTimeout(r, 100));
+    assert.ok(fz.frozen === true && fz.count === 1, 'a pinned search should be served frozen: ' + JSON.stringify(fz).slice(0, 200));
+    assert.strictEqual(calls.length, nF, 'a frozen search must not be asked again in the background');
+    S._test.clearMemory();
+    const fzF = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4&fresh=1')).t);
+    assert.ok(fzF.frozenKept === true && calls.length > nF, 'a fresh check on a frozen field asks IRSA and says the list was kept');
+    assert.strictEqual(fs.readFileSync(path.join(cacheDir, sfile), 'utf8'), before, 'the frozen list must not be replaced');
+    await new Promise(r => setTimeout(r, 20));
+    const fz2 = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
+    assert.ok(fz2.frozen === true && !fz2.frozenKept, 'after a fresh check the next ordinary visit gets the frozen list again (not the fresh one from memory)');
+    const lt = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4&latest=1')).t);
+    assert.ok(!lt.frozen && lt.count >= 1 && fs.readdirSync(cacheDir).some(f => f.startsWith('searchl-')), 'latest=1 keeps its own list: ' + JSON.stringify(lt).slice(0, 200));
     const h = JSON.parse((await get('/api/health')).t); assert.ok(h.ok && h.cache.files >= 2 && h.stats.downloads >= 1, JSON.stringify(h));
     fs.rmSync(process.env.SKYSHIFT_CACHE_DIR, { recursive: true, force: true });
     await new Promise(r => server.close(r));

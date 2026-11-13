@@ -15,6 +15,21 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.56.3: NASA's DR1 is out; the test fields stay fast (13 Nov 2026)
+NASA/IPAC IRSA released **SPHEREx Data Release 1 (DR1)** in November 2026: passes 1 and 2 reprocessed, QR2 no longer
+listed (its files stay downloadable until February 2027). ARCNAVE's archive search needed no change: a new spot now lists
+DR1 + QR3 by itself (Barnard's field: 239 DR1 + 119 QR3 images, no image listed twice). But every image has a new file name,
+so each saved field would have refreshed its list within a day and downloaded about 100 MB again, and every number ARCNAVE
+quotes was measured on the QR2 + QR3 lists.
+- **Frozen test fields.** The image lists of the 29 pinned start-screen fields and the shipped examples (37 in all) are never
+  asked again in the background. Barnard's Star opens with its report in 11 s and 0 images downloaded. The Releases panel
+  says so ("Kept as measured"), and "Check for new data" shows what IRSA lists now without replacing the frozen list;
+  "Switch this spot to the new list" then uses DR1 (kept apart, `searchl` in the cache, so it is fast the second time).
+- **Measured on this PC (one DR1 image, Barnard's 0.5° field):** S3 row read 4.36 MB, 6.4 s once the header layout is known
+  (IMAGE 2.45 MB, FLAGS 1.63 MB: DR1's FLAGS compress worse than QR3's 0.90 MB); IRSA's own cutout service 5.3 MB and 13-20 s
+  per image (it keeps the PSF and VARIANCE), 23 s for 6 in parallel. So the page's S3 read stays; the network is the limit.
+- **Fix:** the Releases panel no longer prints the word "null".
+
 ## v0.56.2: one honest number for Epsilon Indi B (13 Nov 2026)
 The start page said 5.03 ± 0.41″ a year (360 days); the target card said 4.4″ in a year. Re-measured twice today with the
 app's own film on the cached field (8 images per pass, all 4 passes, Apr 2025 to Sep 2026): **4.32 ± 0.27″ a year

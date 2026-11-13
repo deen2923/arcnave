@@ -122,11 +122,26 @@ async function cacheInfo() {
 // (marked stale) so a demo keeps working offline.
 // v0.55 U7: fresh = ask upstream now, past both caches (the "Check for new data" button); the answer replaces the cached one
 const REVALIDATING = new Set(), SWR_OFF = process.env.SKYSHIFT_SWR === '0';
+// v0.56.3: the image lists of the start screen's fields (pinned by tools/pin-cache.js) and of the shipped examples are FROZEN:
+// never asked again in the background, never replaced. NASA's DR1 (Nov 2026) re-lists every image under new file names, so a
+// refreshed list would make each of those fields download ~100 MB again, and ARCNAVE's quoted numbers were measured on these
+// lists (QR2 + QR3). "Check for new data" still shows the archive's list now, and ?latest=1 keeps its own list (kind searchl).
+let FROZEN = { at: 0, set: new Set() };
+async function frozenSet() {
+  if (Date.now() - FROZEN.at < 60e3) return FROZEN.set;
+  const set = new Set();
+  try { for (const n of JSON.parse(await fs.promises.readFile(path.join(CACHE_DIR, 'pinned.json'), 'utf8')).api || []) set.add(n); } catch { /* nothing pinned */ }
+  try { for (const n of await fs.promises.readdir(path.join(SEED_DIR, 'api'))) set.add(n); } catch { /* no seed folder */ }
+  FROZEN = { at: Date.now(), set }; return set;
+}
 function cachedJSON(kind, key, ttlMs, fn, fresh = false) {
   const run = async () => {
     const file = path.join(CACHE_DIR, 'api', kind + '-' + hash(key) + '.json');
     const old = await diskRead(file);
     let saved = null; try { saved = old && JSON.parse(old.toString('utf8')); } catch { saved = null; }
+    const frozen = kind === 'search' && saved && (await frozenSet()).has(path.basename(file));
+    if (frozen && !fresh) { stats.diskHits++; stats.frozenHits = (stats.frozenHits || 0) + 1; return Object.assign({}, saved.data, { frozen: true }); }
+    if (frozen && fresh) return Object.assign({}, await fn(), { frozen: true, frozenKept: true });   // shown, not saved over the frozen list
     if (!fresh && saved && Date.now() - saved.savedAt < ttlMs) { stats.diskHits++; return saved.data; }
     // v0.56: an answer past its time is still served at once (a field opened before must not wait 6-16 s for IRSA again
     // after a day), and asked for again in the background; the next visit gets the new one. "Check for new data" (fresh)
@@ -148,7 +163,11 @@ function cachedJSON(kind, key, ttlMs, fn, fresh = false) {
   };
   if (!fresh) return cached(kind + ':' + key, Math.min(ttlMs, 3600e3), run);
   const p = run().catch(e => { cache.delete(kind + ':' + key); throw e; });
-  cache.set(kind + ':' + key, { exp: Date.now() + Math.min(ttlMs, 3600e3), p }); return p;
+  cache.set(kind + ':' + key, { exp: Date.now() + Math.min(ttlMs, 3600e3), p });
+  // v0.56.3: a frozen list's fresh check is shown once, never kept in memory in place of the frozen list (seen live: the
+  // next ordinary visit got the new list for an hour)
+  p.then(d => { if (d && d.frozenKept && cache.get(kind + ':' + key)?.p === p) cache.delete(kind + ':' + key); }, () => {});
+  return p;
 }
 
 // Copy the shipped demo results into the cache folder (only files that are not there yet). JSON answers get a fresh date, so
@@ -254,7 +273,8 @@ async function spherexSearch(q) {
   let fresh = q.fresh === '1' && !(Date.now() - (FRESH.get(key) || 0) < 60e3);
   if (fresh) { FRESH.set(key, Date.now()); if (FRESH.size > 500) FRESH.delete(FRESH.keys().next().value); }
   // Archive lists change only when IRSA adds a data release: one day is fresh enough.
-  return cachedJSON('search', key, DAY, async () => {
+  // v0.56.3: latest=1 = the archive's list now, kept apart from a frozen list (see frozenSet)
+  return cachedJSON(q.latest === '1' ? 'searchl' : 'search', key, DAY, async () => {
     const adql =
       "SELECT TOP 4000 'https://irsa.ipac.caltech.edu/' || a.uri AS download_url, p.obs_publisher_did, " +
       'p.time_bounds_lower, p.time_bounds_upper, p.energy_bandpassname, p.energy_bounds_lower, p.energy_bounds_upper, p.poly ' +
@@ -781,4 +801,4 @@ if (require.main === module) { const seeded = seedCache(); if (seeded) console.l
 server.seedCache = seedCache;
 if (require.main === module) server.listen(PORT, () => console.log(`ARCNAVE on http://localhost:${PORT}  (cache: ${CACHE_DIR}, ${MAX_UPSTREAM} parallel requests, ${IRSA_PARALLEL} IRSA image downloads at a time, ${RETRIES} retries)`));
 module.exports = server;
-module.exports._test = { readPsfZone, stripFits, stats, clearMemory: () => { cache.clear(); CUTOUT.clear(); }, prune, movers, SKYBOT, MPC, catwise };
+module.exports._test = { readPsfZone, stripFits, stats, clearMemory: () => { cache.clear(); CUTOUT.clear(); FROZEN.at = 0; FRESH.clear(); }, prune, movers, SKYBOT, MPC, catwise };
