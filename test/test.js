@@ -411,7 +411,10 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
       if (u.includes('mast.stsci.edu/vo-tap/api/v0.1/gaiadr3/sync') && decodeURIComponent(u).includes('dbo.gaia_source')) return ok('source_id,ra,dec,parallax,pmra,pmdec,phot_g_mean_mag\n4472832130942575872,269.4485,4.7394,546.98,-801.55,10362.39,8.19\n');
       if (u.includes('ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/argus/sync')) { const q = decodeURIComponent(u);
         if (!q.includes("o.collection = 'NEOSSAT'")) return { ok: false, status: 400, text: async () => 'bad query' };
+        if (q.includes("p.productID = 'raw'")) return ok('id,target,t\n2018318010000,BarnardStar,58436.10\n2018318010100,BarnardStar,58436.20\n2018318010200,BarnardStar,58436.30\n2019337012448,BarnardStar,58820.05\n2022318120952,TOIobject2134.02,59897.50\n2019305153110,DARK,58788.64\nbad,x,1\n');   // v0.57.4: nights
         return ok(q.includes('GROUP BY') ? 'name,n\nBarnardStar,653\nDARK,6\n' : 'n,t0,t1\n660,58436.976,61068.901\n'); }
+      if (u.startsWith('https://ws-cadc.canfar.net/minoc/files/cadc:NEOSSAT/')) { const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47]), Buffer.alloc(200, 7)]);
+        return u.endsWith('2019337012448_raw_prev_256.png') ? { ok: true, status: 200, arrayBuffer: async () => png.buffer.slice(png.byteOffset, png.byteOffset + png.length) } : { ok: false, status: 404, text: async () => 'no file' }; }
       return { ok: false, status: 404, text: async () => 'not here' }; };
     S._test.clearMemory();
     const gm = JSON.parse((await get('/api/gaia?ra=269.452&dec=4.693&r=0.05')).t);
@@ -420,6 +423,17 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     const ns = JSON.parse((await get('/api/neossat?ra=269.452&dec=4.693&r=0.5')).t);
     assert.ok(ns.n === 660 && ns.first === '2018-11-14' && ns.last === '2026-01-28' && ns.targets[0].name === 'BarnardStar' && ns.targets[0].n === 653, 'NEOSSat count: ' + JSON.stringify(ns));
     assert.strictEqual((await get('/api/neossat?ra=999&dec=0')).s, 400, 'a bad position is refused');
+    // v0.57.4: one frame per night, oldest first, the middle frame of the night; junk ids dropped
+    assert.deepStrictEqual(ns.nights.map(x => [x.date, x.n, x.target, x.id]), [['2018-11-14', 3, 'BarnardStar', '2018318010100'], ['2019-12-03', 1, 'BarnardStar', '2019337012448'], ['2022-11-14', 1, 'TOIobject2134.02', '2022318120952']], 'NEOSSat nights: ' + JSON.stringify(ns.nights));
+    const many = S._test.neoNights(Array.from({ length: 20 }, (_, i) => ({ id: String(2018000000000 + i), target: 'T', t: 58000 + i * 30 })));
+    assert.ok(many.total === 20 && many.nights.length === 8 && many.nights[0].date === '2017-09-04' && many.nights[7].id === '2018000000019', 'at most 8 nights, first and last kept: ' + JSON.stringify(many.nights[0]));
+    // v0.57.4: preview pictures: only 13-digit ids, saved on disk, served from disk when CADC is gone
+    assert.strictEqual((await get('/api/neossat/preview?id=../../etc')).s, 400, 'a bad id is refused');
+    const pv = await get('/api/neossat/preview?id=2019337012448&s=256');
+    assert.ok(pv.s === 200 && pv.t.includes('PNG') && fs.existsSync(path.join(process.env.SKYSHIFT_CACHE_DIR, 'neossat', '2019337012448_raw_prev_256.png')), 'preview fetched and saved: ' + pv.s);
+    assert.strictEqual((await get('/api/neossat/preview?id=2019337012449&s=256')).s, 404, 'a frame CADC does not have is a 404');
+    global.fetch = async () => { throw new Error('offline'); };
+    assert.strictEqual((await get('/api/neossat/preview?id=2019337012448&s=256')).s, 200, 'a saved preview opens offline');
     global.fetch = rfG;
     // v0.57.1: the release watcher reads the S3 bucket's top folders; a release this version was not built with is "new"
     const rfR = global.fetch; let rcalls = 0;

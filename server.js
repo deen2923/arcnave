@@ -97,7 +97,7 @@ let writes = 0;
 async function prune() {
   const files = [];
   let spxDirs = []; try { spxDirs = (await fs.promises.readdir(path.join(CACHE_DIR, 'hips'))).filter(d => /^sphx\d+$/.test(d)).map(d => 'hips/' + d); } catch { /* none yet */ }
-  for (const sub of ['cutouts', 'api', ...Object.keys(HIPS).map(k => 'hips/' + k), ...spxDirs]) {   // v0.21: sky tiles count too (v0.57.2: and SPHEREx's own sky)
+  for (const sub of ['cutouts', 'api', 'neossat', ...Object.keys(HIPS).map(k => 'hips/' + k), ...spxDirs]) {   // v0.21: sky tiles count too (v0.57.2: and SPHEREx's own sky)
     const dir = path.join(CACHE_DIR, sub);
     let names = []; try { names = await fs.promises.readdir(dir); } catch { continue; }
     // never evict the shipped example files: seen live after the 18-field scorecard filled the cache past the limit,
@@ -402,10 +402,27 @@ async function gaia(q) {
 /* ---------- v0.57: has the Canadian Space Agency's NEOSSat looked here? (a challenge partner resource) ----------
    NEOSSat (15 cm, 0.86° field, 3″ pixels, visible light) is pointed at chosen targets, not a survey, so most spots have
    none; Barnard's Star has ~650 frames from 2018 on. CADC's TAP (CAOM2, collection NEOSSAT) is asked here: it sends no CORS
-   header. Only a count, the dates and the main targets: the frames themselves open at CADC. Cached 7 days. */
+   header. A count, the dates and the main targets, and (v0.57.4) the nights it looked: up to 8, spread over the years, each
+   with one frame whose preview picture CADC made (/api/neossat/preview). Cached 7 days. */
+const NEO_FILES = 'https://ws-cadc.canfar.net/minoc/files/cadc:NEOSSAT/';
+function neoNights(rows, max = 8) {
+  const by = new Map();
+  for (const o of rows) {
+    const t = parseFloat(o.t), id = String(o.id || '');
+    // DARK (and FLAT/BIAS) frames are taken with no sky on them: seen live at Barnard's Star (2018-11-14, 2019-11-01)
+    if (!Number.isFinite(t) || !/^\d{13}$/.test(id) || /^(DARK|FLAT|BIAS)/i.test(String(o.target || '').trim())) continue;
+    const d = Math.floor(t); if (!by.has(d)) by.set(d, []); by.get(d).push({ id, t, target: String(o.target || '').slice(0, 60) });
+  }
+  const nights = [...by.entries()].sort((a, b) => a[0] - b[0]).map(([d, fr]) => {
+    fr.sort((a, b) => a.t - b.t); const tc = {}; for (const f of fr) tc[f.target] = (tc[f.target] || 0) + 1;
+    return { date: new Date((d - 40587) * 864e5).toISOString().slice(0, 10), n: fr.length, target: Object.entries(tc).sort((a, b) => b[1] - a[1])[0][0], id: fr[fr.length >> 1].id };
+  });
+  if (nights.length <= max) return { nights, total: nights.length };
+  return { nights: Array.from({ length: max }, (_, i) => nights[Math.round(i * (nights.length - 1) / (max - 1))]), total: nights.length };
+}
 async function neossat(q) {
   const ra = num(q.ra, 0, 360, 'ra'), dec = num(q.dec, -90, 90, 'dec'), r = Math.min(1, Math.max(0.01, +q.r || 0.25));
-  return cachedJSON('neossat', `${ra.toFixed(3)},${dec.toFixed(3)},${r.toFixed(3)}`, 7 * DAY, async () => {
+  return cachedJSON('neossat', `${ra.toFixed(3)},${dec.toFixed(3)},${r.toFixed(3)},nights`, 7 * DAY, async () => {
     const where = `o.collection = 'NEOSSAT' AND INTERSECTS(CIRCLE('ICRS', ${ra}, ${dec}, ${r}), p.position_bounds) = 1`;
     const tap = a => upstream('https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/argus/sync?LANG=ADQL&FORMAT=csv&QUERY=' + encodeURIComponent(a), { timeout: 60000, retries: 1 });
     const [all] = P.parseCSV(await tap(`SELECT COUNT(*) AS n, MIN(p.time_bounds_lower) AS t0, MAX(p.time_bounds_lower) AS t1 FROM caom2.Plane AS p JOIN caom2.Observation AS o ON p.obsID = o.obsID WHERE ${where}`));
@@ -413,8 +430,29 @@ async function neossat(q) {
     const targets = n ? P.parseCSV(await tap(`SELECT TOP 5 o.target_name AS name, COUNT(*) AS n FROM caom2.Plane AS p JOIN caom2.Observation AS o ON p.obsID = o.obsID WHERE ${where} GROUP BY o.target_name ORDER BY n DESC`))
       .map(t => ({ name: String(t.name || '').slice(0, 60), n: +t.n || 0 })).filter(t => t.n) : [];
     const day = m => { const x = parseFloat(m); return Number.isFinite(x) ? new Date((x - 40587) * 864e5).toISOString().slice(0, 10) : null; };
-    return { ra, dec, r, n, first: n ? day(all.t0) : null, last: n ? day(all.t1) : null, targets, via: 'CADC' };
+    // v0.57.4: the nights (raw frames: every NEOSSat frame has one, with a preview picture), one frame each
+    let nights = [], nightsTotal = 0;
+    if (n) { try {
+      const rows = P.parseCSV(await tap(`SELECT TOP 5000 o.observationID AS id, o.target_name AS target, p.time_bounds_lower AS t FROM caom2.Plane AS p JOIN caom2.Observation AS o ON p.obsID = o.obsID WHERE ${where} AND p.productID = 'raw' ORDER BY p.time_bounds_lower`));
+      ({ nights, total: nightsTotal } = neoNights(rows));
+    } catch { /* the count still stands */ } }
+    return { ra, dec, r, n, first: n ? day(all.t0) : null, last: n ? day(all.t1) : null, targets, nights, nightsTotal, via: 'CADC' };
   });
+}
+// v0.57.4: one NEOSSat frame's preview picture (CADC makes them: s=256 a thumbnail, else ~1000 px), saved on disk like sky
+// tiles so a demo opens them offline. Only 13-digit observation ids, only the two preview files: nothing else is fetched.
+async function neossatPreview(q, res) {
+  const id = String(q.id || ''), small = q.s === '256';
+  if (!/^\d{13}$/.test(id)) { const e = new Error('id must be a 13-digit NEOSSat observation id'); e.status = 400; throw e; }
+  const name = `${id}_raw_prev${small ? '_256' : ''}.png`, file = path.join(CACHE_DIR, 'neossat', name);
+  let body = await diskRead(file), from = 'disk';
+  if (!body) {
+    body = await upstream(NEO_FILES + name, { timeout: 30000, retries: 1, binary: true });
+    if (body.length < 100 || body.toString('latin1', 1, 4) !== 'PNG') { const e = new Error('CADC sent no picture for this frame'); e.status = 502; throw e; }
+    await diskWrite(file, body); from = 'CADC'; stats.neossatPreviews = (stats.neossatPreviews || 0) + 1;
+  }
+  res.writeHead(200, { 'Content-Type': 'image/png', 'Content-Length': body.length, 'Cache-Control': 'public, max-age=2592000', 'X-Arcnave-From': from });
+  res.end(body);
 }
 
 async function catwise(q) {
@@ -849,6 +887,7 @@ function serveStatic(req, res, pathname) {
     res.end(req.method === 'HEAD' ? undefined : body);
   });
 }
+const STATIC = new Map(); let STATIC_BYTES = 0;
 
 const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, 'http://x');
@@ -868,6 +907,7 @@ const server = http.createServer(async (req, res) => {
       case '/api/gaia': return sendJSON(req, res, 200, await gaia(q));
       case '/api/catwise': return sendJSON(req, res, 200, await catwise(q));
       case '/api/neossat': return sendJSON(req, res, 200, await neossat(q));
+      case '/api/neossat/preview': return await neossatPreview(q, res);
       case '/api/spherex/psf':   // developer check (public/dev/psfcheck.html): local runs only
         if (process.env.SKYSHIFT_PUBLIC === '1' || !isLocal(req)) return sendJSON(req, res, 404, { error: 'No such endpoint' });
         return sendJSON(req, res, 200, await spherexPsf(q));
@@ -887,7 +927,6 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) { const seeded = seedCache(); if (seeded) console.log(`Demo data: ${seeded} files copied into the cache`); }
 server.seedCache = seedCache;
-const STATIC = new Map(); let STATIC_BYTES = 0;
 if (require.main === module) server.listen(PORT, () => {
   console.log(`ARCNAVE on http://localhost:${PORT}  (cache: ${CACHE_DIR}, ${MAX_UPSTREAM} parallel requests, ${IRSA_PARALLEL} IRSA image downloads at a time, ${RETRIES} retries)`);
   // v0.57.1: the release watcher, at start and once a day (a failure is quiet: the last list is kept)
@@ -898,4 +937,4 @@ if (require.main === module) server.listen(PORT, () => {
   setTimeout(watch, 3000).unref(); setInterval(watch, DAY).unref();
 });
 module.exports = server;
-module.exports._test = { readPsfZone, stripFits, stats, clearMemory: () => { cache.clear(); CUTOUT.clear(); FROZEN.at = 0; FRESH.clear(); }, prune, movers, SKYBOT, MPC, catwise, relRank };
+module.exports._test = { readPsfZone, stripFits, stats, clearMemory: () => { cache.clear(); CUTOUT.clear(); FROZEN.at = 0; FRESH.clear(); }, prune, movers, SKYBOT, MPC, catwise, relRank, neoNights };

@@ -916,15 +916,33 @@ function rawFlagsOf(buf, hdIn) {
    at STScI MAST, the Canadian Space Agency's NEOSSat at CADC (asked through /api/neossat: CADC sends no CORS header),
    SSOIS and DSS at CADC, plus SIMBAD, VizieR, Legacy Surveys, Pan-STARRS and the Minor Planet Center. Links only: nothing
    is sent anywhere but the position in the link itself. */
+/* v0.57.4: NEOSSat's frames of this spot, as CADC's preview pictures (raw frames, visible light, 3″ pixels, inverted grey:
+   stars are dark). One frame per night, oldest first; a click opens the large picture. They are shown as they are: the
+   frames are pointed at different targets and turned differently, and the 2018-2019 ones carry no sky coordinates, so
+   ARCNAVE measures nothing on them. */
+function neoGallery(box, n) {
+  const fig = nt => h('figure', { class: 'neof' },
+    h('a', { href: `/api/neossat/preview?id=${nt.id}`, target: '_blank', rel: 'noopener', title: `NEOSSat frame ${nt.id} (${nt.target}), ${nt.date}: open the large picture` },
+      h('img', { src: `/api/neossat/preview?id=${nt.id}&s=256`, alt: `NEOSSat frame of ${nt.target}, ${nt.date}`, loading: 'lazy', width: 96, height: 96,
+        onerror: function () { this.closest('figure').classList.add('neofail'); this.alt = 'CADC did not send this picture'; } })),
+    h('figcaption', {}, nt.date, h('br'), `${nt.n} frame${nt.n === 1 ? '' : 's'}`));
+  box.replaceChildren(
+    h('div', { class: 'neorow' }, ...n.nights.map(fig)),
+    h('p', { class: 'gnote' }, `${n.nightsTotal > n.nights.length ? `${n.nights.length} of the ${n.nightsTotal} nights` : `The ${n.nights.length} night${n.nights.length === 1 ? '' : 's'}`} NEOSSat looked here, one frame each, `,
+      'as CADC previews them (visible light, 3″ pixels, stars dark). They are pointed and turned differently, so they are not lined up and ARCNAVE measures nothing on them: they show the same sky through a second, Canadian telescope.'));
+  box.hidden = false;
+}
 function elsewhereLinks(ra, dec, o = {}) {
   const enc = encodeURIComponent, r5 = (+ra).toFixed(5), d5 = (+dec).toFixed(5), sd = (dec >= 0 ? '+' : '') + d5, pos = enc(r5 + ' ' + sd);
   const a = (href, t) => h('a', { href, target: '_blank', rel: 'noopener' }, t);
   const row = (lab, ...links) => h('p', { class: 'elsrow' }, h('b', {}, lab + ': '), ...links.filter(Boolean).flatMap((l, i) => i ? [' · ', l] : [l]));
-  const neo = h('span', { class: 'elsneo' }, 'asking CADC…');
+  const neo = h('span', { class: 'elsneo' }, 'asking CADC…'), neoG = h('div', { class: 'neog', hidden: true });
   api(`/api/neossat?ra=${r5}&dec=${d5}&r=${Math.min(1, Math.max(0.05, (o.r || 0.25))).toFixed(3)}`).then(n => {
     neo.replaceChildren(n.n ? `${n.n} NEOSSat frame${n.n === 1 ? '' : 's'} here, ${n.first} to ${n.last}` + (n.targets.length ? ` (targets: ${n.targets.map(t => `${t.name} ${t.n}`).join(', ')})` : '') + '. '
       : 'NEOSSat has not imaged this spot (it is pointed at chosen targets, not a survey). ',
       a('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/search/?collection=NEOSSAT', 'Open at CADC'));
+    // v0.57.4: the frames themselves: one per night it looked (up to 8, spread over the years), CADC's own preview pictures
+    if (n.nights && n.nights.length) neoGallery(neoG, n);
   }).catch(() => neo.replaceChildren('CADC did not answer just now. ', a('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/neossat/', 'NEOSSat at CADC')));
   return h('div', { class: 'els' },
     row('SPHEREx at NASA/IPAC IRSA', a('https://irsa.ipac.caltech.edu/applications/spherex/', 'SPHEREx Data Explorer'),
@@ -935,7 +953,9 @@ function elsewhereLinks(ra, dec, o = {}) {
       a(`https://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos=${r5}+${sd}&filter=color&filetypes=stack&size=240`, 'Pan-STARRS'),
       a(`https://irsa.ipac.caltech.edu/applications/finderchart/?locstr=${pos}`, 'IRSA Finder Chart (DSS, SDSS, 2MASS, WISE)'),
       a('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/dss/', 'Digitized Sky Survey at CADC (1950-2002)')),
-    h('p', { class: 'elsrow' }, h('b', {}, 'Canadian Space Agency NEOSSat (visible light): '), neo),
+    h('p', { class: 'elsrow' }, h('b', {}, 'Canadian Space Agency NEOSSat (visible light): '), neo), neoG,
+    row('About NEOSSat', a('https://www.asc-csa.gc.ca/eng/satellites/neossat/', 'The mission (CSA)'), a('https://github.com/asc-csa/NEOSSAT_Tutorial', 'Python data tutorial'),
+      a('https://data.asc-csa.gc.ca/dataset/neossat', 'Open dataset')),
     row('Catalogues', a(`https://simbad.cds.unistra.fr/simbad/sim-coo?Coord=${pos}&CooFrame=ICRS&Radius=1&Radius.unit=arcmin`, 'SIMBAD (1′)'),
       a(`https://vizier.cds.unistra.fr/viz-bin/VizieR?-c=${pos}&-c.rs=60&-out.add=_r&-sort=_r`, 'VizieR'),
       a(`https://mast.stsci.edu/portal/Mashup/Clients/Mast/Portal.html?searchQuery=${enc(r5 + ' ' + d5)}`, 'Gaia and more at MAST')),
