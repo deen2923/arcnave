@@ -28,6 +28,6 @@ false-alarm + brightness tests (Tested drawer) · whole-sky map · game · narra
 note · Share + Copy embed code · Discovery card · 4 languages · embed 640x420 and 390x300.
 
 ## Honest numbers (from CHALLENGE in app.js, v0.37 corrections)
-Barnard 9.7″ vs 10.2″ · Eps Indi B 4.4″ vs 4.7″ · WISE 0855 11.8σ, AB 17.15 · RW Aur: the +0.19 mag was WITHDRAWN
+Barnard 9.7″ vs 10.2″ · Eps Indi B 4.4″ vs 4.7″ (one year, 2 passes); 4.3 ± 0.3″/yr over 4 passes, 515 days (film, v0.56.2; was 5.03 ± 0.41 on the landing, WITHDRAWN) · WISE 0855 11.8σ, AB 17.15 · RW Aur: the +0.19 mag was WITHDRAWN
 (saturated centres); now "change likely", outer glow at 4.0 µm, 1.1 mag range, comparisons 0.04-0.18 · R Dra: the
 0.33-0.35 mag was WITHDRAWN; now 0.41 mag (5 Sep → 25 Oct 2025) and 0.91 mag by 14 Nov 2025 at 0.85 µm.
