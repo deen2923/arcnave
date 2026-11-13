@@ -15,6 +15,22 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.2: SPHEREx's own sky, NASA's flags on a candidate, a WiseView-style view (13 Nov 2026)
+Four upgrades from the challenge's resources, none of which changes a measured number:
+- **SPHEREx DR1 all-sky as the base sky** (Base sky → "SPHEREx DR1 all-sky (NASA, follows Color)"). IRSA released NASA's own
+  all-sky cube on 1 Nov 2026: 102 frames, 0.75-5 µm. The server serves frame F as `/hips/sphx<F>/` (upstream tiles
+  `NpixN_F.png`), cached like the other skies; the frame is the one nearest the Color slider, from the cube's own wavelength
+  list (the blank dichroic frames 50 and 51 are skipped). Aladin Lite 3.8.2 stopped ("unreachable") on the cube's own
+  properties, so each frame is described as a plain colour picture HiPS (no cube lines, no pixel cut, no MOC). Checked in
+  Chrome on Barnard's field: SPHEREx sky, five colour changes, back to 2MASS and again, no error.
+- **FLAGS bit names from QR3 and DR1 files** (`MSKN0000 = 'TRANSIENT'`; QR2 wrote `MP_TRANSIENT = 0`). QR3 and DR1 use the
+  same bit numbers as before, so their masks are kept exactly as they were; a future release that moves a bit gets its own.
+- **NASA's pipeline flags on a candidate:** the candidate card reads the FLAGS of that image at that spot (3×3 pixels) and
+  names them: CROSSTALK, GHOST, PERSIST, HALO… say "most likely an artefact", SOURCE and OUTLIER are noted. On Barnard's field
+  a G 7.6 star reads TRANSIENT, OVERFLOW, SUR_ERROR, SOURCE. Labels only: the masks are unchanged.
+- **Contrast and Invert** under the Color slider, as in WiseView: contrast lifts faint things, Invert shows dark stars on a
+  light sky. Picture only; at "normal" the pixels are exactly as before. In the tools list in all four languages.
+
 ## v0.57.1: new SPHEREx data releases are found by themselves (13 Nov 2026)
 ARCNAVE's archive search (IRSA TAP, `spherex.plane`) has never had a release filter, so every release NASA adds is searched
 in every new spot with no change to ARCNAVE (checked live: a never-opened spot now returns 271 DR1 images). Now it also says so:
