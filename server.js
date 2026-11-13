@@ -288,6 +288,28 @@ async function spherexSearch(q) {
   }, fresh);
 }
 
+/* ---------- v0.57.1: which SPHEREx data releases NASA has out (the release watcher) ----------
+   The archive search above has no release filter, so every release IRSA adds (QR2, QR3, DR1, and later DR2...) is searched
+   with no change to ARCNAVE. This tells people WHEN that happens: the public S3 copy has one top folder per release
+   (qr2/ qr3/ dr1/), listed in one small request. Asked once a day (and once at start); a release that is not in
+   BUILT_WITH (the ones this version was tested on) is reported as new. Newest = Data Releases above Quick Releases, then the
+   higher number. */
+const RELEASES_BUILT_WITH = ['qr2', 'qr3', 'dr1'];
+const relRank = r => { const m = /^([a-z]+)(\d+)$/.exec(r) || [, r, 0]; return (m[1] === 'dr' ? 1e6 : m[1] === 'qr' ? 0 : 5e5) + +m[2]; };
+const SEEN_RELEASES = new Set();
+async function releases(q = {}) {
+  const r = await cachedJSON('releases', 'spherex', DAY, async () => {
+    const xml = await upstream('https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/?list-type=2&delimiter=/', { timeout: 20000, retries: 1 });
+    const names = [...xml.matchAll(/<Prefix>([a-z]+\d+)\/<\/Prefix>/gi)].map(m => m[1].toLowerCase());
+    if (!names.length) { const e = new Error('The SPHEREx bucket listed no release folders'); e.status = 502; throw e; }
+    const list = [...new Set(names)].sort((a, b) => relRank(a) - relRank(b));
+    return { releases: list.map(x => x.toUpperCase()), newest: list[list.length - 1].toUpperCase(),
+      newSinceBuild: list.filter(x => !RELEASES_BUILT_WITH.includes(x)).map(x => x.toUpperCase()), checkedAt: new Date().toISOString(), via: 'S3 nasa-irsa-spherex' };
+  }, q.fresh === '1');
+  for (const x of r.newSinceBuild || []) if (!SEEN_RELEASES.has(x)) { SEEN_RELEASES.add(x); console.log(`New SPHEREx data release at NASA: ${x}. ARCNAVE's archive search includes it already; test fields keep their measured lists.`); }
+  return Object.assign({ builtWith: RELEASES_BUILT_WITH.map(x => x.toUpperCase()) }, r);
+}
+
 /* ---------- catalogue brightness for spectra (v0.35) ---------- */
 // 2MASS (J, H, Ks) and AllWISE (W1, W2) magnitudes of the sources within r arcsec, to check a SPHEREx spectrum against
 // two other NASA surveys. NASA/IPAC IRSA TAP first (the archive the SPHEREx images come from), CDS VizieR if IRSA fails.
@@ -799,6 +821,7 @@ const server = http.createServer(async (req, res) => {
     switch (url.pathname) {
       case '/api/resolve': return sendJSON(req, res, 200, await resolve(q));
       case '/api/spherex/search': return sendJSON(req, res, 200, await spherexSearch(q));
+      case '/api/spherex/releases': return sendJSON(req, res, 200, await releases(q));
       case '/api/spherex/cutout': return await spherexCutout(q, req, res);
       case '/api/movers': return sendJSON(req, res, 200, await movers(q));
       case '/api/photcat': return sendJSON(req, res, 200, await photcat(q));
@@ -824,6 +847,11 @@ const server = http.createServer(async (req, res) => {
 
 if (require.main === module) { const seeded = seedCache(); if (seeded) console.log(`Demo data: ${seeded} files copied into the cache`); }
 server.seedCache = seedCache;
-if (require.main === module) server.listen(PORT, () => console.log(`ARCNAVE on http://localhost:${PORT}  (cache: ${CACHE_DIR}, ${MAX_UPSTREAM} parallel requests, ${IRSA_PARALLEL} IRSA image downloads at a time, ${RETRIES} retries)`));
+if (require.main === module) server.listen(PORT, () => {
+  console.log(`ARCNAVE on http://localhost:${PORT}  (cache: ${CACHE_DIR}, ${MAX_UPSTREAM} parallel requests, ${IRSA_PARALLEL} IRSA image downloads at a time, ${RETRIES} retries)`);
+  // v0.57.1: the release watcher, at start and once a day (a failure is quiet: the last list is kept)
+  const watch = () => releases().then(r => console.log(`SPHEREx releases at NASA: ${r.releases.join(', ')} (newest ${r.newest})${r.stale ? ', saved list (S3 not answering)' : ''}`)).catch(() => {});
+  setTimeout(watch, 3000).unref(); setInterval(watch, DAY).unref();
+});
 module.exports = server;
-module.exports._test = { readPsfZone, stripFits, stats, clearMemory: () => { cache.clear(); CUTOUT.clear(); FROZEN.at = 0; FRESH.clear(); }, prune, movers, SKYBOT, MPC, catwise };
+module.exports._test = { readPsfZone, stripFits, stats, clearMemory: () => { cache.clear(); CUTOUT.clear(); FROZEN.at = 0; FRESH.clear(); }, prune, movers, SKYBOT, MPC, catwise, relRank };

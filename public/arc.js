@@ -334,6 +334,7 @@
         const rel = [...new Set(S.images.map(releaseOf).filter(Boolean))], last = Math.max(...S.images.map(i => i.mjd));
         $('trel').textContent = `${rel.length ? rel.join(' + ') : 'archive'} · newest ${fmtDay(last)}`;
         $('trel').classList.toggle('qr3', rel.includes('QR3'));
+        $('trel').classList.toggle('newrel', typeof NASA_REL !== 'undefined' && !!NASA_REL && rel.includes(NASA_REL.newest));   // v0.57.1: the newest release NASA has out
       } else $('trel').textContent = 'none';
       if (S.al) { const [ra, dec] = S.al.getRaDec(), fov = S.al.getFov()[0];
         $('aladinl').href = `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec >= 0 ? '%2B' : ''}${dec.toFixed(4)}&fov=${Math.min(fov, 180).toFixed(3)}&survey=CDS%2FP%2F2MASS%2Fcolor`; }

@@ -272,7 +272,7 @@ body.intro:has(#intro:not([hidden])) .skyinfo,body.touring .skyinfo{display:none
 .tele dt{color:var(--fg-3);margin:0 .4rem 0 0;font-family:var(--f-ui);font-size:.66rem;letter-spacing:.06em;text-transform:uppercase}
 .tele dd{margin:0 1.1rem 0 0;color:var(--fg);font-weight:600;font-size:.76rem}
 .tele dd.lv{color:var(--teal-2)}
-.tele .qr3{color:var(--amber-2)}
+.tele .qr3,.tele .newrel{color:var(--amber-2)}
 
 /* Clear view (key H) */
 body.clearv .panel{transform:translateX(calc(-100% - 30px));opacity:0;pointer-events:none}

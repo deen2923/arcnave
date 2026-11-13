@@ -382,7 +382,23 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     assert.ok(ns.n === 660 && ns.first === '2018-11-14' && ns.last === '2026-01-28' && ns.targets[0].name === 'BarnardStar' && ns.targets[0].n === 653, 'NEOSSat count: ' + JSON.stringify(ns));
     assert.strictEqual((await get('/api/neossat?ra=999&dec=0')).s, 400, 'a bad position is refused');
     global.fetch = rfG;
-    const lt = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4&latest=1')).t);
+    // v0.57.1: the release watcher reads the S3 bucket's top folders; a release this version was not built with is "new"
+    const rfR = global.fetch; let rcalls = 0;
+    global.fetch = async (url) => { rcalls++; if (!String(url).includes('nasa-irsa-spherex.s3.us-east-1.amazonaws.com/?list-type=2')) return { ok: false, status: 404, text: async () => 'no' };
+      return { ok: true, status: 200, text: async () => '<ListBucketResult><Contents><Key>index.html</Key></Contents><CommonPrefixes><Prefix>dr1/</Prefix></CommonPrefixes><CommonPrefixes><Prefix>dr2/</Prefix></CommonPrefixes><CommonPrefixes><Prefix>qr2/</Prefix></CommonPrefixes><CommonPrefixes><Prefix>qr3/</Prefix></CommonPrefixes></ListBucketResult>' }; };
+    S._test.clearMemory();
+    const rl = JSON.parse((await get('/api/spherex/releases')).t);
+    assert.deepStrictEqual(rl.releases, ['QR2', 'QR3', 'DR1', 'DR2'], 'releases oldest to newest: ' + JSON.stringify(rl));
+    assert.ok(rl.newest === 'DR2' && rl.newSinceBuild.join() === 'DR2' && rl.builtWith.includes('DR1') && rl.checkedAt, 'DR2 is new since this build: ' + JSON.stringify(rl));
+    S._test.clearMemory(); const nR = rcalls;
+    global.fetch = async () => { throw new Error('offline'); };
+    const rl2 = JSON.parse((await get('/api/spherex/releases')).t);
+    assert.ok(rl2.newest === 'DR2' && rcalls === nR, 'the list is kept a day on disk');
+    const rl3 = JSON.parse((await get('/api/spherex/releases?fresh=1')).t);
+    assert.ok(rl3.stale === true && rl3.newest === 'DR2', 'S3 not answering: the saved list, marked stale');
+    assert.ok(S._test.relRank('dr1') > S._test.relRank('qr3') && S._test.relRank('qr10') > S._test.relRank('qr3'), 'release order');
+    global.fetch = rfR;
+    const lt =JSON.parse((await get('/api/spherex/search?ra=190&dec=-4&latest=1')).t);
     assert.ok(!lt.frozen && lt.count >= 1 && fs.readdirSync(cacheDir).some(f => f.startsWith('searchl-')), 'latest=1 keeps its own list: ' + JSON.stringify(lt).slice(0, 200));
     const h = JSON.parse((await get('/api/health')).t); assert.ok(h.ok && h.cache.files >= 2 && h.stats.downloads >= 1, JSON.stringify(h));
     fs.rmSync(process.env.SKYSHIFT_CACHE_DIR, { recursive: true, force: true });

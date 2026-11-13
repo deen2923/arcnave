@@ -15,6 +15,19 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.1: new SPHEREx data releases are found by themselves (13 Nov 2026)
+ARCNAVE's archive search (IRSA TAP, `spherex.plane`) has never had a release filter, so every release NASA adds is searched
+in every new spot with no change to ARCNAVE (checked live: a never-opened spot now returns 271 DR1 images). Now it also says so:
+- **Release watcher:** `/api/spherex/releases` lists the release folders of NASA's public S3 copy (`qr2/ qr3/ dr1/`, one
+  small request), kept a day, asked again at start and once a day; the server log names any release this version was not
+  built with (`newSinceBuild`, e.g. a future DR2). If S3 does not answer, the saved list is served (marked stale).
+- **In the app:** the Releases panel says what NASA has out now and when it was checked; a release newer than this version
+  gets one note per browser; the status line marks the newest release in amber; the data note names it.
+- **Fix:** the star-spectrum reader (`lib/spot.js`) keyed its learned file layouts by `qrN` folders only, so DR1 files (and
+  any later release) all shared the key `?`. Any release folder now gets its own key (`dr1:6`).
+- Test fields stay frozen as in v0.56.3 (their quoted numbers were measured on QR2 + QR3); "Check for new data" switches one.
+- Tests: release order, new since this build, kept a day, stale when S3 is down; DR1/DR2 layout keys.
+
 ## v0.57.0: every resource of the challenge, linked (13 Nov 2026)
 The challenge's Resources tab lists NASA/IPAC IRSA, the SPHEREx tutorial notebooks, WiseView, Gaia DR3 at STScI MAST and the
 Canadian Space Agency's NEOSSat, CADC data and NEOSSat tutorial. Each one is now part of ARCNAVE:
