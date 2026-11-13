@@ -15,6 +15,25 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.0: every resource of the challenge, linked (13 Nov 2026)
+The challenge's Resources tab lists NASA/IPAC IRSA, the SPHEREx tutorial notebooks, WiseView, Gaia DR3 at STScI MAST and the
+Canadian Space Agency's NEOSSat, CADC data and NEOSSat tutorial. Each one is now part of ARCNAVE:
+- **🔗 This spot elsewhere** (Share & report, and "Elsewhere" in every Gaia and WISE star card): the same position in IRSA's
+  SPHEREx Data Explorer, Spectrophotometry Tool, tutorial notebooks and release page; WiseView (blinking NASA WISE), unWISE,
+  Legacy Surveys, Pan-STARRS, IRSA Finder Chart, the Digitized Sky Survey at CADC; SIMBAD, VizieR, MAST; the MPC checker,
+  IRSA MOST and CADC's SSOIS; Backyard Worlds' guide and Talk board. 19 links, all checked.
+- **NEOSSat (CSA) at this spot:** the server asks CADC's TAP (`/api/neossat`, CAOM2 collection NEOSSAT; CADC sends no CORS
+  header) how many NEOSSat frames cover the field, when, and of which targets. Barnard's Star's field: 652 frames,
+  2018-11-14 to 2022-11-14, BarnardStar 647. Most spots have none: NEOSSat is pointed, not a survey.
+- **Gaia DR3 from MAST** as the third copy (IRSA, then CDS VizieR, then MAST's TAP `dbo.gaia_source`). Tested live: Barnard's
+  Star comes back with 10.36″/yr.
+- **Backyard Worlds checks on every candidate:** seen again minutes later, no known asteroid, no Gaia DR3 star and no CatWISE2020
+  source within one SPHEREx pixel (✓ / ✗ / not checked), then SIMBAD 1′, VizieR, Finder Chart and WiseView links.
+- **About page:** a section on each resource and the acknowledgements (IRSA's SPHEREx text, the QR2, QR3 and DR1 DOIs, Gaia,
+  WISE/CatWISE2020, NEOSSat under the Open Government Licence - Canada). "This spot elsewhere" is in the tools list in all
+  four languages.
+- Note: CDS (SIMBAD, VizieR) answered "Page unavailable" from this network on 13 Nov; the links are the standard ones.
+
 ## v0.56.3: NASA's DR1 is out; the test fields stay fast (13 Nov 2026)
 NASA/IPAC IRSA released **SPHEREx Data Release 1 (DR1)** in November 2026: passes 1 and 2 reprocessed, QR2 no longer
 listed (its files stay downloadable until February 2027). ARCNAVE's archive search needed no change: a new spot now lists

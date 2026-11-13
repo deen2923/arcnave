@@ -366,6 +366,22 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     await new Promise(r => setTimeout(r, 20));
     const fz2 = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
     assert.ok(fz2.frozen === true && !fz2.frozenKept, 'after a fresh check the next ordinary visit gets the frozen list again (not the fresh one from memory)');
+    // v0.57: Gaia's third copy (STScI MAST) when IRSA and VizieR fail; NEOSSat frame counts from CADC
+    const rfG = global.fetch, gcalls = [];
+    global.fetch = async (url) => { const u = String(url); gcalls.push(u); const ok = b => ({ ok: true, status: 200, text: async () => b });
+      if (u.includes('mast.stsci.edu/vo-tap/api/v0.1/gaiadr3/sync') && decodeURIComponent(u).includes('dbo.gaia_source')) return ok('source_id,ra,dec,parallax,pmra,pmdec,phot_g_mean_mag\n4472832130942575872,269.4485,4.7394,546.98,-801.55,10362.39,8.19\n');
+      if (u.includes('ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/argus/sync')) { const q = decodeURIComponent(u);
+        if (!q.includes("o.collection = 'NEOSSAT'")) return { ok: false, status: 400, text: async () => 'bad query' };
+        return ok(q.includes('GROUP BY') ? 'name,n\nBarnardStar,653\nDARK,6\n' : 'n,t0,t1\n660,58436.976,61068.901\n'); }
+      return { ok: false, status: 404, text: async () => 'not here' }; };
+    S._test.clearMemory();
+    const gm = JSON.parse((await get('/api/gaia?ra=269.452&dec=4.693&r=0.05')).t);
+    assert.ok(gm.via === 'MAST' && gm.stars.length === 1 && gm.stars[0].pmdec > 10000, 'Gaia should come from MAST when IRSA and VizieR fail: ' + JSON.stringify(gm).slice(0, 200));
+    assert.ok(gcalls.some(c => c.includes('irsa.ipac.caltech.edu')) && gcalls.some(c => c.includes('vizier')), 'IRSA and VizieR are asked first');
+    const ns = JSON.parse((await get('/api/neossat?ra=269.452&dec=4.693&r=0.5')).t);
+    assert.ok(ns.n === 660 && ns.first === '2018-11-14' && ns.last === '2026-01-28' && ns.targets[0].name === 'BarnardStar' && ns.targets[0].n === 653, 'NEOSSat count: ' + JSON.stringify(ns));
+    assert.strictEqual((await get('/api/neossat?ra=999&dec=0')).s, 400, 'a bad position is refused');
+    global.fetch = rfG;
     const lt = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4&latest=1')).t);
     assert.ok(!lt.frozen && lt.count >= 1 && fs.readdirSync(cacheDir).some(f => f.startsWith('searchl-')), 'latest=1 keeps its own list: ' + JSON.stringify(lt).slice(0, 200));
     const h = JSON.parse((await get('/api/health')).t); assert.ok(h.ok && h.cache.files >= 2 && h.stats.downloads >= 1, JSON.stringify(h));
