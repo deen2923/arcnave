@@ -275,7 +275,7 @@
           <li>NASA SPHEREx · NASA/IPAC IRSA</li><li>ESA Gaia DR3</li><li>NASA WISE · CatWISE2020 · AllWISE · 2MASS</li><li>IMCCE SkyBoT · Minor Planet Center</li><li>NASA JPL Horizons</li><li>CDS Aladin Lite, HiPS &amp; SIMBAD</li></ul></div>
         <div><h3 data-i18n="ft.tool">The tool</h3><ul>
           <li><a href="#" data-launch data-i18n="cta.launch">Launch ARCNAVE</a></li><li><a href="#lp-targets" data-i18n="nav.targets">Test targets</a></li><li><a href="/about.html#tested" data-i18n="ft.tested">How we tested it</a></li><li><a href="/about.html#limits" data-i18n="ft.limits">Limits, honestly</a></li><li><a href="#top" data-i18n="v5.top">Back to top</a></li></ul></div>
-        <p class="fine"><span data-i18n="ft.fine">Images are false-colour infrared. Planet X is hypothetical. No discovery is claimed.</span><span class="mono">v0.57.4</span></p>
+        <p class="fine"><span data-i18n="ft.fine">Images are false-colour infrared. Planet X is hypothetical. No discovery is claimed.</span><span class="mono">v0.57.5</span></p>
       </div>
     </footer>
   </div>
@@ -488,7 +488,7 @@
     <div class="btnrow">
       <button id="share"><svg class="ic" aria-hidden="true"><use href="#i-share"/></svg>Copy link</button>
       <button type="button" id="embb"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg>Copy embed code</button>
-      <button type="button" id="pyb" title="Python code (Astropy + astroquery) that fetches the same SPHEREx images of this spot from NASA/IPAC IRSA"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg>Copy Python</button>
+      <button type="button" id="pyb" title="A Jupyter notebook (Astropy + astroquery) that redoes this spot from NASA/IPAC IRSA: blink film, Gaia motions, spectrum"><svg class="ic" aria-hidden="true"><use href="#i-code"/></svg>Python notebook</button>
       <button type="button" id="elsb" title="This spot in every archive the NASA challenge lists: IRSA's SPHEREx tools, WiseView, Gaia at MAST, NEOSSat at CADC, SIMBAD, VizieR and more">🔗 This spot elsewhere</button>
       <button id="dcard" hidden title="Make a looping GIF of this sky patch, with position, dates and colour, to download or share">Discovery card</button>
       <button type="button" id="pngb" title="Save the sky as on screen, with every overlay, as a PNG picture with its position and date"><svg class="ic" aria-hidden="true"><use href="#i-layers"/></svg>Sky picture (PNG)</button>
@@ -635,7 +635,7 @@
      2.4 MB of script plus WebGL, and starting it behind the start page blocked a phone for seconds. -->
 <script>
 window.ARC_TOOL = { aladin: '/vendor/aladin-lite-3.8.2.js', aladinCds: 'https://aladin.cds.unistra.fr/AladinLite/api/v3/3.8.2/aladin.js',
-  rest: ['/lib/fits.js', '/lib/s3cut.js', '/lib/wave.js', '/lib/spot.js', '/lib/slots.js', '/lib/planetx.js', '/gif.js', '/app.js', '/i18n.js', '/tools-plain.js', '/tour.js'] };
+  rest: ['/lib/fits.js', '/lib/s3cut.js', '/lib/wave.js', '/lib/spot.js', '/lib/slots.js', '/lib/planetx.js', '/gif.js', '/notebook.js', '/app.js', '/i18n.js', '/tools-plain.js', '/tour.js'] };
 if (!document.documentElement.classList.contains('landing')) {
   document.write('<script src="' + ARC_TOOL.aladin + '" charset="utf-8"><\/script>');
   document.write('<script>if (!window.A) document.write(\'<script src="' + ARC_TOOL.aladinCds + '" charset="utf-8"><\\/script>\');<\/script>');
