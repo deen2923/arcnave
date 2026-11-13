@@ -15,6 +15,25 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.5: this spot as a Jupyter notebook (13 Nov 2026)
+"Copy Python" (v0.39) gave a short script: the archive query and the first and last images side by side. **Share → Python
+notebook** now downloads a Jupyter notebook (`public/notebook.js`, also as one `.py`) in the style of IRSA's SPHEREx tutorial
+notebooks, which redoes ARCNAVE's work for the spot in the open (`pip install astroquery matplotlib reproject`):
+1. ARCNAVE's own IRSA TAP query (every release, no filter); images per release and per pass (a gap of 60+ days = new pass).
+2. One image per pass (its detector covers the colour on screen), put on one sky grid with `reproject`: panels, "last minus
+   first", and the blink film the challenge asks for, saved as a GIF.
+3. Gaia DR3 (IRSA, brightest first) moved from J2016.0 to each image's date by proper motion; the fastest stars listed.
+4. A spectrum on the fly: each image's wavelength at the star from its WCS-WAVE table (`WCS(..., key='W')`), aperture sum
+   minus a sky ring, MJy/sr to mJy with the pixel's solid angle; points whose aperture has OVERFLOW / NONLINEAR / BLOOM /
+   SUR_ERROR / MISSING_DATA / NONFUNC pixels (bit names read from the FLAGS header, DR1/QR3 `MSKN` or QR2 `MP_`) are drawn grey.
+- Run end to end on real IRSA data (Python 3.14, astropy 8.0, astroquery 0.4.11): **Barnard's Star**: 358 images (DR1 239 +
+  QR3 119), 3 passes; fastest Gaia star Barnard itself at 10.39″/yr; all 60 spectrum points flagged (too bright for SPHEREx,
+  the notebook says so); 75 s. **WISE 0855's comparison spot**: 258 DR1 images, 59 spectrum points of which 7 flagged.
+- Offline test `test/notebook.test.js` (valid nbformat 4, the spot in the setup cell, no release filter, strings escaped).
+- Page stays responsive during the film's searches: longest freeze 7.2 s -> 2.6 s, total 48.7 s -> 19.4 s, film ready
+  50 s -> 40 s (Epsilon Indi B target, headless Chrome); every measured number unchanged (Epsilon Indi B mu
+  4.316672016104891). (Commit 88a6fc2, from the "Project upgrade handoff" session.)
+
 ## v0.57.4: NEOSSat's own pictures of the spot (13 Nov 2026)
 Of the challenge's four Canadian Space Agency resources, ARCNAVE only counted NEOSSat frames (v0.57). Now it shows them:
 - **Server:** `/api/neossat` also lists the nights NEOSSat looked (CADC TAP, raw frames; DARK/FLAT/BIAS frames have no sky

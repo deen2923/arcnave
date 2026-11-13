@@ -974,72 +974,33 @@ function showElsewhere(ra, dec, what) {
     h('button', { onclick: () => { S.report ? showReport() : (c.hidden = true); } }, 'Close'));
 }
 if ($('elsb')) $('elsb').onclick = () => showElsewhere();
-/* ---------- v0.39: the same field in Python (Astropy + astroquery), for anyone who wants to go further ---------- */
-// The query is ARCNAVE's own IRSA TAP query; the cutout URL form (?center=ra,decd&size=deg) is IRSA's, from its SPHEREx
-// cutouts tutorial. Two images (first and last in time, same detector) are cut out and shown side by side.
-function pySnippet() {
+/* ---------- v0.39: the same field in Python, for anyone who wants to go further ----------
+   v0.57.5: a Jupyter notebook (public/notebook.js) in the style of IRSA's SPHEREx tutorials, which redoes this spot in the
+   open: ARCNAVE's own IRSA query, one image per pass lined up (blink GIF, difference), Gaia DR3 moved to each date, and a
+   spectrum on the fly from WCS-WAVE with saturated points marked. The same cells also come as one .py file. */
+function pyBuild() {
   let ra, dec, size;
   if (S.field) ({ ra, dec, size } = S.field); else { [ra, dec] = S.al ? S.al.getRaDec() : [0, 0]; size = 0.1; }
   try { writeHash(); } catch { /* sky not ready */ }
-  size = Math.min(size, 0.5);
-  const Q = '"""';
-  return `# ARCNAVE -> Python: the same NASA SPHEREx images, with Astropy and astroquery.
-# Install once:  pip install astroquery matplotlib
-# View in ARCNAVE: ${location.href}
-import numpy as np
-import matplotlib.pyplot as plt
-from astroquery.ipac.irsa import Irsa
-from astropy.io import fits
-from astropy.wcs import WCS
-from astropy.utils.data import conf
-conf.remote_timeout = 120
-
-ra, dec = ${ra.toFixed(5)}, ${dec.toFixed(5)}   # degrees (ICRS), from ARCNAVE
-size = ${size}                    # cutout side in degrees
-band = ${S.band.toFixed(2)}                   # colour picked in ARCNAVE, micrometres
-
-# 1. Ask NASA/IPAC IRSA which SPHEREx images cover this spot (the same query ARCNAVE uses)
-query = f${Q}
-SELECT 'https://irsa.ipac.caltech.edu/' || a.uri || '?center={ra},{dec}d&size={size}' AS uri,
-       p.time_bounds_lower AS mjd, p.energy_bandpassname AS det,
-       p.energy_bounds_lower AS lam0, p.energy_bounds_upper AS lam1
-FROM spherex.artifact a JOIN spherex.plane p ON a.planeid = p.planeid
-WHERE 1 = CONTAINS(POINT('ICRS', {ra}, {dec}), p.poly)
-ORDER BY p.time_bounds_lower${Q}
-t = Irsa.query_tap(query).to_table()
-print(len(t), 'SPHEREx images cover this spot')
-if len(t) == 0:
-    raise SystemExit('No SPHEREx images cover this spot yet. Try another position.')
-
-# 2. Keep images whose detector covers your colour (metres -> micrometres), then the first and last in time.
-#    SPHEREx's filter changes across each detector, so the exact colour at this spot differs a little per image.
-pick = t[(t['lam0'] * 1e6 <= band) & (t['lam1'] * 1e6 >= band)]
-if len(pick) < 2:
-    pick = t
-pair = [pick[0], pick[-1]]
-
-# 3. Download just the small cutouts (not the whole images) and show them side by side
-fig = plt.figure(figsize=(11, 5))
-for i, row in enumerate(pair):
-    with fits.open(row['uri']) as hdul:
-        img = hdul['IMAGE'].data.astype(float)
-        w = WCS(hdul['IMAGE'].header)
-    ax = fig.add_subplot(1, 2, i + 1, projection=w)
-    lo, hi = np.nanpercentile(img, [5, 99.5])
-    ax.imshow(img, origin='lower', cmap='gray', vmin=lo, vmax=hi)
-    x, y = w.world_to_pixel_values(ra, dec)
-    ax.plot(x, y, 'o', mfc='none', mec='cyan', ms=16)
-    ax.set_title(f"MJD {row['mjd']:.2f}  {row['det']}")
-plt.tight_layout()
-plt.show()
-`;
+  const ct = S.ct && CHALLENGE[S.ct], vEl = document.querySelector('.fine .mono');   // the version shown on the start page
+  // the link back: the page's own address once it carries the spot, else one made from it (a field still loading has none yet)
+  const url = location.hash.length > 1 ? location.href : location.origin + location.pathname + (S.ct ? '#ct=' + S.ct : `#ra=${(+ra).toFixed(4)}&dec=${(+dec).toFixed(4)}`);
+  return ArcNotebook.build({ ra, dec, size: Math.min(size, 0.5), band: S.band, name: ct ? ct.name : '', url,
+    version: vEl ? vEl.textContent.trim().replace(/^v/, '') : '' });
+}
+function pySnippet() { return pyBuild().py; }   // kept: the plain .py form
+function saveFile(text, name, type) {
+  const u = URL.createObjectURL(new Blob([text], { type })), el = h('a', { href: u, download: name });
+  document.body.append(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000);
 }
 async function copyPython() {
-  const code = pySnippet();
-  const dl = () => { const u = URL.createObjectURL(new Blob([code], { type: 'text/x-python' })); const el = h('a', { href: u, download: 'arcnave_field.py' }); document.body.append(el); el.click(); el.remove(); setTimeout(() => URL.revokeObjectURL(u), 4000); };
-  let ok = true; try { await navigator.clipboard.writeText(code); } catch { ok = false; }
-  const e = $('toast'); e.replaceChildren(ok ? 'Python code copied (Astropy + astroquery). ' : 'Copy was blocked here. ', h('button', { class: 'tbtn', onclick: dl }, 'Download .py'));
-  e.hidden = false; clearTimeout(toast.i); toast.i = setTimeout(() => e.hidden = true, 9000);
+  const nb = pyBuild();
+  saveFile(nb.json, nb.file + '.ipynb', 'application/x-ipynb+json');
+  const copy = async () => { try { await navigator.clipboard.writeText(nb.py); toast('Python code copied.'); } catch { toast('Copy was blocked here: use Download .py.'); } };
+  const e = $('toast'); e.replaceChildren(`Notebook downloaded: ${nb.file}.ipynb. Open it in Jupyter or Google Colab (pip install astroquery matplotlib reproject). `,
+    h('button', { class: 'tbtn', onclick: () => saveFile(nb.py, nb.file + '.py', 'text/x-python') }, 'Download .py'), ' ',
+    h('button', { class: 'tbtn', onclick: copy }, 'Copy code'));
+  e.hidden = false; clearTimeout(toast.i); toast.i = setTimeout(() => e.hidden = true, 12000);
 }
 if ($('pyb')) $('pyb').onclick = copyPython;
 function rings(set, color, clip, dashFrom) {
