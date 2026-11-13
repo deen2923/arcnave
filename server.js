@@ -96,7 +96,8 @@ async function diskWrite(file, data) {
 let writes = 0;
 async function prune() {
   const files = [];
-  for (const sub of ['cutouts', 'api', ...Object.keys(HIPS).map(k => 'hips/' + k)]) {   // v0.21: sky tiles count too
+  let spxDirs = []; try { spxDirs = (await fs.promises.readdir(path.join(CACHE_DIR, 'hips'))).filter(d => /^sphx\d+$/.test(d)).map(d => 'hips/' + d); } catch { /* none yet */ }
+  for (const sub of ['cutouts', 'api', ...Object.keys(HIPS).map(k => 'hips/' + k), ...spxDirs]) {   // v0.21: sky tiles count too (v0.57.2: and SPHEREx's own sky)
     const dir = path.join(CACHE_DIR, sub);
     let names = []; try { names = await fs.promises.readdir(dir); } catch { continue; }
     // never evict the shipped example files: seen live after the 18-field scorecard filled the cache past the limit,
@@ -238,19 +239,38 @@ const HIPS = {
 };
 const HIPS_BAD = new Map();   // mirror -> time until which it is skipped (failed recently)
 const hipsLimited = (() => { let act = 0; const wait = []; return async fn => { while (act >= 12) await new Promise(r => wait.push(r)); act++; try { return await fn(); } finally { act--; wait.shift()?.(); } }; })();
+// v0.57.2: NASA's own SPHEREx DR1 all-sky cube (IRSA, released 1 Nov 2026): 102 frames in ascending wavelength, frame =
+// 17*(band-1) + (channel-1); frames 50 and 51 (the dichroic channels) are blank. /hips/sphx<F>/... serves frame F as an
+// ordinary HiPS (its tiles are NpixN_F.png upstream, frame 0 has no suffix), so the page can show SPHEREx's sky at the colour
+// of the Color slider. Tiles are cached like the other skies, so a field opened before keeps its background offline.
+const SPX_HIPS = 'https://irsa.ipac.caltech.edu/data/hips/SPHEREx/spherex_allsky_cube';
+const spxFrame = sky => { const m = /^sphx(\d{1,3})$/.exec(sky); const f = m ? +m[1] : -1; return f >= 0 && f < 102 && f !== 50 && f !== 51 ? f : null; };
 async function hipsTile(req, res, pathname) {
   const m = /^\/hips\/([a-z0-9]+)\/((?:properties|Moc\.fits|Norder\d{1,2}\/Allsky\.(?:jpg|png)|Norder\d{1,2}\/Dir\d{1,7}\/Npix\d{1,10}\.(?:jpg|png)))$/.exec(pathname);
-  if (!m || !HIPS[m[1]]) { const e = new Error('Not a sky tile'); e.status = 404; throw e; }
+  const spx = m ? spxFrame(m[1]) : null;
+  // (SPHEREx frames: no Moc.fits either: with IRSA's MOC, Aladin Lite 3.8.2 asked for no tile at all; without one it takes the whole sky)
+  if (!m || (!HIPS[m[1]] && spx === null) || (spx !== null && (/\.jpg$/.test(m[2]) || m[2] === 'Moc.fits'))) { const e = new Error('Not a sky tile'); e.status = 404; throw e; }
   const [, sky, rel] = m, file = path.join(CACHE_DIR, 'hips', sky, rel.replace(/\//g, '_'));
+  // SPHEREx frames: the upstream file name carries the frame; the properties lose their cube lines (one frame = one sky)
+  const upRel = spx === null || rel === 'properties' || rel === 'Moc.fits' ? rel : rel.replace(/(Npix\d+|Allsky)\.png$/, `$1${spx ? '_' + spx : ''}.png`);
+  const bases = spx === null ? HIPS[sky] : [SPX_HIPS];
   const type = rel === 'properties' ? 'text/plain; charset=utf-8' : rel.endsWith('.png') ? 'image/png' : rel.endsWith('.fits') ? 'application/fits' : 'image/jpeg';
   let body = await diskRead(file), from = 'disk';
   if (!body) {
     from = null;
-    for (const base of HIPS[sky]) {
+    for (const base of bases) {
       if ((HIPS_BAD.get(base) || 0) > Date.now()) continue;
       try {
-        body = await hipsLimited(() => upstream(base + '/' + rel, { timeout: 12000, retries: 0, binary: true, lim: f => f() }));
+        body = await hipsLimited(() => upstream(base + '/' + upRel, { timeout: 12000, retries: 0, binary: true, lim: f => f() }));
         if (rel === 'properties' ? !/hips_/.test(body.toString('latin1', 0, 4000)) : body.length < 100) throw Object.assign(new Error('not a HiPS file'), { status: 502 });
+        // one frame = an ordinary picture HiPS: Aladin Lite 3.8.2 stopped with "unreachable" on the cube's own properties
+        // (dataproduct_type cube, pixel function/cut, service URL pointing at the whole cube); 2MASS-style lines work
+        if (spx !== null && rel === 'properties') {
+          const keep = /^(hips_initial_fov|hips_version|hips_release_date|hips_frame|hips_order|hips_order_min|hips_tile_width|hips_status|hips_tile_format|hips_pixel_scale|obs_regime|hips_creator|hips_copyright|obs_copyright|obs_collection|t_min|t_max)\s*=/;
+          const wl = (/^data_cube_crval3_arr\s*=\s*(.+)$/m.exec(body.toString('utf8')) || [])[1], lam = wl ? +wl.trim().split(/\s+/)[spx] : null;
+          body = Buffer.from(body.toString('utf8').split('\n').filter(l => keep.test(l)).join('\n') +
+            `\ndataproduct_type     = image\ndataproduct_subtype  = color\nobs_title            = SPHEREx DR1 all-sky, frame ${spx}${lam ? ` (${lam} um)` : ''}\n`, 'utf8');
+        }
         from = new URL(base).hostname; break;
       } catch (e) {
         body = null;

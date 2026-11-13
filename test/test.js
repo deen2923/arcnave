@@ -255,6 +255,23 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     assert.strictEqual(hz.length, 2); assert.strictEqual(hz[0].ra, 190.12345); assert.strictEqual(hz[0].mag, 15.2);
   });
 
+  await t('FLAGS bit names: QR2 MP_ keys, DR1 MSKN keys and the defaults give the same mask', async () => {
+    const F = require('../lib/fits');
+    const dr1 = { MSKN0000: 'TRANSIENT', MSKN0001: 'OVERFLOW', MSKN0002: 'SUR_ERROR', MSKN0006: 'NONFUNC', MSKN0007: 'DICHROIC', MSKN0009: 'MISSING_DATA', MSKN0010: 'HOT',
+      MSKN0011: 'COLD', MSKN0012: 'FULLSAMPLE', MSKN0014: 'PHANMISS', MSKN0015: 'NONLINEAR', MSKN0017: 'PERSIST', MSKN0019: 'OUTLIER', MSKN0020: 'CROSSTALK', MSKN0021: 'SOURCE',
+      MSKN0022: 'GHOST', MSKN0023: 'GHOST_FPA', MSKN0024: 'GHOST_EXT', MSKN0025: 'STREAK', MSKN0026: 'BLOOM', MSKN0027: 'SNOWBALL', MSKN0028: 'HALO' };   // as in a real DR1 file
+    const n = F.flagBitNames(dr1);
+    assert.ok(n.CROSSTALK === 20 && n.STREAK === 25 && n.HALO === 28 && n.TRANSIENT === 0, JSON.stringify(n));
+    const qr2 = Object.fromEntries(Object.entries(n).map(([k, v]) => ['MP_' + k, v]));
+    const a = F.badFlagMask(dr1), b = F.badFlagMask(qr2), d = F.badFlagMask(null);
+    assert.ok(b.named && !a.named && !d.named, 'QR2 names its bits (MP_); DR1/QR3 MSKN numbers equal the defaults, so the defaults are kept');
+    assert.strictEqual(a.mask, d.mask, 'a DR1/QR3 file gets exactly the mask it had before v0.57.2 (quoted numbers unchanged)');
+    assert.strictEqual(b.area, d.area, 'QR2 names give the same area bits as the defaults');
+    // a future release that moves a bit: its own names win
+    const moved = Object.assign({}, dr1, { MSKN0028: 'STREAK', MSKN0025: 'HALO' }), mm = F.badFlagMask(moved);
+    assert.ok(mm.named && (mm.area & 2 ** 25) && !(mm.area & 2 ** 28), 'when a release moves HALO to bit 25, bit 25 is masked: ' + mm.area);
+  });
+
   await t('server: static files, validation, SSRF guard, mocked upstreams', async () => {
     const calls = [];
     global.fetch = async (url) => {
@@ -366,6 +383,21 @@ const baseWCS = (ra, dec, nx, ny, extra = []) => [['CTYPE1', 'RA---TAN'], ['CTYP
     await new Promise(r => setTimeout(r, 20));
     const fz2 = JSON.parse((await get('/api/spherex/search?ra=190&dec=-4')).t);
     assert.ok(fz2.frozen === true && !fz2.frozenKept, 'after a fresh check the next ordinary visit gets the frozen list again (not the fresh one from memory)');
+    // v0.57.2: SPHEREx's own sky: /hips/sphx<F> is frame F of IRSA's DR1 cube, as a plain picture HiPS (no cube lines, no MOC)
+    const rfH = global.fetch, hcalls = [];
+    global.fetch = async (url) => { const u = String(url); hcalls.push(u); const ok = b => ({ ok: true, status: 200, text: async () => b, arrayBuffer: async () => Buffer.from(b) });
+      if (!u.startsWith('https://irsa.ipac.caltech.edu/data/hips/SPHEREx/spherex_allsky_cube/')) return { ok: false, status: 404, text: async () => 'no' };
+      if (u.endsWith('/properties')) return ok('hips_order = 5\nhips_tile_format = png\ndataproduct_type = cube\nhips_cube_depth = 102\nhips_pixel_cut = 0 40\nhips_service_url = https://x\ndata_cube_crval3_arr = ' + Array.from({ length: 102 }, (_, i) => (0.75 + i * 0.04).toFixed(3)).join(' ') + '\n');
+      return ok('P'.repeat(500)); };
+    S._test.clearMemory();
+    const hp = (await get('/hips/sphx12/properties')).t;
+    assert.ok(/dataproduct_type\s*=\s*image/.test(hp) && /dataproduct_subtype\s*=\s*color/.test(hp) && !/cube|pixel_cut|service_url/.test(hp.replace(/SPHEREx DR1 all-sky, frame 12.*$/m, '')) && /frame 12 \(1\.23 um\)/.test(hp), 'properties as a picture HiPS: ' + hp);
+    assert.strictEqual((await get('/hips/sphx12/Norder3/Dir0/Npix100.png')).s, 200);
+    assert.ok(hcalls.some(c => c.endsWith('/Norder3/Dir0/Npix100_12.png')), 'frame 12 is asked as Npix100_12.png');
+    assert.strictEqual((await get('/hips/sphx0/Norder3/Dir0/Npix101.png')).s, 200);
+    assert.ok(hcalls.some(c => c.endsWith('/Norder3/Dir0/Npix101.png')), 'frame 0 has no suffix');
+    for (const p of ['/hips/sphx50/properties', '/hips/sphx102/properties', '/hips/sphx12/Moc.fits', '/hips/sphx12/Norder3/Dir0/Npix1.jpg']) assert.strictEqual((await get(p)).s, 404, p + ' is refused');
+    global.fetch = rfH;
     // v0.57: Gaia's third copy (STScI MAST) when IRSA and VizieR fail; NEOSSat frame counts from CADC
     const rfG = global.fetch, gcalls = [];
     global.fetch = async (url) => { const u = String(url); gcalls.push(u); const ok = b => ({ ok: true, status: 200, text: async () => b });

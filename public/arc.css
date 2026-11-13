@@ -918,6 +918,10 @@ body{background:radial-gradient(1100px 600px at 80% -10%,rgba(124,58,237,.10),tr
 .els .elsrow{font-size:.82rem;margin:.4rem 0;line-height:1.55}
 .els a{color:var(--cy)}
 .els .elsneo{color:var(--fg-2,inherit)}
+/* v0.57.2: Contrast + Invert (picture only) under the Color slider */
+#ctrr output{min-width:4.6em;font-size:.75rem}
+#ctrr #invb{flex:none;min-height:30px;padding:.15rem .6rem;font-size:.75rem}
+#ctrr #invb[aria-pressed="true"]{background:var(--fg-2,#ccd);color:#05070d}
 
 /* ======================================================================================================================
    v0.40.0 design system: "a mission-control observatory for everyone". Deep-space navy, calm, one accent.

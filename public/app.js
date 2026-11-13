@@ -200,7 +200,7 @@ async function loadField(ra, dec, opts = {}) {
   $('load').disabled = false;
   S.images = r.images; S.eps = groupEpochs(r.images); S.dropped = null;
   S.search = { checkedAt: r.checkedAt || null, stale: !!r.stale, savedAt: r.savedAt || null, frozen: !!r.frozen, ra, dec };   // v0.55 U7: how old the image list is (v0.56.3: frozen, see searchUrl)
-  if (opts.auto && S.eps.length) { S.band = bestBand(); $('band').value = S.band; }   // the colour from every pass (as before), so the shipped examples and landmarks keep their images
+  if (opts.auto && S.eps.length) { S.band = bestBand(); $('band').value = S.band; spxFollow(); }   // the colour from every pass (as before), so the shipped examples and landmarks keep their images
   // (v0.22.1 left a thin pass out; v0.23 keeps every pass and fills each with its own extra images instead)
   if (!S.eps.length) { S.lastErr = 'No SPHEREx images cover this spot in the archive yet. Try another position.'; stat(S.lastErr, true); S.field = null; return false; }
   S.ei = S.eps.length - 1; // start on the latest epoch
@@ -460,7 +460,19 @@ function buildFrame(buf, im, fld, pcIn) {
 }
 // Shown as measured: OUTLIER-only pixels (the pipeline also flags moving asteroids with it) at their real values.
 const seeOf = f => f.flatKeep || f.flat;
-function paint(f) { const n = S.field.n; f.canvas.getContext('2d').putImageData(new ImageData(F.renderRGBA(seeOf(f), f.st, f.rgb), n, n), 0, 0); }
+function paint(f) { const n = S.field.n; f.canvas.getContext('2d').putImageData(new ImageData(F.renderRGBA(seeOf(f), f.st, f.rgb, S.view), n, n), 0, 0); }
+// v0.57.2: WiseView-style display controls (picture only: no measurement uses them). Contrast lifts faint things; Invert
+// draws dark stars on a light sky, the view many volunteers find easiest for spotting a faint moving dot.
+S.view = { gain: 1, invert: false };
+function setView(v) {
+  Object.assign(S.view, v);
+  if ($('ctro')) $('ctro').textContent = S.view.gain === 1 ? 'normal' : S.view.gain > 1 ? `×${S.view.gain.toFixed(1)} faint` : `×${S.view.gain.toFixed(2)}`;
+  if ($('invb')) $('invb').setAttribute('aria-pressed', String(S.view.invert));
+  if (S.field) { for (const f of S.frames.values()) try { paint(f); } catch { /* frame not ready */ } }
+  try { refresh(); } catch { refreshSoon(); }
+}
+if ($('ctr')) $('ctr').oninput = e => setView({ gain: +(2 ** +e.target.value).toFixed(3) });
+if ($('invb')) $('invb').onclick = () => setView({ invert: !S.view.invert });
 
 // Aligner's core: epoch 1's frame is the reference; every other frame is registered onto it by matching stars (median
 // offset of matched bright stars), with cross-correlation as a fallback. On real SPHEREx data the star method found a
@@ -846,7 +858,40 @@ function candChecklist(pk) {
   const ws = !CW.data ? row('na', 'WISE not loaded: press WISE to check for a known infrared source here.')
     : w && w.d < 6.15 ? row('bad', `A CatWISE2020 source sits ${w.d.toFixed(1)}″ away (${w.s.name}): most likely that source.`)
     : row('ok', `No CatWISE2020 source within one SPHEREx pixel (nearest ${w ? w.d.toFixed(0) + '″' : 'none'}).`);
-  return h('div', { class: 'cklist' }, h('p', { class: 'ckh' }, h('b', {}, 'Checks ARCNAVE made for you:')), h('ul', {}, rep, ast, gs, ws));
+  const fl = row('na', 'SPHEREx pipeline flags at this spot: reading the image…');
+  if (x && x.im) pipeFlagsAt(x.im, pk.ra, pk.dec).then(r => {
+    if (!r) { fl.replaceWith(row('na', 'SPHEREx pipeline flags: this image is not saved here, so they could not be read.')); return; }
+    const bad = r.names.filter(n => FLAG_ARTEFACT.includes(n)), info = r.names.filter(n => !FLAG_ARTEFACT.includes(n));
+    fl.replaceWith(bad.length ? row('bad', `NASA's pipeline flagged this spot as ${bad.join(', ')} (${bad.map(n => FLAG_SAYS[n] || n.toLowerCase()).join('; ')}): most likely an artefact.`)
+      : row('ok', 'No artefact flag from NASA\'s pipeline at this spot' + (info.length ? ` (it notes: ${info.map(n => FLAG_SAYS[n] || n).join('; ')}).` : '.')));
+  }).catch(() => fl.replaceWith(row('na', 'SPHEREx pipeline flags could not be read.')));
+  return h('div', { class: 'cklist' }, h('p', { class: 'ckh' }, h('b', {}, 'Checks ARCNAVE made for you:')), h('ul', {}, rep, ast, gs, ws, fl));
+}
+/* v0.57.2: which FLAGS bits NASA's pipeline set on a spot of one image (3x3 pixels around it), read from the cutout this
+   server saved. Names come from the file (QR2 MP_ keys, QR3/DR1 MSKN keys), else DR1's own numbering. Labels only: the
+   masks ARCNAVE measures with are not changed. CROSSTALK and STREAK are not in ARCNAVE's masks, so they are worth a word. */
+const FLAG_DR1 = { 0: 'TRANSIENT', 1: 'OVERFLOW', 2: 'SUR_ERROR', 6: 'NONFUNC', 7: 'DICHROIC', 9: 'MISSING_DATA', 10: 'HOT', 11: 'COLD', 12: 'FULLSAMPLE', 14: 'PHANMISS',
+  15: 'NONLINEAR', 17: 'PERSIST', 19: 'OUTLIER', 20: 'CROSSTALK', 21: 'SOURCE', 22: 'GHOST', 23: 'GHOST_FPA', 24: 'GHOST_EXT', 25: 'STREAK', 26: 'BLOOM', 27: 'SNOWBALL', 28: 'HALO' };
+const FLAG_ARTEFACT = ['TRANSIENT', 'OVERFLOW', 'SUR_ERROR', 'NONFUNC', 'MISSING_DATA', 'HOT', 'COLD', 'NONLINEAR', 'PERSIST', 'CROSSTALK', 'GHOST', 'GHOST_FPA', 'GHOST_EXT', 'BLOOM', 'SNOWBALL', 'HALO'];
+const FLAG_SAYS = { TRANSIENT: 'a one-off hit such as a cosmic ray', OVERFLOW: 'saturated', NONLINEAR: 'too bright to measure', PERSIST: 'afterglow of an earlier bright star',
+  CROSSTALK: 'an electronic echo of a bright star elsewhere on the detector', GHOST: 'an optical ghost of a bright star', GHOST_FPA: 'an optical ghost', GHOST_EXT: 'an optical ghost',
+  BLOOM: 'charge spilling from a saturated star', SNOWBALL: 'a snowball (a large cosmic-ray hit)', HALO: 'the halo of a bright star', HOT: 'a hot pixel', COLD: 'a dead pixel',
+  NONFUNC: 'a faulty pixel', MISSING_DATA: 'data lost', SUR_ERROR: 'a readout error', STREAK: 'a streak (a satellite or a fast asteroid)', SOURCE: 'a known source sits here',
+  OUTLIER: 'an outlier (also set on moving asteroids)', DICHROIC: 'the dichroic edge (calibrated)', FULLSAMPLE: 'full sampling', PHANMISS: 'no phantom reference' };
+const FLAGSAT = new Map();
+async function pipeFlagsAt(im, ra, dec) {
+  const fld = S.field; if (!fld) return null;
+  const key = `${im.url}|${ra.toFixed(5)}|${dec.toFixed(5)}`; if (FLAGSAT.has(key)) return FLAGSAT.get(key);
+  const r = await fetch(`/api/spherex/cutout?url=${encodeURIComponent(im.url)}&ra=${fld.ra}&dec=${fld.dec}&size=${fld.size}&cached=1`);
+  if (r.status !== 200) return null;
+  const buf = await r.arrayBuffer(), hd = F.parseFITS(buf), hi = F.findHDU(hd, 'IMAGE'), hf = F.findHDU(hd, 'FLAGS');
+  if (!hi || !hf) return null;
+  const fl = F.readFlags(buf, hf), p = F.sky2pix(F.makeWCS(hi.header), ra, dec); if (!p) return null;
+  const names = F.flagBitNames(hf.header), byBit = Object.keys(names).length ? Object.fromEntries(Object.entries(names).map(([n, b]) => [b, n])) : FLAG_DR1;
+  let bits = 0; const x0 = Math.round(p[0] - 1), y0 = Math.round(p[1] - 1);   // sky2pix is 1-based (FITS)
+  for (let y = y0 - 1; y <= y0 + 1; y++) for (let x = x0 - 1; x <= x0 + 1; x++) if (x >= 0 && y >= 0 && x < fl.nx && y < fl.ny) bits |= fl.data[y * fl.nx + x];
+  const out = { bits: bits >>> 0, names: Object.keys(byBit).map(Number).filter(b => (bits >>> b) & 1).map(b => byBit[b]) };
+  FLAGSAT.set(key, out); return out;
 }
 /* ---------- v0.57: this spot elsewhere: every resource the NASA challenge lists, and the archives volunteers use ----------
    NASA/IPAC IRSA (SPHEREx tools, tutorial notebooks, DR1), WiseView (the WISE tool the challenge names as a model), Gaia
@@ -1443,10 +1488,30 @@ $('flip').onclick = () => { S.flipped = !S.flipped; S.flipIdx = (S.flipIdx || 0)
 // v0.14.1: the colour really changes. The images of a field are picked for one colour when it loads (S.slots); moving the
 // slider used to only change the label, because those picked images were kept. Now letting go of the slider (or a preset)
 // fetches the images at the new colour and the agents run again on them, so every view and the report use that colour.
-$('band').oninput = e => { S.band = +e.target.value; $('bo').textContent = S.band.toFixed(2) + ' µm'; };
+$('band').oninput = e => { S.band = +e.target.value; $('bo').textContent = S.band.toFixed(2) + ' µm'; clearTimeout(spxFollow.t); spxFollow.t = setTimeout(spxFollow, 250); };
 $('band').onchange = () => recolour();
 document.querySelectorAll('[data-b]').forEach(b => b.onclick = () => { S.band = +b.dataset.b; $('band').value = S.band; recolour(); });
+/* v0.57.2: SPHEREx's own sky as the base layer: NASA's DR1 all-sky cube (IRSA, Nov 2026), 102 colours, served by this
+   server as /hips/sphx<frame>. The frame follows the Color slider: the frame whose wavelength is nearest (the dichroic
+   frames 50 and 51 are blank, so their neighbours are shown). */
+// the 102 frame wavelengths (µm), from the cube's own properties (data_cube_crval3_arr)
+const SPX_LAM = '0.753 0.771 0.790 0.809 0.828 0.848 0.868 0.889 0.910 0.932 0.955 0.978 1.001 1.025 1.050 1.075 1.102 1.113 1.139 1.167 1.195 1.224 1.254 1.284 1.315 1.346 1.378 1.412 1.446 1.481 1.517 1.554 1.592 1.631 1.656 1.695 1.735 1.775 1.818 1.861 1.905 1.949 1.995 2.041 2.089 2.139 2.189 2.240 2.292 2.345 2.399 2.445 2.506 2.575 2.646 2.719 2.794 2.871 2.951 3.033 3.118 3.204 3.293 3.383 3.476 3.570 3.667 3.768 3.833 3.867 3.901 3.935 3.970 4.005 4.040 4.076 4.112 4.148 4.184 4.220 4.257 4.294 4.331 4.368 4.405 4.435 4.467 4.500 4.533 4.566 4.600 4.635 4.669 4.704 4.739 4.773 4.808 4.843 4.879 4.915 4.951 4.988'.split(' ').map(Number);
+function spxFrameFor(lam) {
+  let best = 0; for (let f = 0; f < SPX_LAM.length; f++) if (f !== 50 && f !== 51 && Math.abs(SPX_LAM[f] - lam) < Math.abs(SPX_LAM[best] - lam)) best = f;
+  return best;
+}
+let spxShown = null;
+function setBaseSky(id) {
+  const u = skyUrl(id);
+  try { S.al.setBaseImageLayer(S.al.newImageSurvey ? S.al.newImageSurvey(u) : u); }
+  catch (err) { try { S.al.setImageSurvey(u); } catch (e2) { toast('Could not switch the base sky.'); } }
+}
+function spxFollow() {
+  if (!S.al || !$('survey') || $('survey').value !== 'spherex') { spxShown = null; return; }
+  const f = spxFrameFor(S.band); if (f === spxShown) return; spxShown = f; setBaseSky('spherex');
+}
 function recolour() {
+  spxFollow();
   updateLabels();
   if (!S.field || !S.eps.length) return;
   const now = S.slots.length && S.slots[0][0] ? lamRank(S.slots[0][0]) : null;
@@ -1462,9 +1527,8 @@ $('ipe').onchange = e => {
 };
 $('ecl').onclick = e => { S.ecl = !S.ecl; e.target.setAttribute('aria-pressed', S.ecl); };
 $('survey').onchange = e => {
-  const u = skyUrl(e.target.value);
-  try { S.al.setBaseImageLayer(S.al.newImageSurvey ? S.al.newImageSurvey(u) : u); }
-  catch (err) { try { S.al.setImageSurvey(u); } catch (e2) { toast('Could not switch the base sky.'); } }
+  if (e.target.value === 'spherex') { spxShown = null; spxFollow(); toast(`SPHEREx's own all-sky map (NASA DR1, 2026) at ${SPX_LAM[spxFrameFor(S.band)].toFixed(2)} µm: it follows the Color slider.`, 5000); return; }
+  spxShown = null; setBaseSky(e.target.value);
 };
 // Real examples: the field below is bundled with the site (demo-cache), so they open in seconds even when IRSA is busy.
 const EXAMPLES = {
@@ -2221,7 +2285,7 @@ function deepStack(frs) {   // mean of (image - median) / noise, masked pixels l
   }
   return { flat: out, st, n: frs.length, gain };
 }
-function deepCanvas(flat, st, rgb) { const n = S.field.n, cv = document.createElement('canvas'); cv.width = cv.height = n; cv.getContext('2d').putImageData(new ImageData(F.renderRGBA(flat, st, rgb), n, n), 0, 0); return cv; }
+function deepCanvas(flat, st, rgb) { const n = S.field.n, cv = document.createElement('canvas'); cv.width = cv.height = n; cv.getContext('2d').putImageData(new ImageData(F.renderRGBA(flat, st, rgb, S.view), n, n), 0, 0); return cv; }
 function deepComposite(stk) {   // blue = D1+D2, green = D3+D4, red = D5+D6, each in noise units
   const n = S.field.n, img = new ImageData(n, n), ch = [['D5', 'D6'], ['D3', 'D4'], ['D1', 'D2']].map(ds => {
     const parts = ds.map(d => stk[d]).filter(Boolean); if (!parts.length) return null;
@@ -2481,7 +2545,7 @@ async function runAgents(target, opts = {}) {
       const fwTick = () => waitTick(firstWave.filter(i => rawOf(i)).length);
       await Promise.all(firstWave.map(i => idx.includes(i) ? ensureFrame(i).then(fwTick) : ensureFrame(i).then(fwTick).catch(() => { /* retried later */ })));   // parallel: the server fetches up to 4 from IRSA at once and caches them
       if (!live()) return;
-      if (Object.keys(TABLES).length !== nTables && !opts.keepMode && opts.band == null) { S.band = bestBand(); $('band').value = S.band; }
+      if (Object.keys(TABLES).length !== nTables && !opts.keepMode && opts.band == null) { S.band = bestBand(); $('band').value = S.band; spxFollow(); }
       buildSlotsNow();   // slot 0 follows the new choice
       if (idx.every((i, k) => chosen(i).url === before[k])) break;
     }
@@ -3215,7 +3279,7 @@ function drawPxMap(m) {
 // v0.21: the base sky comes through this site (/hips/...), which takes the tiles from NASA/IPAC IRSA's mirror of the CDS
 // HiPS (or other mirrors) and keeps them. Seen live: CDS unreachable from a network, and the page showed no sky at all.
 const SKY_URL = { 'P/2MASS/color': '/hips/2mass', 'P/allWISE/color': '/hips/allwise', 'P/DSS2/color': '/hips/dss2' };
-const skyUrl = id => SKY_URL[id] ? location.origin + SKY_URL[id] : id;
+const skyUrl = id => id === 'spherex' ? `${location.origin}/hips/sphx${spxFrameFor(S.band || 3)}` : SKY_URL[id] ? location.origin + SKY_URL[id] : id;
 
 /* ---------- boot ---------- */
 function boot() {
@@ -5939,7 +6003,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.0', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.2', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
