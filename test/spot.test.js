@@ -33,6 +33,9 @@ const get = async (a, b) => { calls++; return { buf: new Uint8Array(full.subarra
 (async () => {
   const memo = {}, url = 'https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/qr2/level2/x/level2_2025W22_2B_0360_1D4_spx_l2b.fits';
   assert.strictEqual(SP.keyOf(url), 'qr2:4');
+  // v0.57.1: DR1 (and any later release folder) gets its own layout key, not '?' shared with every other release
+  assert.strictEqual(SP.keyOf('https://irsa.ipac.caltech.edu/ibe/data/spherex/dr1/level2/2025W33_2C/l2b-v27-2026-228/6/level2_2025W33_2C_0321_1D6_spx_l2b-v27-2026-228.fits'), 'dr1:6');
+  assert.strictEqual(SP.keyOf('https://nasa-irsa-spherex.s3.us-east-1.amazonaws.com/dr2/level2/x/level2_2027W01_1A_0001_1D3_spx_l2b.fits'), 'dr2:3');
   const s = await SP.spot(get, url, sky[0], sky[1], 7, memo, F.badFlagMask(null).mask);
   const first = calls; calls = 0;
   assert.strictEqual(s.w, 15); assert.strictEqual(s.h, 15);

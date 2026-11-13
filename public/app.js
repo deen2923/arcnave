@@ -213,6 +213,17 @@ async function loadField(ra, dec, opts = {}) {
 /* ---------- v0.55 U7: data-release panel ----------
    What is loaded (releases, passes and their dates, the newest image), how old the archive's image list is (the server keeps
    it a day, or serves the last copy when IRSA does not answer), and a button that asks IRSA again now. */
+// v0.57.1: the SPHEREx data releases NASA has out now (server: /api/spherex/releases, S3 bucket listing, kept a day).
+// A release newer than the ones this version was built with gets one note per browser; nothing else changes, because the
+// archive search already includes every release.
+let NASA_REL = null;
+(async () => {
+  try { NASA_REL = await api('/api/spherex/releases'); } catch { return; }
+  if (typeof relRender === 'function') relRender();
+  const nw = NASA_REL.newSinceBuild || [];
+  if (nw.length) { let told = ''; try { told = localStorage.getItem('arcnave-rel-told') || ''; } catch { /* no storage */ }
+    if (told !== nw.join(',')) { toast(`New SPHEREx data at NASA: ${nw.join(', ')}. ARCNAVE searches it already in every new spot.`, 6000); try { localStorage.setItem('arcnave-rel-told', nw.join(',')); } catch { /* no storage */ } } }
+})();
 const fmtAge = iso => { const t = iso ? Date.parse(iso) : NaN; if (!(t > 0)) return 'at an unknown time'; const m = (Date.now() - t) / 6e4;
   return m < 1.5 ? 'just now' : m < 90 ? `${Math.round(m)} min ago` : m < 48 * 60 ? `${Math.round(m / 60)} h ago` : `${Math.round(m / 1440)} days ago (${iso.slice(0, 10)})`; };
 function relRender(msg) {
@@ -224,6 +235,10 @@ function relRender(msg) {
     h('p', {}, h('b', {}, 'Releases: '), Object.entries(by).sort().map(([k, n]) => `${k === '?' ? 'unknown' : k} (${n} images)`).join(' + ') + ` · newest image ${fmtDay(last)}`),
     h('ul', { class: 'rellist' }, ...S.eps.map((ep, e) => h('li', {}, h('b', {}, `Pass ${e + 1}`), ` · ${fmtDay(ep.t0)} to ${fmtDay(ep.t1)} · ${ep.imgs.length} images` +
       ` (${[...new Set(ep.imgs.map(releaseOf).filter(Boolean))].join(', ') || '?'})`))),
+    // v0.57.1: what NASA has out (the server's release watcher, asked once a day)
+    NASA_REL ? h('p', {}, h('b', {}, 'At NASA now: '), `${NASA_REL.releases.join(', ')} (newest ${NASA_REL.newest}, checked ${fmtAge(NASA_REL.checkedAt)}${NASA_REL.stale ? ', saved list' : ''}). ` +
+      (NASA_REL.newSinceBuild.length ? `New since this ARCNAVE version: ${NASA_REL.newSinceBuild.join(', ')}. ` : '') +
+      'The archive search has no release filter, so every new release is searched by itself in every spot.') : null,
     s.frozen ? h('p', {}, h('b', {}, 'Kept as measured: '), 'this spot is one of ARCNAVE\'s test fields, so its image list is kept as it was when the numbers ARCNAVE quotes were measured, and it opens from saved images. NASA released SPHEREx Data Release 1 (DR1) in November 2026: "Check for new data" shows what IRSA lists now and can switch this spot to it.') : null,
     h('p', { class: s.stale ? 'relwarn' : '' }, h('b', {}, 'Archive asked: '), s.stale ? `IRSA did not answer, so this is the list saved ${fmtAge(s.savedAt)}.`
       : s.checkedAt ? `${fmtAge(s.checkedAt)}. ARCNAVE keeps the list a day; new images in between show after "Check for new data".` : 'time not recorded (a copy shipped with ARCNAVE, or saved before v0.55). "Check for new data" asks IRSA now.'),
@@ -1264,7 +1279,7 @@ function dataNote() {
   if (!S.images || !S.images.length) return '';
   const rel = [...new Set(S.images.map(releaseOf).filter(Boolean))], last = Math.max(...S.images.map(i => i.mjd));
   return ` Data: SPHEREx ${rel.length ? rel.join(' + ') : 'archive'} at NASA/IPAC IRSA, newest image here ${fmtDay(last)}.` + (S.search && S.search.frozen
-    ? ' This test field keeps the image list its quoted numbers were measured on; NASA\'s newer DR1 is one click away (Releases: Check for new data).'
+    ? ' This test field keeps the image list its quoted numbers were measured on; NASA\'s newest release' + (NASA_REL ? ` (${NASA_REL.newest})` : '') + ' is one click away (Releases: Check for new data).'
     : ' The archive is asked live, so new releases appear without any change to ARCNAVE.');
 }
 // What the pipeline flagged in one image (counted in the image's own pixels, before it is put on the field grid)
