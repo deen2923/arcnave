@@ -15,6 +15,17 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.56.1: a calmer start page, a film that stays in view (13 Nov 2026)
+- **Start page:** the hero is centred, with the picture below the words (desktop and phone). The picture is now the
+  Lindbloom blink only, playing as soon as the page shows; its caption says plainly that 3865 Lindbloom is a known
+  asteroid ARCNAVE caught moving. The Tamil, Hindi and Spanish film captions quote the measured Epsilon Indi B motion
+  (5.03 ± 0.41″/yr, as on its target card) instead of 5.9″.
+- **🎬 Film:** the "from here to there" callout and the pass caption stay on the sky between the controls panel and the
+  right card (`movieFreeX` in `app.js`); before, the callout could slide under the card. Checked on Barnard's Star at
+  1366 px with the card open: every callout and caption inside the free sky.
+- **Time machine:** month labels are spaced by their real width, so they no longer overlap on a narrow track.
+- **Fix:** the start page's star background no longer throws on every frame when the window has no size.
+
 ## v0.56: every field within a minute, the start screen ready (11 Nov 2026)
 Measured on this PC (2.2-2.4 MB/s to NASA's S3, the same with 4, 8 or 16 streams): a new field at 8 images per pass took
 79-90 s (archive search 6-16 s, then ~170 MB of image rows). Now:

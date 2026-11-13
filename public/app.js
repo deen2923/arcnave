@@ -5842,7 +5842,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.56.0', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.56.1', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
@@ -5948,12 +5948,24 @@ function movieStage(g, now, k) {
   const fade = Math.min(1, 0.25 + k * 1.2), lh = 15, pad = 8;
   ctx.font = '600 11px Inter,system-ui,sans-serif'; let wmax = 0; for (const [t, , f] of lines) { ctx.font = (f || '600 11px') + ' Inter,system-ui,sans-serif'; wmax = Math.max(wmax, ctx.measureText(t).width); }
   const bw = wmax + 2 * pad, bh = lines.length * lh + pad + 2;
-  let bx = head[0] + 30, by = head[1] - bh - 18; if (bx + bw > cw - 8) bx = head[0] - 30 - bw; if (bx < 8) bx = 8; if (by < 96) by = head[1] + 28; if (by + bh > ch - 8) by = ch - 8 - bh;
+  const [fl, fr] = movieFreeX(cw);   // v0.56.1: keep the callout on the sky the panels leave visible (it slid under the right card)
+  let bx = head[0] + 30, by = head[1] - bh - 18; if (bx + bw > fr) bx = head[0] - 30 - bw; if (bx < fl) bx = fl; if (bx + bw > fr) bx = Math.max(fl, fr - bw); if (by < 96) by = head[1] + 28; if (by + bh > ch - 8) by = ch - 8 - bh;
   ctx.globalAlpha = fade; ctx.fillStyle = 'rgba(5,8,15,.86)'; ctx.fillRect(bx, by, bw, bh); ctx.strokeStyle = col; ctx.lineWidth = 1; ctx.strokeRect(bx + .5, by + .5, bw - 1, bh - 1);
   const ax = Math.max(bx, Math.min(bx + bw, head[0])), ay = by + bh < head[1] ? by + bh : by;   // a leader line to the ring
   ctx.beginPath(); ctx.moveTo(ax, ay); ctx.lineTo(head[0] + (ax - head[0]) * 14 / (Math.hypot(ax - head[0], ay - head[1]) || 1), head[1] + (ay - head[1]) * 14 / (Math.hypot(ax - head[0], ay - head[1]) || 1)); ctx.stroke();
   lines.forEach(([t, c, f], j) => { ctx.font = (f || '600 11px') + ' Inter,system-ui,sans-serif'; ctx.fillStyle = c; ctx.fillText(t, bx + pad, by + pad + 9 + j * lh); });
   ctx.restore();
+}
+// v0.56.1: the part of the overlay canvas (x, CSS px) not covered by the controls panel or the card beside it
+function movieFreeX(cw) {
+  let L = 8, R = cw - 8; const cv = ctx.canvas.getBoundingClientRect();
+  for (const el of [document.querySelector('section.panel'), document.querySelector('.rdock'), $('card'), $('lab')]) {
+    if (!el || el.hidden) continue; const r = el.getBoundingClientRect();
+    if (!r.width || !r.height || r.bottom < cv.top + 40 || r.top > cv.bottom - 40) continue;
+    const l = r.left - cv.left, rr = r.right - cv.left;
+    if (rr < cw / 2 && rr + 8 > L) L = rr + 8; else if (l > cw / 2 && l - 8 < R) R = l - 8;
+  }
+  return R - L > 160 ? [L, R] : [8, cw - 8];
 }
 function drawMovie() {
   if (!MOVIE.on) return; if (MOVIE.run !== S.run) { movieStop(true); return; }
@@ -6030,9 +6042,10 @@ function drawMovie() {
   // caption
   let txt = `🎬 Pass ${e + 1} of ${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (MOVIE.mo ? ' · motion only (sky hidden)' : '') + (Fx > 1 ? ` · paths drawn ${Fx}x longer to be seen (zoom in for true scale)` : '');
   ctx.font = '600 12px Inter,system-ui,sans-serif'; const cw = ctx.canvas.width / (window.devicePixelRatio || 1);
-  if (ctx.measureText(txt).width + 34 > cw) txt = `🎬 Pass ${e + 1}/${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (Fx > 1 ? ` · paths ${Fx}x longer` : '');   // phones: the short form
+  const [fl, fr] = movieFreeX(cw), fw = fr - fl;   // v0.56.1: centred on the sky the panels leave visible
+  if (ctx.measureText(txt).width + 34 > fw) txt = `🎬 Pass ${e + 1}/${S.eps.length} · ${fmtMonth(S.eps[e].t0)} · ${ms.length} moving` + (Fx > 1 ? ` · paths ${Fx}x longer` : '');   // phones and narrow skies: the short form
   const w = ctx.measureText(txt).width + 18;
-  const x = Math.max(8, (cw - w) / 2), y = 64; ctx.fillStyle = 'rgba(5,8,15,.82)'; ctx.fillRect(x, y, w, 24); ctx.strokeStyle = 'rgba(45,212,191,.5)'; ctx.strokeRect(x, y, w, 24);
+  const x = Math.max(fl, fl + (fw - w) / 2), y = 64; ctx.fillStyle = 'rgba(5,8,15,.82)'; ctx.fillRect(x, y, w, 24); ctx.strokeStyle = 'rgba(45,212,191,.5)'; ctx.strokeRect(x, y, w, 24);
   ctx.fillStyle = '#e6fffb'; ctx.fillText(txt, x + 9, y + 16);
   ctx.restore();
 }

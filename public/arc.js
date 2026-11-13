@@ -149,6 +149,9 @@
       // or decodes the 358 kB GIF (it did, measured on the tool page); going back to the start page later starts it then.
       // v0.55: the film frame is the first picture now; the blink's GIF is fetched only when its tab is opened
       blinkStart = () => { if (blinkOn) return; blinkOn = true; swap(); }; }
+    // v0.56.1: the hero shows the Lindbloom blink only (no film tab), so it plays once the start page is really shown
+    const blinkIfShown = () => { if (!html.classList.contains('landing')) return false; blinkStart(); return true; };
+    if (!blinkIfShown()) new MutationObserver((_, o) => { if (blinkIfShown()) o.disconnect(); }).observe(html, { attributes: true, attributeFilter: ['class'] });
     // download (not run) the viewer once the visitor shows interest (points at or touches a Launch or target button, or
     // scrolls to the targets), so Launch is quick; v0.40: no 1.1 MB download for someone who only reads the page
     let pre = false; const prefetch = () => { if (pre || typeof S !== 'undefined' || !window.ARC_TOOL) return; pre = true;
@@ -204,7 +207,8 @@
   function spawnShooter(t) { const right = rnd() < .5; shooters.push({ t0: t, x: W3 * (.15 + rnd() * .7), y: H3 * rnd() * .45, a: right ? Math.PI * (.15 + rnd() * .15) : Math.PI * (.7 + rnd() * .15), v: (.6 + rnd() * .5) * DPR, len: (120 + rnd() * 160) * DPR, life: 650 + rnd() * 450 }); }
   const qb = (p0, p1, p2, f) => [(1 - f) ** 2 * p0[0] + 2 * (1 - f) * f * p1[0] + f * f * p2[0], (1 - f) ** 2 * p0[1] + 2 * (1 - f) * f * p1[1] + f * f * p2[1]];
   function drawStars(time = 0) {
-    if (!cv) return; const g = cv.getContext('2d'); if (!bgC || bgC.width !== W3) paintBg();
+    if (!cv || !W3 || !H3) return;   // v0.56.1: a zero-size page (hidden window, mid-resize) made drawImage throw every frame
+    const g = cv.getContext('2d'); if (!bgC || bgC.width !== W3) paintBg();
     cam.x += (cam.tx - cam.x) * .05; cam.y += (cam.ty - cam.y) * .05;   // the camera eases towards the pointer
     g.globalCompositeOperation = 'source-over'; g.fillStyle = '#000'; g.fillRect(0, 0, W3, H3);
     g.drawImage(bgC, -cam.x * 6 * DPR - 10 * DPR, -drift * DPR * .03 - cam.y * 4 * DPR - 10 * DPR);
@@ -590,14 +594,19 @@
     } catch { return [$('tmo').textContent || '', '']; } };
     // tick marks where each pass starts, labelled with its month
     function drawTicks() {
-      const lo = +tm.min, hi = +tm.max, key = `${S.mode}|${lo}|${hi}|${S.eps.length}|${S.seq ? S.seq.length : 0}`; if (key === tickKey) return; tickKey = key;
+      const tw = ticks.clientWidth || 0;   // v0.56.1: the track can be narrow (film, small screens): space the labels by their real width
+      const lo = +tm.min, hi = +tm.max, key = `${S.mode}|${lo}|${hi}|${S.eps.length}|${S.seq ? S.seq.length : 0}|${Math.round(tw / 16)}`; if (key === tickKey) return; tickKey = key;
+      const gap = tw > 0 ? Math.max(12, 100 * 1.6 * 54 / tw) : 12;
       const marks = []; try {
         if (S.mode === 'time' && S.seq && hi === S.seq.length - 1) S.seq.forEach((x, i) => { if (!i || x.e !== S.seq[i - 1].e) marks.push([i, fmtMonth(S.eps[x.e].t0)]); });
         else if (hi === S.eps.length - 1) for (let i = lo; i <= hi; i++) marks.push([i, fmtMonth(S.eps[i].t0)]);
       } catch { }
       // a label closer than 12 % to the one before keeps its tick but not its text (a pass of 3 images among 43)
-      let last = -99; ticks.innerHTML = hi > lo ? marks.map(([i, t]) => { const x = (i - lo) / (hi - lo) * 100, show = x - last >= 12; if (show) last = x;
+      let last = -99; ticks.innerHTML = hi > lo ? marks.map(([i, t]) => { const x = (i - lo) / (hi - lo) * 100, show = x - last >= gap; if (show) last = x;
         return `<span style="left:${x.toFixed(2)}%"${show ? '' : ' class="nl"'}><i></i>${show ? t : ''}</span>`; }).join('') : '';
+      // v0.56.1: then measure the real labels and drop any that would touch the one before (the last one wins over its neighbour)
+      if (tw > 0) { const sp = [...ticks.children].filter(s => s.textContent); const box = s => s.getBoundingClientRect();
+        for (let i = 1; i < sp.length; i++) { const a = box(sp[i - 1]), c = box(sp[i]); if (c.left < a.right + 6) { const drop = i === sp.length - 1 && i > 1 ? sp[i - 1] : sp[i]; drop.innerHTML = '<i></i>'; drop.classList.add('nl'); sp.splice(sp.indexOf(drop), 1); i--; } } }
     }
     function sync() {
       const tmr = $('tmr'), live = typeof S !== 'undefined' && S.eps && S.eps.length && tmr && !tmr.hidden && S.mode !== 'change' && !html.classList.contains('landing');
