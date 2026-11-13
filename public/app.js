@@ -2510,6 +2510,25 @@ const NOTES = [
   'Known-object positions come from IMCCE SkyBoT (or, when SkyBoT cannot be reached, the Minor Planet Center checker) for a geocentric observer. SPHEREx is in low Earth orbit, so near objects can be off by about an arcminute.',
   'Nothing here is a discovery claim. Planet X is hypothetical and is not searched for.'];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
+/* v0.57.5: the page stays alive during the long searches. Measured on Barnard's field in Chrome, starting the film froze the
+   page 22 s in all, 5.5 s at once: the 24 images' star shapes (F.epsfGrid, ~0.4 s each) were built back to back inside the
+   first measurement, and the loops gave the page a turn only every 20-25 sources (0.8-3 s). Now the star shapes are built
+   one image at a time with a pause in between, and the loops pause every ~50 ms. Same inputs, same cached shapes: every
+   number is the same, only the page answers clicks while it works. */
+// The pause is a message to itself, not setTimeout (in a background tab timers run about once a second, so 50 ms setTimeout
+// pauses made a search many times slower there) and not scheduler.yield (its continuation jumps the queue, so other tasks
+// still waited: measured, the first 30 star shapes still froze the page 5 s). A message waits its turn behind clicks.
+const yieldNow = () => new Promise(r => { const c = new MessageChannel(); c.port1.onmessage = () => { c.port1.close(); r(); }; c.port2.postMessage(0); });
+let BREATHE_T = 0;
+const breathe = async () => { if (performance.now() - BREATHE_T > 50) { await yieldNow(); BREATHE_T = performance.now(); } };
+async function warmEpsf(live = () => true) {
+  for (const fr of [...S.frames.values()]) {
+    if (!live()) return;
+    if (!fr.flat0 || (FT.epsfMode !== 'stack' && fr.epsf !== undefined)) continue;
+    try { epsfOf(fr); } catch { /* measured later, as before */ }
+    await yieldNow();
+  }
+}
 function renderAgents() {
   const box = $('alist'); box.replaceChildren();
   for (const [id, name, desc] of AGENTS) {
@@ -4538,6 +4557,7 @@ async function motionSearch() {
     const A = eps[0].fr, later = eps.slice(1);
     say('Finding the bright stars of the first pass...');
     try { await gaiaLoad(); } catch { /* checked below */ }   // v0.56: always for THIS field (it kept the last field's stars)
+    await warmEpsf(() => run === S.run && !MS.stop); await fieldFloorWarm(() => run === S.run && !MS.stop); if ((run !== S.run || MS.stop)) return;   // v0.57.5: star shapes and the field floor first, with pauses
     const peaks = F.detectPeaks(A.flat, n, A.st, 10, 300).filter(p => p.x > 16 && p.y > 16 && p.x < n - 17 && p.y < n - 17);
     const stars = peaks.filter((p, i) => !peaks.some((q, j) => j < i && Math.hypot(q.x - p.x, q.y - p.y) < 5)).slice(0, 120);   // isolated: no brighter star within 5 px
     const meas = [];
@@ -4840,10 +4860,30 @@ const CHI99 = { 2: 9.21, 4: 13.28, 6: 16.81, 8: 20.09 };
    The floor is the error added to every pass that makes their χ² equal its degrees of freedom (0 when their errors are
    already big enough). Tested: Epsilon Indi field 0.178″ (17 stars), WISE 0855 0.133″ (21), Barnard 0 (33). Cached per
    run and per number of images loaded. */
-const FLOOR = { key: null, res: null, busy: false };
+const FLOOR = { key: null, res: null, busy: false, gen: null, genKey: null };
+const floorKey = () => !GAIA.data || !S.field || S.eps.length < 2 ? null : S.run + ':' + S.frames.size + ':' + FT.fitter + ':' + FT.epsfMode;
+// v0.57.5: the work is a generator that hands control back after each reference star. fieldFloor() runs it to the end at
+// once (as before, same result); fieldFloorWarm() runs the same steps ahead of time with pauses, so the page does not freeze
+// for seconds inside a measurement. A call that finds a warm-up half done finishes that very generator: one result, no repeat.
 function fieldFloor() {
-  if (!GAIA.data || !S.field || S.eps.length < 2) return null;
-  const key = S.run + ':' + S.frames.size + ':' + FT.fitter + ':' + FT.epsfMode; if (FLOOR.key === key) return FLOOR.res; if (FLOOR.busy) return null;
+  const key = floorKey(); if (key == null) return null;
+  if (FLOOR.key === key) return FLOOR.res;
+  if (FLOOR.gen && FLOOR.genKey === key) { const it = FLOOR.gen; let r; do { r = it.next(); } while (!r.done); return r.value; }
+  if (FLOOR.gen) FLOOR.gen.return();   // a warm-up for an older run or field: dropped (its finally clears busy)
+  if (FLOOR.busy) return null;
+  const it = fieldFloorSteps(key); FLOOR.gen = it; FLOOR.genKey = key; let r; do { r = it.next(); } while (!r.done); return r.value;
+}
+async function fieldFloorWarm(live = () => true) {
+  const key = floorKey(); if (key == null || FLOOR.key === key || FLOOR.gen || FLOOR.busy) return;
+  const it = fieldFloorSteps(key); FLOOR.gen = it; FLOOR.genKey = key;
+  for (;;) {
+    if (FLOOR.gen !== it) return;   // finished meanwhile by a measurement that needed it
+    const r = it.next(); if (r.done) return;
+    if (!live()) { it.return(); return; }
+    await yieldNow();
+  }
+}
+function* fieldFloorSteps(key) {
   FLOOR.busy = true; let res = null;
   try {
     const f = S.field, n = f.n, grid = { ra0: f.ra, dec0: f.dec, s: f.s, n };
@@ -4858,7 +4898,7 @@ function fieldFloor() {
     const meas = [];
     for (const o of refs) { const obj = gaiaObj(o.s), ff = ffCore((e, fr, im) => F.skyToGrid(...ctAt(obj, im.mjd), grid), { H: 3, minSnr: 5, plx: o.s.plx, raw: true });
       if (!ff || ff.fail || ff.passes.length < Math.min(3, S.eps.length) || ff.nSat) continue;
-      const rs = passRes(ff, (o.s.pmra || 0) / 1000, (o.s.pmdec || 0) / 1000, o.s.plx); meas.push({ rs, k: 2 * rs.length - 2 }); }
+      const rs = passRes(ff, (o.s.pmra || 0) / 1000, (o.s.pmdec || 0) / 1000, o.s.plx); meas.push({ rs, k: 2 * rs.length - 2 }); yield; }
     if (meas.length >= 5) {
       const K = meas.reduce((a, x) => a + x.k, 0), tot = s => meas.reduce((a, x) => a + chiWith(x.rs, s), 0);
       let lo = 0, hi = 3; if (tot(0) <= K) hi = 0; for (let i = 0; i < 50 && hi > 0; i++) { const s = (lo + hi) / 2; if (tot(s) > K) lo = s; else hi = s; }
@@ -4867,7 +4907,8 @@ function fieldFloor() {
       res = { floor: (lo + hi) / 2, refs: meas.length, before: tot(0) / K, rms: Math.sqrt(all.reduce((a, v) => a + v * v, 0) / all.length) };
     }
   } catch (e) { console.warn('fieldFloor', e); }
-  FLOOR.busy = false; FLOOR.key = key; FLOOR.res = res; return res;
+  finally { FLOOR.busy = false; FLOOR.gen = null; FLOOR.genKey = null; }
+  FLOOR.key = key; FLOOR.res = res; return res;
 }
 // the share of a frame-by-frame measurement's images in which the star is saturated (its centre blank)
 const satShare = ff => ff && ff.nKept ? ff.nSat / ff.nKept : 0;
@@ -5053,6 +5094,7 @@ async function deepSearch() {
     say('Lining every image up on Gaia and stacking them all...'); await sleep(30);
     try { await gaiaLoad(); } catch { /* checked below */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
     if (!GAIA.data) { say('Gaia DR3 did not answer, and every image is lined up on Gaia here. Try again in a minute.'); return; }
+    await warmEpsf(() => run === S.run && !DS.stop); await fieldFloorWarm(() => run === S.run && !DS.stop); if ((run !== S.run || DS.stop)) return;   // v0.57.5: star shapes first, one image at a time
     const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded for a deep stack. Run the agents first (Images per epoch: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 5, 2000).filter(p => p.x > 12 && p.y > 12 && p.x < n - 13 && p.y < n - 13);
     const src = pk.filter((p, i) => !pk.some((q, j) => j < i && Math.hypot(q.x - p.x, q.y - p.y) < 3)).slice(0, 500);
@@ -5064,6 +5106,7 @@ async function deepSearch() {
       const s = src[i], ff = ffCore((e, fr) => toRaw(fr, s.x, s.y), { H: 3, minSnr: 3, raw: true });
       if (ff && !ff.fail && ff.fit) all.push({ s, ff });
       if (i % 25 === 0) { say(`A stack of ${D.nImg} images found ${src.length} sources down to 5σ. Each is now measured in every image, lined up on Gaia.`, i, src.length); await sleep(0); }
+      else await breathe();
     }
     // every pass that has images must see it at least twice (or once, if the pass has one image)
     const good = all.filter(x => S.eps.every((_, e) => { const nIm = epochImgs(e).filter(im => S.frames.get(im.url)).length; if (!nIm) return true; const p = x.ff.passes.find(q => q.e === e); return p && p.nUsed >= Math.min(2, nIm); }));
@@ -5324,6 +5367,7 @@ async function diffSearch() {
   try {
     say('Subtracting images of the same colour, pass by pass...'); await sleep(30);
     try { await gaiaLoad(); } catch { /* labels say unchecked */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
+    await warmEpsf(() => run === S.run && !DF.stop); await fieldFloorWarm(() => run === S.run && !DF.stop); if ((run !== S.run || DF.stop)) return;   // v0.57.5: star shapes first, one image at a time
     const slots = S.slots.length ? S.slots : [S.eps.map((_, i) => chosen(i))];
     // pairs: slot k, pass 1 against pass e
     const pairs = [];
@@ -5557,6 +5601,7 @@ async function motionScan() {
   try {
     say('Stacking every image and finding sources...'); await sleep(30);
     try { await gaiaLoad(); } catch { /* labels say unchecked */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
+    await warmEpsf(() => run === S.run && !TSC.stop); await fieldFloorWarm(() => run === S.run && !TSC.stop); if ((run !== S.run || TSC.stop)) return;   // v0.57.5: star shapes first, one image at a time
     const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Run the agents first (Images per epoch: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 5, 2000).filter(p => p.x > 14 && p.y > 14 && p.x < n - 15 && p.y < n - 15);
     const blankNear = p => { const X = Math.round(p.x), Y = Math.round(p.y); for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (!(D.flat[(Y + j) * n + X + i] === D.flat[(Y + j) * n + X + i])) return true; return false; };
@@ -5572,6 +5617,7 @@ async function motionScan() {
       if ((run !== S.run || TSC.stop)) return;
       const r = scScan(PS, n, src[i], arc, sigPsf); if (r) out.push({ s: src[i], ...r });
       if (i % 20 === 0) { say(`Trying 625 motions for each of ${src.length} sources, in ${PS.length} passes (${D.nImg} images).`, i, src.length); await sleep(0); }
+      else await breathe();
     }
     // calibration by brightness: a fixed source gains 1.386 on median (2-number chi-square); brighter sources gain more from
     // small systematic shifts, so each S/N bin of the stack gets its own factor (the field-wide one when a bin has < 12)
