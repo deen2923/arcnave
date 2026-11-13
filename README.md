@@ -2,6 +2,24 @@
 
 Real SPHEREx images in a sky viewer, with known movers. Needs Node 18+ and internet. No npm install.
 
+## For judges (NASA Space Apps 2026, "Planet X and SPHEREx")
+- **Live:** _link added at submission_ · **Code:** this repository
+- **What it does:** type any RA/Dec (or a name) and NASA's real SPHEREx images of that spot play like a film; stars that
+  move are circled pass by pass and measured, checked against ESA Gaia DR3 and NASA WISE (CatWISE2020). SPHEREx's own
+  all-sky map, spectra, light curves, a Planet X shift-and-stack search, a game and guided tours in English, Tamil, Hindi
+  and Spanish. Every number is measured by this code on the real archive data; nothing is called a discovery.
+- **The 5 NASA test targets, one click each** (append to the live link or to `http://localhost:8083/`):
+  `#ct=barnard` · `#ct=epsindb` · `#ct=wise0855` · `#ct=rwaur` · `#ct=rdra`. Tests and limits: `#scorecard`, `/about.html`.
+- **Run it yourself:** Windows: double-click `start.bat` (opens `http://localhost:8083`). Any OS: `node server.js`, then
+  open `http://localhost:8080` (Node 18+, no install). Public server: `DEPLOY.md` (Docker + Caddy, Oracle Cloud free tier).
+- **Data:** NASA/IPAC IRSA (SPHEREx QR2, QR3, DR1), ESA Gaia DR3, NASA WISE/CatWISE2020, CSA NEOSSat via CADC, IMCCE SkyBoT,
+  Minor Planet Center, JPL Horizons, CDS. Full credits and acknowledgements: `public/about.html`.
+- **Use of AI (SI):** the code was written with the help of an AI assistant (Claude, Anthropic); the tour narration uses
+  Microsoft neural text-to-speech voices. The idea, the design choices and every measurement are the team's and the code's,
+  run on real archive data. See also `public/about.html`.
+
+## Tests
+
 ```
 node server.js        # then open http://localhost:8080
 node test/test.js     # offline tests (synthetic FITS, parsers, guards, server with mocked network)
@@ -14,6 +32,18 @@ node test/examples.e2e.js # both examples open from demo-cache, offline
 node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
+
+## v0.57.7: ready to publish: judges' quick start, AI disclosure, Cloudflare measured (13 Nov 2026)
+- **README "For judges"** at the top: what ARCNAVE does, the 5 NASA targets one click each, how to run it, data credits.
+- **AI (SI) disclosure**, as the Space Apps submission guide asks: the code was written with an AI assistant (Claude); the
+  tour narration is Microsoft neural text-to-speech (README, `public/about.html`, and `public/audio/ABOUT-THESE-VOICES.txt`
+  next to the recordings). No image, data or result is AI-generated.
+- `.gitignore`: `.claude/` and `HANDOFF-PROMPT.md` (internal) stay out of the public repository.
+- **Measured: a Cloudflare quick tunnel from this PC is not fast enough to host ARCNAVE.** Through
+  `*.trycloudflare.com` the server's files reached a visitor at 60-130 KB/s (nothing cached: `cf-cache-status: DYNAMIC`),
+  against 1.33 MB/s for this PC's own upload: Aladin Lite (840 kB) took 10 s, each saved image (0.58 MB) 7.5-8 s, so a
+  saved field (24 images) would take minutes. The archive searches through it were fine (0.8 s). The public server stays
+  the Oracle Cloud plan in `DEPLOY.md` (Ashburn, next to NASA's S3); Cloudflare can sit in front of it with a domain.
 
 ## v0.57.6: ready for the public server (13 Nov 2026)
 - **The 18 test fields stay as measured on the public server too.** Their image lists (QR2 + QR3, 0 DR1) are now in

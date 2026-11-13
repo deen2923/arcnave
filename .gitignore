@@ -20,3 +20,6 @@ desktop.ini
 .idea/
 # reports/src: pdf.cjs writes this temp file on every build
 reports/src/report.built.html
+# internal notes and Claude Code working files (never pushed)
+.claude/
+HANDOFF-PROMPT.md

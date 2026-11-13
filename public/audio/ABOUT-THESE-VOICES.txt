@@ -1,0 +1,8 @@
+AI-GENERATED AUDIO (Super Intelligence / SI disclosure, NASA Space Apps 2026)
+
+Every .mp3 file in this folder (en/, ta/, hi/, es/) is AI-generated speech: Microsoft neural text-to-speech voices
+reading the guided tour's own captions, one file per caption. The captions are in texts.json (key = hash of the exact
+caption text); index.json lists which captions have a recording. The files were made with tools/make-voices.py.
+
+The words are ARCNAVE's own tour text, written by the team. Only the voice is generated. No image, data or measured
+result in ARCNAVE is AI-generated. When a recording is missing, the browser's own speech voice reads the caption.
