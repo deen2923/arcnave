@@ -1,12 +1,12 @@
 @echo off
 title ARCNAVE: make the share zip
-rem ARCNAVE v0.56: makes ONE file to share, ..\ARCNAVE-v0.56.zip: the app, the portable Node and the saved data ("cache",
+rem ARCNAVE v0.57: makes ONE file to share, ..\ARCNAVE-v0.57.zip: the app, the portable Node and the saved data ("cache",
 rem about 2.2 GB: the NASA targets, the 18 test fields and every spot opened here), so the other computer needs nothing
 rem installed and opens the same places as fast as this one. The git history (.git) and work folders are left out.
 rem Without the saved data (small zip, about 400 MB): make-share.bat nocache
 set "SRC=%~dp0"
-set "OUT=%~dp0..\ARCNAVE-SHARE-v0.56\ARCNAVE"
-set "ZIP=%~dp0..\ARCNAVE-v0.56.zip"
+set "OUT=%~dp0..\ARCNAVE-SHARE-v0.57\ARCNAVE"
+set "ZIP=%~dp0..\ARCNAVE-v0.57.zip"
 echo Copying the app...
 robocopy "%SRC%." "%OUT%" /E /XD cache node_modules .git .claude debug-cutouts "%SRC%deploy\out" /XF *.tmp /NFL /NDL /NJH /NJS /NP >nul
 if exist "%SRC%..\node\node-v24.20.0-win-x64\node.exe" (

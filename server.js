@@ -333,13 +333,19 @@ async function gaia(q) {
         `WHERE CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', ${ra}, ${dec}, ${r})) = 1 AND phot_g_mean_mag < ${gmax} ORDER BY phot_g_mean_mag`;
       const rows = P.parseCSV(await upstream('https://irsa.ipac.caltech.edu/TAP/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=csv&QUERY=' + encodeURIComponent(adql), { timeout: 60000, retries: 1 }));
       stars = rows.map(o => ({ id: o.source_id, ra: f(o.ra), dec: f(o.dec), plx: f(o.parallax), pmra: f(o.pmra), pmdec: f(o.pmdec), g: f(o.phot_g_mean_mag) })); via = 'IRSA';
-    } catch (e) {
+    } catch (e) { try {
       const t = await upstream(`https://vizier.cds.unistra.fr/viz-bin/asu-tsv?-source=I/355/gaiadr3&-c=${ra}${dec >= 0 ? '%2B' : ''}${dec}&-c.rd=${r}&-out=Source,RA_ICRS,DE_ICRS,Plx,pmRA,pmDE,Gmag&Gmag=%3C${gmax}&-sort=Gmag&-out.max=3000`, { timeout: 60000, retries: 0 });
       const L = t.split('\n').filter(l => l && !l.startsWith('#')), i = L.findIndex(l => /^-+/.test(l));
       const h = i > 0 ? L[i - 1].split('\t').map(x => x.trim()) : [];
       stars = (i > 0 ? L.slice(i + 1) : []).map(l => { const c = l.split('\t'), o = Object.fromEntries(h.map((k, j) => [k, (c[j] || '').trim()]));
         return { id: o.Source, ra: f(o.RA_ICRS), dec: f(o.DE_ICRS), plx: f(o.Plx), pmra: f(o.pmRA), pmdec: f(o.pmDE), g: f(o.Gmag) }; }); via = 'VizieR';
-    }
+    } catch (e2) {
+      // v0.57: third copy, the one the challenge names: Gaia DR3 at STScI MAST (TAP, table dbo.gaia_source; no CORS, so asked here)
+      const adql = `SELECT TOP 3000 source_id, ra, dec, parallax, pmra, pmdec, phot_g_mean_mag FROM dbo.gaia_source ` +
+        `WHERE CONTAINS(POINT('ICRS', ra, dec), CIRCLE('ICRS', ${ra}, ${dec}, ${r})) = 1 AND phot_g_mean_mag < ${gmax} ORDER BY phot_g_mean_mag`;
+      const rows = P.parseCSV(await upstream('https://mast.stsci.edu/vo-tap/api/v0.1/gaiadr3/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=csv&QUERY=' + encodeURIComponent(adql), { timeout: 60000, retries: 0 }));
+      stars = rows.map(o => ({ id: o.source_id, ra: f(o.ra), dec: f(o.dec), plx: f(o.parallax), pmra: f(o.pmra), pmdec: f(o.pmdec), g: f(o.phot_g_mean_mag) })); via = 'MAST';
+    } }
     return { ra, dec, r, gmax, epoch: 2016.0, via, stars: stars.filter(s => s.ra != null && s.dec != null) };
   });
 }
@@ -349,6 +355,24 @@ async function gaia(q) {
    images for sources down to W1 ~17. Positions are for MJD 57170 (2015.4); pmra already includes cos(dec), in arcsec/yr.
    NASA/IPAC IRSA TAP (catwise_2020) only: CDS VizieR (II/365) could not be reached from the team's network to check its
    columns, so there is no untested fallback. Sent compact (one array per source), cached 30 days. */
+/* ---------- v0.57: has the Canadian Space Agency's NEOSSat looked here? (a challenge partner resource) ----------
+   NEOSSat (15 cm, 0.86° field, 3″ pixels, visible light) is pointed at chosen targets, not a survey, so most spots have
+   none; Barnard's Star has ~650 frames from 2018 on. CADC's TAP (CAOM2, collection NEOSSAT) is asked here: it sends no CORS
+   header. Only a count, the dates and the main targets: the frames themselves open at CADC. Cached 7 days. */
+async function neossat(q) {
+  const ra = num(q.ra, 0, 360, 'ra'), dec = num(q.dec, -90, 90, 'dec'), r = Math.min(1, Math.max(0.01, +q.r || 0.25));
+  return cachedJSON('neossat', `${ra.toFixed(3)},${dec.toFixed(3)},${r.toFixed(3)}`, 7 * DAY, async () => {
+    const where = `o.collection = 'NEOSSAT' AND INTERSECTS(CIRCLE('ICRS', ${ra}, ${dec}, ${r}), p.position_bounds) = 1`;
+    const tap = a => upstream('https://ws.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/argus/sync?LANG=ADQL&FORMAT=csv&QUERY=' + encodeURIComponent(a), { timeout: 60000, retries: 1 });
+    const [all] = P.parseCSV(await tap(`SELECT COUNT(*) AS n, MIN(p.time_bounds_lower) AS t0, MAX(p.time_bounds_lower) AS t1 FROM caom2.Plane AS p JOIN caom2.Observation AS o ON p.obsID = o.obsID WHERE ${where}`));
+    const n = +(all && all.n) || 0;
+    const targets = n ? P.parseCSV(await tap(`SELECT TOP 5 o.target_name AS name, COUNT(*) AS n FROM caom2.Plane AS p JOIN caom2.Observation AS o ON p.obsID = o.obsID WHERE ${where} GROUP BY o.target_name ORDER BY n DESC`))
+      .map(t => ({ name: String(t.name || '').slice(0, 60), n: +t.n || 0 })).filter(t => t.n) : [];
+    const day = m => { const x = parseFloat(m); return Number.isFinite(x) ? new Date((x - 40587) * 864e5).toISOString().slice(0, 10) : null; };
+    return { ra, dec, r, n, first: n ? day(all.t0) : null, last: n ? day(all.t1) : null, targets, via: 'CADC' };
+  });
+}
+
 async function catwise(q) {
   const ra = num(q.ra, 0, 360, 'ra'), dec = num(q.dec, -90, 90, 'dec'), r = Math.min(0.8, Math.max(0.02, +q.r || 0.36));
   return cachedJSON('catwise', `${ra.toFixed(4)},${dec.toFixed(4)},${r.toFixed(3)}`, 30 * DAY, async () => {
@@ -780,6 +804,7 @@ const server = http.createServer(async (req, res) => {
       case '/api/photcat': return sendJSON(req, res, 200, await photcat(q));
       case '/api/gaia': return sendJSON(req, res, 200, await gaia(q));
       case '/api/catwise': return sendJSON(req, res, 200, await catwise(q));
+      case '/api/neossat': return sendJSON(req, res, 200, await neossat(q));
       case '/api/spherex/psf':   // developer check (public/dev/psfcheck.html): local runs only
         if (process.env.SKYSHIFT_PUBLIC === '1' || !isLocal(req)) return sendJSON(req, res, 404, { error: 'No such endpoint' });
         return sendJSON(req, res, 200, await spherexPsf(q));

@@ -798,15 +798,84 @@ function reportBox(pk) {
   const copy = async () => { const t = candReport(pk); try { await navigator.clipboard.writeText(t); toast('Report copied: paste it in an e-mail or a forum post'); } catch { prompt('Copy this report', t); } };
   return h('div', { class: 'rpt' },
     h('h4', {}, 'Check it, then tell someone'),
-    h('p', {}, '1. Look at the same spot in other surveys: ',
-      a(`https://simbad.cds.unistra.fr/simbad/sim-coo?Coord=${enc(ra + ' ' + sdec)}&CooFrame=ICRS&Radius=10&Radius.unit=arcsec`, 'SIMBAD'), ' · ',
+    candChecklist(pk),
+    h('p', {}, '1. Look at the same spot in other surveys (the checks Backyard Worlds volunteers make): ',
+      a(`https://simbad.cds.unistra.fr/simbad/sim-coo?Coord=${enc(ra + ' ' + sdec)}&CooFrame=ICRS&Radius=1&Radius.unit=arcmin`, 'SIMBAD (1′)'), ' · ',
+      a(`https://vizier.cds.unistra.fr/viz-bin/VizieR?-c=${enc(ra + ' ' + sdec)}&-c.rs=60&-out.add=_r&-sort=_r`, 'VizieR (motions)'), ' · ',
+      a(`https://irsa.ipac.caltech.edu/applications/finderchart/?locstr=${enc(ra + ' ' + sdec)}`, 'IRSA Finder Chart'), ' · ',
+      a(`http://byw.tools/wiseview#ra=${ra}&dec=${dec}&size=176&band=3&speed=500&window=0.5&zoom=9&gaia=1`, 'WiseView'), ' · ',
       a(`https://www.legacysurvey.org/viewer?ra=${ra}&dec=${dec}&layer=ls-dr10&zoom=15`, 'Legacy Surveys'), ' · ',
-      a('https://minorplanetcenter.net/cgi-bin/checkmp.cgi', 'MPC asteroid checker'), '. If something known sits there, it is explained.'),
+      a('https://minorplanetcenter.net/cgi-bin/checkmp.cgi', 'MPC asteroid checker'), ' · ',
+      h('button', { type: 'button', class: 'linkbtn', onclick: () => showElsewhere(pk.ra, pk.dec, 'this candidate') }, 'every archive…'),
+      '. If something known sits there, it is explained.'),
     h('p', {}, '2. Still unexplained? Send the report to an astronomer, a teacher or a club, or post it for the volunteers of ',
       a('https://www.zooniverse.org/projects/marckuchner/backyard-worlds-planet-9/talk', 'Backyard Worlds (Talk board)'), '.'),
     h('div', { class: 'btnrow' }, h('button', { class: 'hbtn', onclick: mail }, 'Send this candidate'), h('button', { onclick: copy }, 'Copy report')),
     h('p', { class: 'rptn' }, 'Your e-mail app opens with the report filled in; you choose who gets it. ARCNAVE sends nothing itself. Most such spots turn out to be artefacts.'));
 }
+/* ---------- v0.57: the Backyard Worlds checks, done for the person where ARCNAVE can ----------
+   Backyard Worlds volunteers check a candidate in this order: seen more than once, not a known asteroid, nothing known at the
+   spot (SIMBAD 1′, VizieR motions), then report. ARCNAVE answers the first ones from what it already has; the rest are links. */
+function candChecklist(pk) {
+  const x = pk.item, mjd = x && x.im ? x.im.mjd : (S.eps.length ? S.eps[S.eps.length - 1].t0 : 0), cosd = Math.cos(pk.dec * Math.PI / 180);
+  const sep = (p) => Math.hypot((p[0] - pk.ra) * cosd, p[1] - pk.dec) * 3600;
+  const near = (list, at) => { let best = null; for (const s of list || []) { const p = at(s); if (!p) continue; const d = sep(p); if (!best || d < best.d) best = { s, d }; } return best; };
+  const g = GAIA.data ? near(GAIA.data.stars, s => gAt(s, mjd)) : null, w = CW.src && CW.src.length ? near(CW.src, s => cwAt(s, mjd)) : null;
+  const row = (st, txt) => h('li', { class: 'ck ' + st }, h('span', { class: 'ckm', 'aria-hidden': 'true' }, st === 'ok' ? '✓' : st === 'bad' ? '✗' : '·'), ' ', txt);
+  const rep = pk.repeat === true ? row('ok', 'Seen again in the exposure taken minutes later (not a one-pixel glitch).')
+    : pk.repeat === null ? row('na', 'No second exposure minutes apart to check it in.') : row('bad', 'Not seen in the exposure taken minutes later: often a cosmic ray or an artefact.');
+  const ast = S.inside ? row('ok', 'No known asteroid on this spot at that time (SkyBoT / Minor Planet Center).') : row('na', 'Known asteroids not checked yet (the report checks them).');
+  const gs = !GAIA.data ? row('na', 'Gaia not loaded: press Gaia to check for a known star here.')
+    : g && g.d < 6.15 ? row('bad', `A Gaia DR3 star sits ${g.d.toFixed(1)}″ away (G ${g.s.g.toFixed(1)}): most likely that star.`)
+    : row('ok', `No Gaia DR3 star within one SPHEREx pixel (nearest ${g ? g.d.toFixed(0) + '″' : 'none'}).`);
+  const ws = !CW.data ? row('na', 'WISE not loaded: press WISE to check for a known infrared source here.')
+    : w && w.d < 6.15 ? row('bad', `A CatWISE2020 source sits ${w.d.toFixed(1)}″ away (${w.s.name}): most likely that source.`)
+    : row('ok', `No CatWISE2020 source within one SPHEREx pixel (nearest ${w ? w.d.toFixed(0) + '″' : 'none'}).`);
+  return h('div', { class: 'cklist' }, h('p', { class: 'ckh' }, h('b', {}, 'Checks ARCNAVE made for you:')), h('ul', {}, rep, ast, gs, ws));
+}
+/* ---------- v0.57: this spot elsewhere: every resource the NASA challenge lists, and the archives volunteers use ----------
+   NASA/IPAC IRSA (SPHEREx tools, tutorial notebooks, DR1), WiseView (the WISE tool the challenge names as a model), Gaia
+   at STScI MAST, the Canadian Space Agency's NEOSSat at CADC (asked through /api/neossat: CADC sends no CORS header),
+   SSOIS and DSS at CADC, plus SIMBAD, VizieR, Legacy Surveys, Pan-STARRS and the Minor Planet Center. Links only: nothing
+   is sent anywhere but the position in the link itself. */
+function elsewhereLinks(ra, dec, o = {}) {
+  const enc = encodeURIComponent, r5 = (+ra).toFixed(5), d5 = (+dec).toFixed(5), sd = (dec >= 0 ? '+' : '') + d5, pos = enc(r5 + ' ' + sd);
+  const a = (href, t) => h('a', { href, target: '_blank', rel: 'noopener' }, t);
+  const row = (lab, ...links) => h('p', { class: 'elsrow' }, h('b', {}, lab + ': '), ...links.filter(Boolean).flatMap((l, i) => i ? [' · ', l] : [l]));
+  const neo = h('span', { class: 'elsneo' }, 'asking CADC…');
+  api(`/api/neossat?ra=${r5}&dec=${d5}&r=${Math.min(1, Math.max(0.05, (o.r || 0.25))).toFixed(3)}`).then(n => {
+    neo.replaceChildren(n.n ? `${n.n} NEOSSat frame${n.n === 1 ? '' : 's'} here, ${n.first} to ${n.last}` + (n.targets.length ? ` (targets: ${n.targets.map(t => `${t.name} ${t.n}`).join(', ')})` : '') + '. '
+      : 'NEOSSat has not imaged this spot (it is pointed at chosen targets, not a survey). ',
+      a('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/search/?collection=NEOSSAT', 'Open at CADC'));
+  }).catch(() => neo.replaceChildren('CADC did not answer just now. ', a('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/neossat/', 'NEOSSat at CADC')));
+  return h('div', { class: 'els' },
+    row('SPHEREx at NASA/IPAC IRSA', a('https://irsa.ipac.caltech.edu/applications/spherex/', 'SPHEREx Data Explorer'),
+      a('https://irsa.ipac.caltech.edu/applications/spherex/tool-spectrophotometry', 'Spectrophotometry Tool'),
+      a('https://caltech-ipac.github.io/irsa-tutorials/spherex/', 'Python tutorial notebooks'), a('https://irsa.ipac.caltech.edu/Missions/spherex.html', 'Data releases (DR1, QR3)')),
+    row('The same spot with other telescopes', a(`http://byw.tools/wiseview#ra=${r5}&dec=${d5}&size=176&band=3&speed=500&window=0.5&zoom=9&gaia=1`, 'WiseView (NASA WISE, blinking)'),
+      a(`https://www.legacysurvey.org/viewer?ra=${r5}&dec=${d5}&zoom=14&layer=unwise-neo7`, 'unWISE'), a(`https://www.legacysurvey.org/viewer?ra=${r5}&dec=${d5}&zoom=15&layer=ls-dr10`, 'Legacy Surveys'),
+      a(`https://ps1images.stsci.edu/cgi-bin/ps1cutouts?pos=${r5}+${sd}&filter=color&filetypes=stack&size=240`, 'Pan-STARRS'),
+      a(`https://irsa.ipac.caltech.edu/applications/finderchart/?locstr=${pos}`, 'IRSA Finder Chart (DSS, SDSS, 2MASS, WISE)'),
+      a('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/dss/', 'Digitized Sky Survey at CADC (1950-2002)')),
+    h('p', { class: 'elsrow' }, h('b', {}, 'Canadian Space Agency NEOSSat (visible light): '), neo),
+    row('Catalogues', a(`https://simbad.cds.unistra.fr/simbad/sim-coo?Coord=${pos}&CooFrame=ICRS&Radius=1&Radius.unit=arcmin`, 'SIMBAD (1′)'),
+      a(`https://vizier.cds.unistra.fr/viz-bin/VizieR?-c=${pos}&-c.rs=60&-out.add=_r&-sort=_r`, 'VizieR'),
+      a(`https://mast.stsci.edu/portal/Mashup/Clients/Mast/Portal.html?searchQuery=${enc(r5 + ' ' + d5)}`, 'Gaia and more at MAST')),
+    row('Asteroids and comets', a('https://minorplanetcenter.net/cgi-bin/checkmp.cgi', 'MPC checker'),
+      a('https://irsa.ipac.caltech.edu/applications/MOST/', 'IRSA MOST (incl. SPHEREx images)'), a('https://www.cadc-ccda.hia-iha.nrc-cnrc.gc.ca/en/ssois/', 'SSOIS at CADC (who else imaged it)')),
+    row('Volunteers', a('https://www.zooniverse.org/projects/marckuchner/backyard-worlds-planet-9/about/faq', 'Backyard Worlds: how to check a mover'),
+      a('https://www.zooniverse.org/projects/marckuchner/backyard-worlds-planet-9/talk', 'Talk board')));
+}
+function showElsewhere(ra, dec, what) {
+  if (ra == null) { if (S.field) ({ ra, dec } = S.field); else if (S.al) [ra, dec] = S.al.getRaDec(); else return; }
+  const c = $('card'); c.replaceChildren(); c.hidden = false;
+  c.append(h('h3', {}, '🔗 ' + (what ? 'Elsewhere: ' + what : 'This spot elsewhere')),
+    h('p', { style: 'font-size:.78rem;color:var(--dust)' }, `RA ${(+ra).toFixed(5)}°, Dec ${(+dec).toFixed(5)}° · opens in a new tab`),
+    elsewhereLinks(ra, dec, { r: S.field ? Math.min(1, S.field.size / 2) : 0.25 }),
+    h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'Every resource NASA lists for this challenge, and the archives Backyard Worlds volunteers use to check a mover.'),
+    h('button', { onclick: () => { S.report ? showReport() : (c.hidden = true); } }, 'Close'));
+}
+if ($('elsb')) $('elsb').onclick = () => showElsewhere();
 /* ---------- v0.39: the same field in Python (Astropy + astroquery), for anyone who wants to go further ---------- */
 // The query is ARCNAVE's own IRSA TAP query; the cutout URL form (?center=ra,decd&size=deg) is IRSA's, from its SPHEREx
 // cutouts tutorial. Two images (first and last in time, same detector) are cut out and shown side by side.
@@ -1957,7 +2026,8 @@ function showGaia(s, res) {
   else if (S.eps.length > 1 && s.pmra != null) c.append(h('p', { style: 'font-size:.85rem' }, `Too slow to see in SPHEREx: ${mv.toFixed(2)}″ is far below one 6.15″ pixel. Like most stars, it looks fixed between passes.`));
   if (S.eps.length > 1 && s.pmra != null && mv >= 1.5) c.append(h('p', {}, h('button', { class: 'hbtn', onclick: () => replayAcross(gaiaObj(s), 'Gaia DR3 ' + s.id, () => showGaia(s)) }, '▶ Track its motion across passes')));   // v0.41
   c.append(h('p', {}, h('button', { onclick: () => spectrumAt(p[0], p[1], { name: 'Gaia DR3 ' + s.id, posAt: m => gAt(s, m) }) }, 'Its spectrum'), ' ',
-    h('a', { href: 'https://aladin.cds.unistra.fr/AladinLite/?target=' + encodeURIComponent(q) + '&fov=0.05', target: '_blank', rel: 'noopener', style: 'font-size:.85rem' }, 'Aladin')),
+    h('a', { href: 'https://aladin.cds.unistra.fr/AladinLite/?target=' + encodeURIComponent(q) + '&fov=0.05', target: '_blank', rel: 'noopener', style: 'font-size:.85rem' }, 'Aladin'), ' ',
+    h('button', { type: 'button', onclick: () => showElsewhere(p[0], p[1], 'Gaia DR3 ' + s.id) }, '🔗 Elsewhere')),
     h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'Gaia data: ESA Gaia DR3, from NASA/IPAC IRSA. Gaia positions are for 2016, moved here with Gaia’s own proper motion.'),
     h('button', { onclick: () => { S.sel = null; S.report ? showReport() : (c.hidden = true); } }, 'Close'));
   refreshSoon();
@@ -2075,7 +2145,8 @@ function showCw(s, res) {
   else if (S.eps.length > 1) c.append(h('p', { style: 'font-size:.85rem' }, `Too slow to see in SPHEREx: ${mv.toFixed(2)}″ is far below one 6.15″ pixel.`));
   if (S.eps.length > 1 && mv >= 1.5 && !s.halo) c.append(h('p', {}, h('button', { class: 'hbtn', onclick: () => replayAcross(cwObj(s), nm, () => showCw(s)) }, '▶ Track its motion across passes')));
   c.append(h('p', {}, h('button', { onclick: () => spectrumAt(p[0], p[1], { name: nm, posAt: m => cwAt(s, m) }) }, 'Its spectrum'), ' ',
-    h('a', { href: 'https://aladin.cds.unistra.fr/AladinLite/?target=' + encodeURIComponent(q) + '&fov=0.05&survey=CDS%2FP%2FallWISE%2Fcolor', target: '_blank', rel: 'noopener', style: 'font-size:.85rem' }, 'Aladin (WISE)')),
+    h('a', { href: 'https://aladin.cds.unistra.fr/AladinLite/?target=' + encodeURIComponent(q) + '&fov=0.05&survey=CDS%2FP%2FallWISE%2Fcolor', target: '_blank', rel: 'noopener', style: 'font-size:.85rem' }, 'Aladin (WISE)'), ' ',
+    h('button', { type: 'button', onclick: () => showElsewhere(p[0], p[1], nm) }, '🔗 Elsewhere')),
     h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'WISE data: CatWISE2020 (Marocco et al. 2021), from NASA/IPAC IRSA. CatWISE positions are for 2015.4, moved here with its own motion. Its motions come from WISE images of 2010-2018 and are less precise than Gaia\'s; for faint sources small motions can be systematic.'),
     h('button', { onclick: () => { S.sel = null; S.report ? showReport() : (c.hidden = true); } }, 'Close'));
   refreshSoon();
@@ -5853,7 +5924,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.56.3', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.0', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
