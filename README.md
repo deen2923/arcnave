@@ -33,6 +33,35 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.8: the page keeps answering while it works; panels scroll at once (13 Nov 2026)
+Measured in headless Chrome (Long Animation Frames API, after the first 7 s), old code and new code side by side on the
+same machine and saved images, film included. Every measured number is unchanged (Epsilon Indi B 4.316672016104891″/yr,
+Barnard's Star 13.204205407378112; same movers in both films).
+
+| | frames > 200 ms | main thread blocked | worst freeze |
+|---|---|---|---|
+| Epsilon Indi B, old → new | 20-23 → 8 | 6.6-8.0 s → 4.5 s | 0.99 s → 0.42 s |
+| Barnard's Star, old → new | 42 → 10 | 12.7 s → 2.5 s | 0.89 s → 0.51 s (film ready 21 s → 12 s) |
+
+- **Panels scroll at once, whatever the page is doing.** The report card and the drawers have see-through glass
+  backgrounds, so Chrome scrolled them on the page's main thread (Chrome's layer tree: no scrolling layer of their own;
+  one drawer "repaints on scroll"): while images loaded or a search ran, they did not move. `will-change: scroll-position`
+  gives each its own compositor scroller (checked in the layer tree), without changing how anything inside is placed.
+- **Star shapes (ePSF) are made in the worker pool**, several at once: 0.2-0.4 s each on the page before (24 in a row on
+  Barnard's Star). Same function (`lib/fits.js epsfGrid`); the copy a worker sends back gets its lookup rebuilt from the
+  same grid by `F.epsfRevive` (`test/epsfworker.test.js`: identical to the last bit on the real fixture images).
+- **The film strip is no longer rebuilt after every image** (250+ thumbnails redrawn each time); only changed thumbnails
+  are redrawn.
+- **The sky view rebuilds an epoch's median stack at most once a second while images arrive** (it rebuilt them on the
+  next frame after every image, 0.05-0.2 s each). Measurements still use the up-to-date stack.
+- Each image's build, line-up and listing, the re-alignment when the reference image arrives, each image's Gaia line-up
+  (the first measurement did 28 at once: 2.4 s) and the film's tracks (`movieMovers`: 1 s) now run one step at a time
+  with a pause in between; the bright-star search pauses every 50 ms instead of every 6th star.
+- Still on the page: the sky viewer itself (Aladin Lite: its script, about 1 s, and its first 2MASS sky image, about
+  0.6 s, at the start) and single measurements of one star across all images (0.1-0.3 s each).
+- Known, not changed here: `node test/psf.test.js` (not part of `npm test`) stops on the old code too, since
+  `demo-cache/cutouts` now also holds the other test fields' images, which do not cover the field it assumes.
+
 ## v0.57.7: ready to publish: judges' quick start, AI disclosure, Cloudflare measured (13 Nov 2026)
 - **README "For judges"** at the top: what ARCNAVE does, the 5 NASA targets one click each, how to run it, data credits.
 - **AI (SI) disclosure**, as the Space Apps submission guide asks: the code was written with an AI assistant (Claude); the

@@ -6,6 +6,12 @@ importScripts('/lib/fits.js');
 onmessage = e => {
   const { id, kind } = e.data;
   try {
+    if (kind === 'epsf') {   // v0.57.8: one image's star shape (lib/fits.js epsfGrid, 0.2-0.4 s), sent back without its at()
+      const { flat, n, st, opts } = e.data, P = SkyFits.epsfGrid(flat, n, st, opts);
+      if (P) delete P.at;
+      postMessage({ id, out: P });
+      return;
+    }
     if (kind === 'chg') {
       const { stacks, frames, n, opts } = e.data, r = SkyFits.changeMaps(stacks, frames, n, opts);
       postMessage({ id, out: r }, [r.epochRGBA.buffer, r.timeRGBA.buffer]);

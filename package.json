@@ -1,6 +1,6 @@
 {
   "name": "arcnave",
-  "version": "0.57.7",
+  "version": "0.57.8",
   "description": "ARCNAVE: browse real SPHEREx images and spot what moves",
   "private": true,
   "main": "server.js",
@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node test/test.js && node test/wave.test.js && node test/real.test.js && node test/stack.test.js && node test/change.test.js && node test/psfzone.test.js && node test/planetx.test.js && node test/prune.test.js && node test/gif.test.js && node test/skybot.test.js && node test/mpc.test.js && node test/mpcfallback.test.js && node test/hedge.test.js && node test/s3cut.test.js && node test/spot.test.js && node test/s3cut_rice.test.js && node test/s3cut_416.test.js && node test/cutoutput.test.js && node test/sky.test.js && node test/catwise.test.js && node test/notebook.test.js",
+    "test": "node test/test.js && node test/wave.test.js && node test/real.test.js && node test/stack.test.js && node test/change.test.js && node test/psfzone.test.js && node test/planetx.test.js && node test/prune.test.js && node test/gif.test.js && node test/skybot.test.js && node test/mpc.test.js && node test/mpcfallback.test.js && node test/hedge.test.js && node test/s3cut.test.js && node test/spot.test.js && node test/s3cut_rice.test.js && node test/s3cut_416.test.js && node test/cutoutput.test.js && node test/sky.test.js && node test/catwise.test.js && node test/notebook.test.js && node test/epsfworker.test.js",
     "test:replay": "node test/replay.e2e.js",
     "test:multi": "node test/multi.e2e.js",
     "test:examples": "node test/examples.e2e.js",

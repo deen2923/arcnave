@@ -1723,3 +1723,8 @@ body:not(.adv) .begstory{display:flex}
   .lp-hero .lp-wrap.lp-hgrid{gap:clamp(2rem,4vw,3rem)}
 }
 @media (max-width:700px){ .lp-hero .lp-scope.lp-blinkonly{max-width:420px;margin-left:auto;margin-right:auto} }
+
+/* v0.57.8: scroll panels on the compositor. Their see-through glass backgrounds made Chrome scroll them on the page's main
+   thread (keeping LCD text), so while the page worked (images loading, a search) a panel did not move for up to seconds.
+   Now they scroll at once, whatever the page is doing. */
+#card,.strip,:is(#drawer,#tdrawer),#intro,:is(#dcd,#game),#glossp,.acts,html.landing #landing,.els .neorow{will-change:scroll-position}
