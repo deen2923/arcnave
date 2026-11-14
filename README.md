@@ -33,6 +33,14 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.14: the trip by the galactic centre made shorter, the new field opens on time (15 Nov 2026)
+Asked by the team: after v0.57.13 a new field opened late.
+- Measured (cached fields, report time): the 2.3 s trip made the report 2 to 5 s later than a direct jump (WISE 0855
+  13.2 s vs 8.4 s), because the preview waits for the camera and the whole-sky view shared the page while the field loaded.
+- Now fade 0.2 s, galactic centre 0.7 s, dive 0.45 s (about 1.4 s), and the RA/Dec grid (thousands of projections per
+  draw) is skipped while the trip passes the galactic centre. Report time now equals a direct jump: R Draconis 10.9 s vs
+  12.8 s, Barnard 8.8 s vs 9.0 s, WISE 0855 12.9 s vs 12.8 s.
+
 ## v0.57.13: from field to field by the galactic centre again (15 Nov 2026)
 Asked by the team: a trip from one field to a far one should pass by the galactic centre, as it did before v0.57.9.
 - The sky fades out, the whole-sky map comes up centred on the galactic centre (labelled), holds about 1.3 s, then dives
