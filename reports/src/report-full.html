@@ -1,0 +1,373 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ARCNAVE: Full Project Report (v0.57.8)</title>
+<style>
+@page { size: A4; margin: 15mm 14mm 16mm 14mm; }
+@page :first { margin: 0; }
+:root { --ink:#0f1720; --ink2:#3b4654; --ink3:#6b7684; --line:#dfe4ea; --teal:#0f9d8f; --bg:#f6f8fa; }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin:0; font: 10pt/1.5 "Segoe UI", Arial, sans-serif; color: var(--ink); }
+h2 { font-size: 18pt; margin: 0 0 6px; letter-spacing:-.01em; }
+h2 .num { color: var(--teal); margin-right: 8px; }
+h3 { font-size: 12pt; margin: 14px 0 5px; }
+p { margin: 0 0 7px; }
+.lead { color: var(--ink2); font-size: 10.8pt; margin-bottom: 10px; }
+.sec { page-break-before: always; }
+.keep { page-break-inside: avoid; break-inside: avoid; }
+.muted { color: var(--ink3); } .small { font-size: 8.6pt; }
+ul { margin: 4px 0 9px; padding-left: 18px; } li { margin: 2px 0; }
+table { width:100%; border-collapse: collapse; margin: 7px 0 11px; font-size: 8.9pt; }
+th, td { text-align:left; vertical-align: top; padding: 5px 7px; border-bottom: 1px solid var(--line); }
+th { background: #eef6f5; color: #0b5f57; font-weight: 600; }
+tr { page-break-inside: avoid; break-inside: avoid; }
+td.ok { color: #0b7d4f; font-weight: 600; white-space: nowrap; }
+figure { margin: 8px 0 12px; page-break-inside: avoid; break-inside: avoid; }
+figure img { width: 100%; display:block; border-radius: 6px; border: 1px solid #cfd6de; }
+figcaption { font-size: 8.5pt; color: var(--ink3); margin-top: 4px; }
+.two { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.three { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: 9px; }
+.stats { display:grid; grid-template-columns: repeat(4, 1fr); gap: 9px; margin: 10px 0 12px; }
+.stat { background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+.stat b { display:block; font-size: 19pt; color: var(--teal); line-height:1.1; }
+.stat span { font-size: 8.4pt; color: var(--ink2); }
+.callout { background: #eef8f6; border: 1px solid #bfe6df; border-radius: 8px; padding: 9px 11px; margin: 9px 0 11px; }
+.warn { background: #fff7e8; border: 1px solid #f2d39b; border-radius: 8px; padding: 9px 11px; margin: 9px 0 11px; }
+.flow { display:flex; gap:5px; align-items:stretch; margin: 9px 0 12px; }
+.flow div { flex:1; background: var(--bg); border:1px solid var(--line); border-radius:8px; padding:7px; font-size:8.4pt; }
+.flow div b { display:block; color: var(--teal); font-size:9.2pt; margin-bottom:2px; }
+.tag { display:inline-block; font-size:7.8pt; padding:1px 7px; border-radius: 10px; background:#e3f5f1; color:#0b5f57; font-weight:600; }
+.phone { display:grid; grid-template-columns: 1fr 1fr 1.6fr; gap: 10px; align-items:start; }
+.cover { height: 297mm; width: 210mm; background: radial-gradient(120% 70% at 50% 100%, #0b2a2a 0%, #05070d 60%); color:#fff; position:relative; padding: 24mm 18mm; }
+.cover .kick { font: 600 9pt/1 Consolas, monospace; letter-spacing: .14em; color: #7ee9dc; text-transform: uppercase; border:1px solid rgba(126,233,220,.4); display:inline-block; padding:6px 12px; border-radius: 20px; }
+.cover h1 { color:#fff; font-size: 42pt; margin: 20px 0 4px; letter-spacing: -.02em; }
+.cover .tl { font-size: 20pt; font-weight: 600; color:#e8edf5; margin: 0; }
+.cover .tl em { font-style: normal; color: #2dd4bf; }
+.cover .sub { font-size: 11.5pt; color:#c4c9d4; max-width: 150mm; margin-top: 12px; }
+.cover .shot { position:absolute; left:18mm; right:18mm; top:112mm; border-radius: 10px; overflow:hidden; border:1px solid rgba(255,255,255,.14); }
+.cover .shot img { width:100%; display:block; }
+.cover .meta { position:absolute; left:18mm; right:18mm; bottom: 18mm; display:grid; grid-template-columns: repeat(3,1fr); gap: 12px; font-size: 9.2pt; color:#c4c9d4; }
+.cover .meta b { display:block; color:#fff; font-size: 10.4pt; }
+.toc { columns: 2; column-gap: 24px; font-size: 10pt; }
+.toc div { break-inside: avoid; padding: 3px 0; border-bottom: 1px dotted var(--line); }
+.toc span { color: var(--teal); font-weight: 600; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<section class="cover">
+  <div class="kick">NASA Space Apps Challenge 2026 · Planet X and SPHEREx</div>
+  <h1>ARCNAVE</h1>
+  <p class="tl">Watch the sky change. <em>Find what moves.</em></p>
+  <p class="sub">Full project report: what we built from the first version to v0.57.8, how it answers every objective of the
+    challenge, how it uses every resource NASA and its partners listed, what makes it different, and every feature on screen.</p>
+  <div class="shot"><img src="shots-full/20-film-epsindb.jpg" alt="ARCNAVE film of the Epsilon Indi B field"></div>
+  <div class="meta">
+    <div><b>Version</b>v0.57.8 · 13-14 Nov 2026</div>
+    <div><b>Data</b>NASA SPHEREx (QR2, QR3, DR1) via NASA/IPAC IRSA, ESA Gaia DR3, NASA WISE, CSA NEOSSat</div>
+    <div><b>Runs on</b>Any browser, phones included · English, Tamil, Hindi, Spanish</div>
+  </div>
+</section>
+
+<section>
+  <h2>Contents</h2>
+  <div class="toc">
+    <div><span>1</span>Summary</div>
+    <div><span>2</span>The challenge, objective by objective</div>
+    <div><span>3</span>Every listed resource, and how we use it</div>
+    <div><span>4</span>How ARCNAVE uses the data</div>
+    <div><span>5</span>The website, feature by feature</div>
+    <div><span>6</span>NASA's five test targets</div>
+    <div><span>7</span>How far to trust it</div>
+    <div><span>8</span>Speed and engineering</div>
+    <div><span>9</span>What makes ARCNAVE different</div>
+    <div><span>10</span>The journey: v0.9 to v0.57.8</div>
+    <div><span>11</span>Honest limits and next steps</div>
+    <div><span>12</span>Credits, AI disclosure, acknowledgements</div>
+  </div>
+
+  <h2 style="margin-top:20px"><span class="num">1</span>Summary</h2>
+  <p class="lead">ARCNAVE is a free public web tool that turns NASA SPHEREx's all-sky infrared survey into something anyone can
+    watch. Type any sky position or a name: ARCNAVE fetches every real SPHEREx image of that spot, lines the images up on Gaia
+    stars and plays the passes like a short film, so what moves or changes stands out. Movers are circled pass by pass,
+    measured, and checked against ESA Gaia, NASA WISE and the known asteroids. Nothing is ever called a discovery.</p>
+  <div class="stats">
+    <div class="stat"><b>5 / 5</b><span>NASA test targets answered with measured numbers</span></div>
+    <div class="stat"><b>8 / 8</b><span>challenge resources used or linked from the app</span></div>
+    <div class="stat"><b>18</b><span>test fields chosen in advance; 19,880 fake planets hidden and searched for</span></div>
+    <div class="stat"><b>48</b><span>tools, each explained in plain words in 4 languages</span></div>
+  </div>
+  <div class="callout"><b>Results on NASA's targets (measured by ARCNAVE on real SPHEREx images).</b>
+    <ul>
+      <li>Barnard's Star: 9.7″ north in 359 days (9.9″ a year); the catalogue predicts 10.2″.</li>
+      <li>Epsilon Indi B: 4.3 ± 0.3″ a year south-east over 4 passes (5.9″ in 515 days); catalogue 4.7″.</li>
+      <li>WISE 0855: 8.82 ± 1.10″ a year west, AB 17.15 at 11.8σ; CatWISE2020 gives 7.94″, which agrees.</li>
+      <li>RW Aurigae: faded 0.74 mag from Sep 2025 to Sep 2026 in 6 of 6 colours (comparison stars 0.13 mag).</li>
+      <li>R Draconis: changed 1.24 mag at 0.85 µm in 10 images (comparison stars 0.12-0.13 mag).</li>
+    </ul></div>
+  <p>Everything runs in the visitor's browser and a small Node.js server with no dependencies. The code reads only the rows
+    of each 65 MB SPHEREx image that the field needs (about 4 MB), keeps what it read, and tells the user how sure it is.</p>
+</section>
+
+<section class="sec">
+  <h2><span class="num">2</span>The challenge, objective by objective</h2>
+  <p class="lead">"Create a public-facing web tool to display images of the sky from the SPHEREx mission, making it easy for
+    anyone to quickly see how they change over time." Below: every objective and suggested consideration, and where ARCNAVE
+    answers it.</p>
+  <table>
+    <tr><th style="width:35%">Challenge asks</th><th>ARCNAVE</th><th style="width:16%">Where</th></tr>
+    <tr><td>Users enter RA and Dec of a patch of sky</td><td>Search box takes RA/Dec ("190 -4") or any name (resolved by CDS Sesame); also a whole-sky map to click</td><td>§5 · fig. 01, 04</td></tr>
+    <tr><td>Show a series of images like a little video</td><td>🎬 Film, Time machine slider, Blink, Swipe: the real SPHEREx passes in order</td><td>§5 · fig. 11, 20</td></tr>
+    <tr><td>Make it easy to spot moving objects</td><td>Movers circled in every pass, "was here, now there" labels, spotlight, automatic motion searches</td><td>§5 · fig. 20</td></tr>
+    <tr><td>Test on Barnard's Star, Epsilon Indi B, WISE 0855, RW Aurigae, R Draconis</td><td>One click each (<code>#ct=…</code>), measured value next to the catalogue value</td><td>§6</td></tr>
+    <tr><td>Easy to update with the latest data releases</td><td>The archive search has no release filter: SPHEREx DR1 (Nov 2026) appeared with no change; a release watcher names any new one; test fields keep the lists their numbers were measured on</td><td>§8</td></tr>
+    <tr><td>Use the 102 bands; add up each detector; spectra on the fly</td><td>Colour slider; Deep view adds every image of each of the 6 detectors; spectrum of any star (~100 colours) checked against 2MASS and AllWISE</td><td>fig. 15, 33</td></tr>
+    <tr><td>Add together or subtract images taken at different times</td><td>Stacks per pass, Difference view, Changes map, shift-and-stack (Hide Planet X)</td><td>fig. 11, 40</td></tr>
+    <tr><td>Let users choose the field of view</td><td>0.25°, 0.5° or 1° fields</td><td>§5</td></tr>
+    <tr><td>Overlay Gaia or WISE</td><td>Gaia DR3 overlay with motion arrows and star cards; CatWISE2020 overlay with movers and very red sources</td><td>fig. 12, 31</td></tr>
+    <tr><td>Query by coordinates in the URL, embed</td><td><code>#ra=…&amp;dec=…</code> links, <code>?embed=1</code>, "Copy embed code"</td><td>§5</td></tr>
+    <tr><td>Display metadata such as contamination flags</td><td>Flags overlay and counts from the pipeline's own FLAGS bits; release and date of every image; flags named on a candidate</td><td>fig. 14</td></tr>
+    <tr><td>Use tools like Astropy and Aladin</td><td>Aladin Lite (CDS) is the sky viewer; "Copy Python" and a Jupyter notebook redo the work with Astropy/astroquery</td><td>§5</td></tr>
+  </table>
+</section>
+
+<section class="sec">
+  <h2><span class="num">3</span>Every listed resource, and how we use it</h2>
+  <p class="lead">The challenge's Resources tab lists eight resources. All eight are part of ARCNAVE.</p>
+  <table>
+    <tr><th style="width:24%">Resource</th><th>How ARCNAVE uses it</th></tr>
+    <tr><td><b>NASA/IPAC IRSA: SPHEREx</b></td><td>Core data. TAP search (<code>spherex.plane</code>, <code>spherex.artifact</code>) for every image of a spot, in every release (QR2, QR3, DR1); images read from NASA's open copy on AWS S3; the DR1 all-sky cube as a base sky that follows the colour slider; links to IRSA's Data Explorer, Spectrophotometry Tool and MOST.</td></tr>
+    <tr><td><b>SPHEREx tutorial notebooks</b></td><td>The cutout form and TAP query come from them; FLAGS bit names (QR2 <code>MP_</code>, QR3/DR1 <code>MSKN</code>) as in the notebooks; Share → Python notebook downloads a Jupyter notebook in their style that redoes ARCNAVE's work for the spot.</td></tr>
+    <tr><td><b>WiseView</b></td><td>The model the challenge names. Blink, Gaia overlay and WISE overlay like WiseView; Contrast and Invert controls like WiseView; every star card opens the same spot in WiseView.</td></tr>
+    <tr><td><b>Gaia DR3</b></td><td>Every image is aligned on Gaia stars moved to its date; every motion is checked against Gaia. Asked from IRSA, then CDS VizieR, then STScI MAST (the copy the challenge names).</td></tr>
+    <tr><td><b>CSA NEOSSat</b></td><td>"This spot elsewhere" asks CADC how many NEOSSat frames cover the spot and shows NEOSSat's own pictures of up to 8 nights (Barnard's Star: 652 frames, 2019-2022).</td></tr>
+    <tr><td><b>CADC</b></td><td>CADC TAP for NEOSSat, preview pictures, and links to SSOIS (who else imaged an asteroid) and the Digitized Sky Survey.</td></tr>
+    <tr><td><b>NEOSSat data tutorial</b></td><td>Linked from the app ("About NEOSSat"), with the CSA mission page.</td></tr>
+    <tr><td><b>NEOSSat open dataset</b></td><td>Linked from the app ("About NEOSSat").</td></tr>
+  </table>
+  <p>Also used: NASA WISE CatWISE2020 (motions of cool brown dwarfs Gaia cannot see), 2MASS and AllWISE photometry (spectrum
+    checks), NASA JPL Horizons, IMCCE SkyBoT and the Minor Planet Center (known asteroids), CDS Aladin Lite, Sesame, SIMBAD,
+    VizieR and HiPS sky surveys, and Backyard Worlds' checking steps for candidates.</p>
+  <figure><img src="shots-full/16-elsewhere.jpg" alt="This spot elsewhere panel"><figcaption>Fig. 16 · "This spot elsewhere": every resource of the challenge for the spot on screen, with NEOSSat's own pictures.</figcaption></figure>
+</section>
+
+<section class="sec">
+  <h2><span class="num">4</span>How ARCNAVE uses the data</h2>
+  <div class="flow">
+    <div><b>1 · Find</b>IRSA TAP lists every SPHEREx image covering the spot, all releases</div>
+    <div><b>2 · Read</b>Only the field's rows of each image from AWS S3: ~4 MB, not 65 MB</div>
+    <div><b>3 · Clean</b>FLAGS bits out (saturation, ghosts, halos, cosmic rays); ZODI light removed</div>
+    <div><b>4 · Match</b>WCS-WAVE: images of the same colour in every pass</div>
+    <div><b>5 · Align</b>On Gaia DR3 stars moved to each image's date</div>
+    <div><b>6 · Measure</b>PSF fits per image; motion through the passes; 625-trial scan</div>
+    <div><b>7 · Check</b>Gaia, CatWISE, SkyBoT/MPC/Horizons; "How sure are we?"</div>
+  </div>
+  <h3>The measurements</h3>
+  <ul>
+    <li><b>Motion:</b> each star is fitted in every image with an empirical PSF made from that image's own stars (checked against the official SPHEREx PSF); a straight line through the passes gives the motion; a field error floor comes from ~40 steady Gaia stars.</li>
+    <li><b>Searches:</b> 🔍 bright moving stars, 🔭 deep search on every source of the full stack, ◐ difference search, 🎯 a trial-motion scan of 625 motions for faint sources (shift-and-stack), each with checks (not hopping between stars, steady brightness, Gaia agrees, plausible speed, a second opinion).</li>
+    <li><b>Brightness:</b> light curves with three steady comparison stars; glare checks for saturated stars.</li>
+    <li><b>Spectra:</b> ~100 colours from 0.75 to 5 µm per pass by aperture photometry, compared with 2MASS and AllWISE.</li>
+    <li><b>Known objects:</b> SkyBoT (with the Minor Planet Center as fallback) and JPL Horizons orbits; every asteroid gets a proof card and its track.</li>
+  </ul>
+  <h3>Releases</h3>
+  <p>NASA released SPHEREx Data Release 1 in November 2026. ARCNAVE's search lists it in every new spot with no code change.
+    The 5 targets and 18 test fields keep the QR2 + QR3 lists their quoted numbers were measured on, ship with the site, and
+    open without asking the archive; "Check for new data" shows what IRSA lists now and can switch a spot to DR1.</p>
+</section>
+
+<section class="sec">
+  <h2><span class="num">5</span>The website, feature by feature</h2>
+  <p class="lead">Screenshots from the running v0.57.8, taken with Chrome on 14 Nov 2026 from images saved by the app.</p>
+  <figure><img src="shots-full/01-landing-hero.jpg" alt=""><figcaption>Fig. 01 · Start page: type a place, try Barnard's Star, or watch the 90-second story.</figcaption></figure>
+  <div class="two">
+    <figure><img src="shots-full/02-landing-targets.jpg" alt=""><figcaption>Fig. 02 · NASA's five test targets, each with its measured result.</figcaption></figure>
+    <figure><img src="shots-full/03-landing-tamil.jpg" alt=""><figcaption>Fig. 03 · The same page in Tamil (also Hindi and Spanish).</figcaption></figure>
+  </div>
+  <figure><img src="shots-full/04-whole-sky.jpg" alt=""><figcaption>Fig. 04 · Whole-sky map: ready places, the Milky Way, the ecliptic.</figcaption></figure>
+  <figure><img src="shots-full/10-target-barnard.jpg" alt=""><figcaption>Fig. 10 · Barnard's Star target card: what NASA expects, what ARCNAVE measured, "How sure are we?".</figcaption></figure>
+</section>
+
+<section class="sec">
+  <h3>View modes: one field, five ways to see change</h3>
+  <div class="two">
+    <figure><img src="shots-full/11-mode-time.jpg" alt=""><figcaption>Fig. 11a · Time machine: every image in time order.</figcaption></figure>
+    <figure><img src="shots-full/11-mode-blink.jpg" alt=""><figcaption>Fig. 11b · Blink: flip between passes, as Tombaugh found Pluto.</figcaption></figure>
+    <figure><img src="shots-full/11-mode-swipe.jpg" alt=""><figcaption>Fig. 11c · Swipe: two passes side by side under a slider.</figcaption></figure>
+    <figure><img src="shots-full/11-mode-diff.jpg" alt=""><figcaption>Fig. 11d · Difference: what changed between passes.</figcaption></figure>
+  </div>
+  <figure><img src="shots-full/11-mode-change.jpg" alt=""><figcaption>Fig. 11e · Changes: brightenings, fadings and movers, coloured by epoch, explained in words.</figcaption></figure>
+</section>
+
+<section class="sec">
+  <h3>The film: from here to there</h3>
+  <figure><img src="shots-full/20-film-barnard.jpg" alt=""><figcaption>Fig. 20a · 🎬 Film on Barnard's Star: the star circled in every pass (P1, P2…), its measured track, the spotlight.</figcaption></figure>
+  <figure><img src="shots-full/21-film-epsindb-b.jpg" alt=""><figcaption>Fig. 20b · Film on Epsilon Indi B: four passes, April 2025 to September 2026; Epsilon Indi A moves with it.</figcaption></figure>
+</section>
+
+<section class="sec">
+  <h3>Star maps on top, and measuring a star</h3>
+  <div class="two">
+    <figure><img src="shots-full/12-gaia-overlay.jpg" alt=""><figcaption>Fig. 12 · Gaia DR3 overlay: stars at the date of the pass, arrows for motion.</figcaption></figure>
+    <figure><img src="shots-full/13-gaia-measure.jpg" alt=""><figcaption>Fig. 13 · "Measure its motion" on a Gaia star, with controls.</figcaption></figure>
+    <figure><img src="shots-full/31-wise-overlay.jpg" alt=""><figcaption>Fig. 31 · CatWISE2020 overlay on WISE 0855: movers (orange arrows) and very red sources.</figcaption></figure>
+    <figure><img src="shots-full/14-flags.jpg" alt=""><figcaption>Fig. 14 · Contamination flags from the pipeline's own FLAGS bits.</figcaption></figure>
+  </div>
+</section>
+
+<section class="sec">
+  <h3>Colours of light</h3>
+  <div class="two">
+    <figure><img src="shots-full/15-deep-view.jpg" alt=""><figcaption>Fig. 15 · Deep view: every image of each of the 6 detectors added up.</figcaption></figure>
+    <figure><img src="shots-full/33-spectrum.jpg" alt=""><figcaption>Fig. 33 · Spectrum on the fly of Epsilon Indi B (~100 colours), checked against 2MASS and AllWISE.</figcaption></figure>
+    <figure><img src="shots-full/18-spherex-dr1-sky.jpg" alt=""><figcaption>Fig. 18 · SPHEREx's own DR1 all-sky map as the base sky, at the colour of the slider.</figcaption></figure>
+    <figure><img src="shots-full/17-contrast-invert.jpg" alt=""><figcaption>Fig. 17 · Contrast and Invert (WiseView style): picture only, no number changes.</figcaption></figure>
+  </div>
+</section>
+
+<section class="sec">
+  <h3>Planet X, known asteroids, play and learn</h3>
+  <div class="two">
+    <figure><img src="shots-full/40-hide-planet-x.jpg" alt=""><figcaption>Fig. 40 · Hide Planet X: hide a fake planet in the real images and let the agents hunt for it.</figcaption></figure>
+    <figure><img src="shots-full/44-known-asteroid.jpg" alt=""><figcaption>Fig. 44 · A known asteroid caught moving, with its proof card.</figcaption></figure>
+    <figure><img src="shots-full/50-game.jpg" alt=""><figcaption>Fig. 50 · "Find the asteroid": a 60-second game on real images.</figcaption></figure>
+    <figure><img src="shots-full/51-tour.jpg" alt=""><figcaption>Fig. 51 · The 90-second story with narration, here in Tamil (also English, Hindi, Spanish).</figcaption></figure>
+  </div>
+  <div class="two">
+    <figure><img src="shots-full/52-tools-page.jpg" alt=""><figcaption>Fig. 52 · Every tool in plain words (public page).</figcaption></figure>
+    <figure><img src="shots-full/53-about-page.jpg" alt=""><figcaption>Fig. 53 · About: data, method, limits, credits.</figcaption></figure>
+  </div>
+</section>
+
+<section class="sec">
+  <h3>On a phone</h3>
+  <div class="phone">
+    <figure><img src="shots-full/60-phone-landing.jpg" alt=""><figcaption>Fig. 60 · Start page on a phone.</figcaption></figure>
+    <figure><img src="shots-full/61-phone-target.jpg" alt=""><figcaption>Fig. 61 · Epsilon Indi B on a phone.</figcaption></figure>
+    <div class="callout small"><b>Built for everyone.</b><ul>
+      <li>Phone layout with sheets for each panel.</li>
+      <li>Four languages for the start page, story, guide and tools; recorded narration (Listen).</li>
+      <li>Share links, embed code, Discovery card (animated GIF), sky picture (PNG), Python and Jupyter export.</li>
+      <li>Accessibility: shapes as well as colours for passes, reduced-motion respected, keyboard shortcuts.</li></ul></div>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="num">6</span>NASA's five test targets</h2>
+  <table>
+    <tr><th>Target</th><th>What to look for</th><th>ARCNAVE measured</th><th>Reference</th><th>Verdict</th></tr>
+    <tr><td><b>Barnard's Star</b></td><td>Fastest star in our sky</td><td>9.7″ north in 359 days (9.9″/yr); saturated, measured from its glow, pass by pass</td><td>Catalogue 10.2″</td><td class="ok">✓ Motion seen</td></tr>
+    <tr><td><b>Epsilon Indi B</b></td><td>Brown-dwarf pair</td><td>4.3 ± 0.3″/yr south-east over 4 passes (5.9″ in 515 days)</td><td>Catalogue 4.7″</td><td class="ok">✓ Motion seen</td></tr>
+    <tr><td><b>WISE 0855−0714</b></td><td>Coldest known brown dwarf</td><td>8.82 ± 1.10″/yr west, every image; AB 17.15 at 11.8σ</td><td>CatWISE2020 7.94″</td><td class="ok">✓ Agrees</td></tr>
+    <tr><td><b>RW Aurigae</b></td><td>Variable young star</td><td>Faded 0.74 mag, Sep 2025 → Sep 2026, 6 of 6 colours</td><td>Comparison 0.13 mag</td><td class="ok">✓ Change seen</td></tr>
+    <tr><td><b>R Draconis</b></td><td>Pulsating giant (Mira)</td><td>Changed 1.24 mag at 0.85 µm, 10 images</td><td>Comparison 0.12-0.13 mag</td><td class="ok">✓ Change seen</td></tr>
+  </table>
+  <div class="two">
+    <figure><img src="shots-full/30-target-wise0855.jpg" alt=""><figcaption>WISE 0855: not in Gaia at all; found and checked with NASA WISE.</figcaption></figure>
+    <figure><img src="shots-full/32-target-epsindb.jpg" alt=""><figcaption>Epsilon Indi B target card.</figcaption></figure>
+    <figure><img src="shots-full/32-target-rwaur.jpg" alt=""><figcaption>RW Aurigae: brightness change with steady comparison stars.</figcaption></figure>
+    <figure><img src="shots-full/32-target-rdra.jpg" alt=""><figcaption>R Draconis: glare-checked brightness change.</figcaption></figure>
+  </div>
+</section>
+
+<section class="sec">
+  <h2><span class="num">7</span>How far to trust it</h2>
+  <p class="lead">Four tests on the same 18 sky fields, picked on a grid before the runs (along the ecliptic every 60°, on it and
+    40° above and below). Fields where ARCNAVE does badly are in the tables too.</p>
+  <table>
+    <tr><th>Test</th><th>What it does</th><th>Result</th></tr>
+    <tr><td><b>Hide Planet X</b> (scorecard)</td><td>19,880 fake planets hidden in the real images, then searched for, with and without a motion-following stack</td><td>Planet at 1000 AU found in 18 of 18 fields (median faintest V 17); at 300 AU in 12 of 18</td></tr>
+    <tr><td><b>False alarms</b></td><td>Two stacks of the same passes that differ in nothing real: every change reported is false</td><td>Away from the Milky Way: 22 false alarms in 32 comparisons, 7 of 12 fields with none. In the plane: many more (crowded), and the app warns</td></tr>
+    <tr><td><b>Brightness</b></td><td>Stars made brighter by known amounts</td><td>1.5× brighter caught in 82% of 720 stars; 2× in 89%</td></tr>
+    <tr><td><b>Movers</b></td><td>Fake movers of known speed and brightness injected and measured</td><td>Recovery by speed and signal reported cell by cell</td></tr>
+  </table>
+  <div class="two">
+    <figure><img src="shots-full/41-scorecard.jpg" alt=""><figcaption>Fig. 41 · The Tested drawer: "How far can you trust it?", every test in one look.</figcaption></figure>
+    <figure><img src="shots-full/42-false-alarm-test.jpg" alt=""><figcaption>Fig. 42 · Hide Planet X, field by field: faintest planet found at 300 and 1000 AU, misses shown.</figcaption></figure>
+  </div>
+  <p>Every result card has a "How sure are we?" note, an "Honest limits" section names what SPHEREx cannot see, Planet X is
+    always called hypothetical, and candidates are always "unconfirmed".</p>
+</section>
+
+<section class="sec">
+  <h2><span class="num">8</span>Speed and engineering</h2>
+  <ul>
+    <li><b>Only the bytes needed:</b> FITS images are stored row by row, so ARCNAVE reads just the field's rows from S3; the smooth ZODI model is rebuilt from 9 rows (7.5 → 5.1 MB per image).</li>
+    <li><b>Quick first report:</b> a new field reports from 3 images per pass first, then deepens to 8 by itself (about 40 s here, network-bound).</li>
+    <li><b>Saved for good:</b> archive and catalogue answers and images are kept on disk; the start screen's fields are prewarmed and pinned; the 5 targets and 18 test fields ship with the site.</li>
+    <li><b>Frozen test fields:</b> after DR1 renamed every file, the test fields keep their measured QR2 + QR3 lists, so they stay instant and their numbers stay true (37 of 37 checked on a fresh server).</li>
+    <li><b>Responsive page:</b> star shapes built in workers, long searches pause every 50 ms; measured old → new: worst freeze 7.2 → 2.6 s (v0.57.5), panels scroll at once (v0.57.8). Every number unchanged to the last digit.</li>
+    <li><b>Static files</b> gzipped once with ETags: app.js 56 → 2 ms; a returning visitor downloads nothing (304).</li>
+    <li><b>Robust:</b> mirrors and fallbacks for every outside service (IRSA → VizieR → MAST for Gaia; SkyBoT → MPC); works offline from its cache; 15+ unit test files, real-data tests and headless browser tests.</li>
+  </ul>
+</section>
+
+<section class="sec">
+  <h2><span class="num">9</span>What makes ARCNAVE different</h2>
+  <table>
+    <tr><th style="width:28%">Advantage</th><th>Why it matters</th></tr>
+    <tr><td><b>Real SPHEREx data, live</b></td><td>Every image comes from NASA's archive at the moment of the visit; new releases appear by themselves.</td></tr>
+    <tr><td><b>Measures, not just shows</b></td><td>Motions in ″/yr with errors, brightness changes in magnitudes, spectra in µm, each compared with Gaia or WISE.</td></tr>
+    <tr><td><b>Honest by design</b></td><td>Tested on 18 pre-chosen fields with fake planets, false-alarm and brightness tests; withdrawn numbers are written down, not hidden.</td></tr>
+    <tr><td><b>Beyond WiseView</b></td><td>Everything WiseView does for WISE (blink, Gaia, contrast, invert) plus a film with circled movers, automatic searches, spectra, light curves, Planet X injection, NEOSSat, a notebook export.</td></tr>
+    <tr><td><b>Citizen-science ready</b></td><td>Backyard Worlds' checks done automatically for a candidate (seen again, known asteroid, Gaia/CatWISE match, NASA flags), then a ready report; nothing called a discovery.</td></tr>
+    <tr><td><b>For everyone</b></td><td>Four languages with narration, a game, a 90-second story, phone layout, plain-words help for 48 tools.</td></tr>
+    <tr><td><b>Open and reproducible</b></td><td>No dependencies, Docker deploy, one-file offline package, Python and Jupyter export, all code public.</td></tr>
+  </table>
+</section>
+
+<section class="sec">
+  <h2><span class="num">10</span>The journey: v0.9 to v0.57.8</h2>
+  <p class="lead">77 versions, each written down in the README with what was measured. The main steps:</p>
+  <table>
+    <tr><th style="width:17%">Versions</th><th>What we built</th></tr>
+    <tr><td>v0.9 - v0.12</td><td>First sky viewer on real SPHEREx images, examples, first public deploy; empirical PSF checked against the official SPHEREx PSF; Hide Planet X (injection and recovery); the ARCNAVE name and design; the 18-field validation scorecard.</td></tr>
+    <tr><td>v0.13 - v0.20</td><td>Guided tour "60 seconds as Clyde Tombaugh"; whole-sky start; Discovery card; twice as fast; accessibility and phone layout; Minor Planet Center fallback; new spots read from NASA's S3 copy; "Find the asteroid" game; 90-second story; four languages with Listen.</td></tr>
+    <tr><td>v0.21 - v0.32</td><td>Works when outside servers fail; Changes view explained; every pass filled; the observatory layout and visual identity; false-alarm test; motion-following stack (shift-and-stack); brightness test; known-asteroid track arrows.</td></tr>
+    <tr><td>v0.33 - v0.39</td><td>NASA's five test targets; embed, contamination flags, data release notes; spectra on the fly; QR3 from S3; Gaia overlay and motion check for any star; light curves; deep view per detector; fast first look; report a candidate; Python export.</td></tr>
+    <tr><td>v0.40 - v0.49</td><td>UI upgrade ("mission control for everyone"); watch it move; known asteroids' paths; measured track across passes; automatic motion search; frame-by-frame track; deep search; difference search; trial-motion scan for faint stars.</td></tr>
+    <tr><td>v0.50 - v0.55</td><td>Animate the movers (film), spotlight; faster loading with identical numbers; WISE overlay (CatWISE2020); "from here to there" in every pass; redesign.</td></tr>
+    <tr><td>v0.56 - v0.56.3</td><td>Every field within a minute; start screen prewarmed; centred start page; one honest number for Epsilon Indi B (re-measured 4.32 ± 0.27″/yr); SPHEREx DR1 handled, test fields frozen.</td></tr>
+    <tr><td>v0.57.0 - v0.57.8</td><td>Every challenge resource linked (IRSA tools, WiseView, Gaia at MAST, NEOSSat at CADC); release watcher; SPHEREx's own DR1 sky; NASA flags on candidates; Contrast and Invert; review fixes and static-file speed; NEOSSat pictures; Jupyter notebook; page freezes cut; ready for a public server; judges' quick start and AI disclosure; panels scroll at once.</td></tr>
+  </table>
+</section>
+
+<section class="sec">
+  <h2><span class="num">11</span>Honest limits and next steps</h2>
+  <div class="warn"><ul>
+    <li>SPHEREx pixels are 6.15″: motions under about a pixel between passes are hard to see; most stars move 0.1-0.3″ a year.</li>
+    <li>Bright stars are saturated (measured from their glow); crowded Milky Way fields give many more false alarms.</li>
+    <li>A new field depends on NASA's archive search (seconds to minutes) and the visitor's internet.</li>
+    <li>QR2 files stay on NASA's S3 until February 2027: the test fields must move to DR1 and be re-measured before then.</li>
+    <li>NEOSSat pictures are shown, not measured (no sky coordinates on the raw frames).</li>
+  </ul></div>
+  <h3>Next</h3>
+  <ul>
+    <li>Re-measure everything on DR1 (v0.58) and publish the comparison.</li>
+    <li>Use DR1's official ePSF and VARIANCE extension for errors; name STREAK and CROSSTALK in more places.</li>
+    <li>A volunteer mode: many people checking candidates on the same field, with agreement counts.</li>
+  </ul>
+</section>
+
+<section class="sec">
+  <h2><span class="num">12</span>Credits, AI disclosure, acknowledgements</h2>
+  <p><b>Data:</b> NASA SPHEREx via NASA/IPAC IRSA (QR2 10.26131/IRSA652, QR3 10.26131/IRSA662, DR1 10.26131/IRSA678) and
+    the AWS Open Data copy; ESA Gaia DR3 (DPAC) via IRSA, CDS VizieR and STScI MAST; NASA WISE / CatWISE2020 (Marocco et al.
+    2021); 2MASS; CSA NEOSSat via the Canadian Astronomy Data Centre (Open Government Licence - Canada); IMCCE SkyBoT; the
+    Minor Planet Center; NASA JPL Horizons; CDS Aladin Lite, Sesame, SIMBAD and VizieR.</p>
+  <p><b>SPHEREx acknowledgement:</b> "This publication makes use of data products from the Spectro-Photometer for the History
+    of the Universe, Epoch of Reionization and Ices Explorer (SPHEREx), which is a joint project of the Jet Propulsion
+    Laboratory and the California Institute of Technology, and is funded by the National Aeronautics and Space
+    Administration."</p>
+  <div class="callout"><b>Use of AI.</b> The code was written with the help of an AI assistant (Claude, Anthropic). The
+    idea, the design choices and the science decisions are the team's; every number is computed by the code from real
+    archive data and checked by running the app. The tour narration is AI-generated speech (Microsoft neural voices) reading
+    our own captions. No image, data or result is AI-generated, and no NASA branding is used in generated content.</div>
+  <p class="muted small">Report generated from the running ARCNAVE v0.57.8 (commit 24ffed0). Screenshots: real Chrome,
+    1440×860 (desktop) and 390×844 (phone).</p>
+</section>
+
+</body>
+</html>

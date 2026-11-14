@@ -33,6 +33,14 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.9: the full project report; the right version on screen (14 Nov 2026)
+
+- **Full report:** `reports/ARCNAVE-Full-Report-v0.57.8.pdf` (source `reports/src/report-full.html`): the challenge
+  objective by objective, every listed resource and how it is used, the data pipeline, the five targets, the four tests,
+  what makes ARCNAVE different, the journey from v0.9, and screenshots of every feature from the running v0.57.8.
+  `reports/src/shots-full.cjs` retakes the screenshots with headless Chrome (no npm packages).
+- **Version badge:** the header still said v0.56.0; it now shows the running version.
+
 ## v0.57.8: the page keeps answering while it works; panels scroll at once (13 Nov 2026)
 Measured in headless Chrome (Long Animation Frames API, after the first 7 s), old code and new code side by side on the
 same machine and saved images, film included. Every measured number is unchanged (Epsilon Indi B 4.316672016104891″/yr,
