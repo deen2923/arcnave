@@ -1,16 +1,14 @@
-# Cloudflare Worker in front of the Hugging Face Space (DEPLOY-HF-CLOUDFLARE.md, step 5).
+# ARCNAVE on Cloudflare Workers, free plan, no card (DEPLOY-CLOUDFLARE-ONLY.md).
+#   node deploy/cloudflare/build.mjs https://arcnave.<your-subdomain>.workers.dev
 #   npx wrangler login
-#   npx wrangler deploy        (run in deploy/cloudflare)
-# Or paste worker.js into the Cloudflare dashboard (Workers & Pages > Create > Hello World > Edit code) and set the
-# ORIGIN variable and the custom domain there; this file is then not needed.
+#   npx wrangler deploy --config deploy/cloudflare/wrangler.toml
 name = "arcnave"
 main = "worker.js"
 compatibility_date = "2026-11-01"
 workers_dev = true
 
-# the site's address; arcnave.in must be on this Cloudflare account (free plan)
-routes = [{ pattern = "sky.arcnave.in", custom_domain = true }]
-
-[vars]
-# the Space's own address (https://<hf-name>-arcnave.hf.space): replace with yours
-ORIGIN = "https://CHANGE-ME-arcnave.hf.space"
+[assets]
+directory = "../out/cf"
+binding = "ASSETS"
+# a path with no file (a new sky tile, a /_c answer the PC did not have) goes to worker.js
+not_found_handling = "none"
