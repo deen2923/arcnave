@@ -33,6 +33,15 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.13: from field to field by the galactic centre again (15 Nov 2026)
+Asked by the team: a trip from one field to a far one should pass by the galactic centre, as it did before v0.57.9.
+- The sky fades out, the whole-sky map comes up centred on the galactic centre (labelled), holds about 1.3 s, then dives
+  towards the new field and the field fades in. The dive aims at the new field's place on the whole-sky map.
+- Cheap this time: the sky viewer draws the whole sky once and the new field once. The fades and the dive are CSS
+  opacity and scale on the browser's compositor, so the page keeps answering. Measured on the Intel UHD 620 laptop,
+  Barnard's Star to R Draconis: worst frame 0.5–0.7 s (the old animated flight: one frame of 18.9 s).
+- The whole-sky map key stays hidden during the trip. A newer trip cancels an older one; "reduce motion" and the tour still jump.
+
 ## v0.57.12: which numbers to type; where the view is, in degrees (14 Nov 2026)
 Asked by the team: visitors did not know what coordinates to type, or which patch of sky they were looking at.
 - **Whole-sky map: an RA/Dec grid in degrees.** RA lines every 30° (0° to 330°), Dec lines at −60°, −30°, 0°, +30°,
