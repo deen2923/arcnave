@@ -1115,12 +1115,13 @@ async function flyTo(ra, dec, fov, quick = false) {   // quick: jump (the guided
       // Here the sky viewer draws the whole sky once and the new field once; the fades and the dive are CSS on the
       // browser's compositor (opacity and scale), which costs the page nothing.
       const els = skyEls(), css = (t, o, tr) => { for (const e of els) { e.style.transition = t; e.style.opacity = o; if (tr != null) e.style.transform = tr; } };
-      css('opacity .25s ease', '0'); await sleep(260); if (!alive()) return;
+      // v0.57.14: shorter (2.3 s made a cached field open 2 to 5 s later): fade 0.2 s, hold 0.7 s, dive 0.45 s
+      css('opacity .2s ease', '0'); await sleep(200); if (!alive()) return;
       FLY.via = me; wholeSky(false); await new Promise(r => requestAnimationFrame(r));
-      css('opacity .35s ease', '1'); await sleep(1350); if (!alive()) return;
+      css('opacity .25s ease', '1'); await sleep(700); if (!alive()) return;
       let p = null; try { p = al.world2pix(ra, dec); } catch { p = null; }   // the dive heads for the new field on the whole-sky map
       for (const e of els) e.style.transformOrigin = p && isFinite(p[0]) && isFinite(p[1]) ? `${p[0]}px ${p[1]}px` : '50% 50%';
-      css('opacity .55s ease-in .1s, transform .65s cubic-bezier(.5,0,.9,.6)', '0', 'scale(6)'); await sleep(680);
+      css('opacity .35s ease-in .1s, transform .45s cubic-bezier(.5,0,.9,.6)', '0', 'scale(6)'); await sleep(460);
       end(); return;   // end() puts the field in place, unzooms and fades it back in
     } else if (from > 20) {   // from the whole sky (as before)
       al.animateToRaDec(ra, dec, 1.4); await sleep(1500); if (!alive()) return;
@@ -1214,7 +1215,7 @@ function viewRange() {
   return (poleIn ? 'RA all (pole in view)' : `RA ${f1(lo)}–${f1(hi)}`) + ` · Dec ${f2(Math.min(...decs))}…${f2(Math.max(...decs))}`;
 }
 function drawAllSky() {
-  drawCoordGrid();
+  if (!FLY.via) drawCoordGrid();   // v0.57.14: not during a flight past the galactic centre (thousands of projections per draw)
   ctx.save(); ctx.font = '600 12px Archivo,sans-serif'; ctx.textBaseline = 'middle';
   drawEcliptic();
   // label the ecliptic once, where it is on screen
@@ -6273,7 +6274,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.13', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.14', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }

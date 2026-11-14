@@ -1,6 +1,6 @@
 {
   "name": "arcnave",
-  "version": "0.57.13",
+  "version": "0.57.14",
   "description": "ARCNAVE: browse real SPHEREx images and spot what moves",
   "private": true,
   "main": "server.js",
