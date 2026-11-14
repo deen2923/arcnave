@@ -1120,7 +1120,90 @@ async function flyTo(ra, dec, fov, quick = false) {   // quick: jump (the guided
   } catch { /* jump instead */ }
   end();
 }
+// v0.57.12: an RA/Dec grid in degrees on the whole-sky map (asked by the team: "people don't know which coordinates to
+// type"). RA lines every 30° (0° to 360°), Dec lines every 30° (-90° south pole to +90° north pole), each labelled, so a
+// visitor can read a position off the map and type it in Fly to. The map itself is in the galactic frame, so the grid curves.
+function polyline(pts) {
+  let prev = null; ctx.beginPath();
+  for (const [ra, dec] of pts) { const p = proj(ra, dec); if (p && prev && Math.hypot(p[0] - prev[0], p[1] - prev[1]) < 60) ctx.lineTo(p[0], p[1]); else if (p) ctx.moveTo(p[0], p[1]); prev = p; }
+  ctx.stroke();
+}
+function drawCoordGrid() {
+  ctx.save(); ctx.strokeStyle = 'rgba(159,176,220,.22)'; ctx.lineWidth = 1;
+  for (let ra = 0; ra < 360; ra += 30) { const pts = []; for (let d = -88; d <= 88; d += 2) pts.push([ra, d]); polyline(pts); }
+  for (const d of [-60, -30, 0, 30, 60]) { const pts = []; for (let ra = 0; ra <= 360; ra += 2) pts.push([ra, d]); if (d === 0) { ctx.strokeStyle = 'rgba(159,176,220,.42)'; } polyline(pts); ctx.strokeStyle = 'rgba(159,176,220,.22)'; }
+  ctx.font = '500 11px "JetBrains Mono",ui-monospace,Consolas,monospace'; ctx.textBaseline = 'middle'; ctx.textAlign = 'center';
+  const label = (t, p) => { const w = ctx.measureText(t).width + 8; ctx.fillStyle = 'rgba(6,11,24,.6)'; ctx.fillRect(p[0] - w / 2, p[1] - 8, w, 16); ctx.fillStyle = 'rgba(200,212,238,.92)'; ctx.fillText(t, p[0], p[1]); };
+  for (let ra = 0; ra < 360; ra += 30) { const p = proj(ra, 0); if (p && p[0] > 0 && p[0] < W && p[1] > 0 && p[1] < H) label('RA ' + ra + '°', p); }
+  for (const d of [-60, -30, 30, 60]) { const p = proj(90, d); if (p && p[0] > 0 && p[0] < W && p[1] > 0 && p[1] < H) label('Dec ' + (d > 0 ? '+' : '') + d + '°', p); }
+  for (const d of [-90, 90]) { const p = proj(0, d); if (p && p[0] > 0 && p[0] < W && p[1] > 0 && p[1] < H) label((d > 0 ? 'North pole' : 'South pole') + ' · Dec ' + (d > 0 ? '+' : '') + d + '°', p); }
+  // the position under the mouse, ready to type in Fly to
+  const m = S.mouse;
+  if (m) {
+    let s = null; try { s = S.al.pix2world(m[0], m[1], 'icrs'); } catch { s = null; }
+    if (s && isFinite(s[0]) && isFinite(s[1])) {
+      const t = `RA ${(((s[0] % 360) + 360) % 360).toFixed(1)}  Dec ${s[1] >= 0 ? '+' : ''}${s[1].toFixed(1)}   type this in Fly to`;
+      ctx.textAlign = 'left'; ctx.font = '600 12px "JetBrains Mono",ui-monospace,Consolas,monospace';
+      const er = eyeRect(), right = er ? er.right : W, w = ctx.measureText(t).width + 12, x = m[0] + 16 + w > right ? m[0] - 16 - w : m[0] + 16, y = m[1] + 22;
+      ctx.fillStyle = 'rgba(6,11,24,.85)'; ctx.fillRect(x, y - 10, w, 20); ctx.strokeStyle = 'rgba(95,227,240,.6)'; ctx.strokeRect(x + .5, y - 9.5, w - 1, 19);
+      ctx.fillStyle = '#8af3e8'; ctx.fillText(t, x + 6, y);
+    }
+  }
+  ctx.restore();
+}
+// v0.57.12: the corners of the eyepiece say where they point (RA/Dec in degrees), and a line under the view gives the RA and
+// Dec range on screen and its width, so anyone can tell which patch of sky they are looking at.
+const fmtRa = v => (((v % 360) + 360) % 360).toFixed(3) + '°', fmtDec = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(3) + '°';
+// the eyepiece rectangle, measured only when it changes size or place (a layout read every frame would freeze the page)
+const EYE = { r: null, dirty: true };
+function eyeRect() {
+  if (EYE.dirty) { EYE.dirty = false; const e = document.querySelector('.eye'); const r = e && e.getBoundingClientRect(); EYE.r = r && r.width > 80 && r.height > 80 ? { left: r.left, top: r.top, right: r.right, bottom: r.bottom } : null; }
+  return EYE.r;
+}
+{ const e = document.querySelector('.eye'); const mark = () => { EYE.dirty = true; TELE.fit = null; };
+  addEventListener('resize', mark);
+  if (e) { e.addEventListener('transitionend', mark); if (window.ResizeObserver) new ResizeObserver(mark).observe(e); }
+  if (window.MutationObserver) new MutationObserver(mark).observe(document.body, { attributes: true, attributeFilter: ['class'] }); }   // panels collapse / clear view move the eyepiece
+// is something (the film's player) over the sky at this point? A hit test reads layout, so it is asked once a second at most
+const COVER = { at: 0, v: {} };
+function coveredAt(k, x, y) {
+  const now = performance.now();
+  if (EYE.dirty || now - COVER.at > 1000) { COVER.at = now; COVER.v = {}; }
+  if (!(k in COVER.v)) { const el = document.elementFromPoint(x, y); COVER.v[k] = !!(el && el.id !== 'aladin' && !(el.closest && el.closest('#aladin'))); }
+  return COVER.v[k];
+}
+function drawCorners(r) {
+  if (!r) return;
+  { const it = $('intro'); if (it && !it.hidden) return; }   // the start page covers the sky
+  const at = (x, y) => { try { const s = S.al.pix2world(x, y, 'icrs'); return s && isFinite(s[0]) && isFinite(s[1]) ? s : null; } catch { return null; } };
+  ctx.save(); ctx.font = '500 11px "JetBrains Mono",ui-monospace,Consolas,monospace'; ctx.textBaseline = 'middle';
+  const box = (t, x, y, align) => { ctx.textAlign = align; const w = ctx.measureText(t).width + 10, x0 = align === 'left' ? x - 5 : x - w + 5; ctx.fillStyle = 'rgba(6,11,24,.62)'; ctx.fillRect(x0, y - 9, w, 18); ctx.fillStyle = 'rgba(138,243,232,.92)'; ctx.fillText(t, x, y); };
+  const C = [[r.left, r.top, 'left', 1], [r.right, r.top, 'right', 1], [r.left, r.bottom, 'left', -1], [r.right, r.bottom, 'right', -1]];
+  for (const [x, y, al, dy] of C) {
+    const s = at(x, y); if (!s) continue;
+    const tx = al === 'left' ? x + 36 : x - 36;
+    if (dy < 0 && coveredAt(al, al === 'left' ? tx + 60 : tx - 60, y - 12)) continue;   // the film's player covers it
+    box(`RA ${fmtRa(s[0])}  Dec ${fmtDec(s[1])}`, tx, y + dy * 12, al);
+  }
+  ctx.restore();
+}
+// the RA and Dec range inside the eyepiece (RA may wrap through 0°), shown in the status bar
+function viewRange() {
+  if (allSky()) return 'whole sky · RA 0–360° · Dec −90…+90°';
+  const r = eyeRect() || { left: 0, top: 0, right: W, bottom: H }, got = [];
+  for (const [x, y] of [[r.left, r.top], [r.right, r.top], [r.left, r.bottom], [r.right, r.bottom]]) {
+    let s = null; try { s = S.al.pix2world(x, y, 'icrs'); } catch { s = null; }
+    if (!s || !isFinite(s[0]) || !isFinite(s[1])) return 'none'; got.push(s);
+  }
+  const ras = got.map(s => ((s[0] % 360) + 360) % 360), decs = got.map(s => s[1]);
+  let lo = Math.min(...ras), hi = Math.max(...ras);
+  if (hi - lo > 180) { const sh = ras.map(v => v > 180 ? v - 360 : v); lo = Math.min(...sh); hi = Math.max(...sh); }
+  const poleIn = [proj(0, 90), proj(0, -90)].some(z => z && z[0] > r.left && z[0] < r.right && z[1] > r.top && z[1] < r.bottom);
+  const f1 = v => (((v % 360) + 360) % 360).toFixed(2) + '°', f2 = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(2) + '°';
+  return (poleIn ? 'RA all (pole in view)' : `RA ${f1(lo)}–${f1(hi)}`) + ` · Dec ${f2(Math.min(...decs))}…${f2(Math.max(...decs))}`;
+}
 function drawAllSky() {
+  drawCoordGrid();
   ctx.save(); ctx.font = '600 12px Archivo,sans-serif'; ctx.textBaseline = 'middle';
   drawEcliptic();
   // label the ecliptic once, where it is on screen
@@ -1276,13 +1359,16 @@ let lastTele = 0;
 // the glass panels on top of it (backdrop-filter): on ordinary laptops that showed as a light, constant stutter. Now it
 // redraws only when the view moves, a blink frame flips, the user just did something, or (for async loads) 5 times a second.
 let lastKey = '', lastDraw = 0, busyUntil = 0;
+// v0.57.12: where the mouse is on the sky (the whole-sky map shows its RA/Dec next to the pointer)
+addEventListener('pointermove', e => { S.mouse = e.pointerType === 'mouse' && e.target && e.target.closest && e.target.closest('#aladin') ? [Math.round(e.clientX), Math.round(e.clientY)] : null; }, { passive: true });
 for (const ev of ['pointerdown', 'pointermove', 'wheel', 'keydown', 'input', 'click', 'touchmove']) addEventListener(ev, () => { busyUntil = performance.now() + 700; }, { passive: true, capture: true });
 function frame(ts) {
   requestAnimationFrame(frame);
   if (!S.al) return;
   VSTK.n++;
   let key = '';
-  try { const c = S.al.getRaDec(), f = S.al.getFov(); key = `${c[0].toFixed(6)},${c[1].toFixed(6)},${f[0].toFixed(6)},${W},${H},${S.mode},${S.lab}`; } catch { /* draw anyway */ }
+  const er = eyeRect();
+  try { const c = S.al.getRaDec(), f = S.al.getFov(); key = `${c[0].toFixed(6)},${c[1].toFixed(6)},${f[0].toFixed(6)},${W},${H},${S.mode},${S.lab},${er ? Math.round(er.left) + ':' + Math.round(er.right) : ''},${f[0] > 40 && S.mouse ? S.mouse.join(':') : ''}`; } catch { /* draw anyway */ }
   if (S.mode === 'blink' || S.mode === 'time') key += ',' + Math.floor(ts / (S.mode === 'blink' && !multi() ? 700 : 650));
   // v0.56: the film's glide, lock-on ring and "from here to there" callout are drawn at ~30 frames a second while a pass
   // changes (and 10 a second for the pulse after), instead of the 5 a second that made the glide jump
@@ -1340,12 +1426,28 @@ function frame(ts) {
   }
   if (!allSky()) { drawGaia(); drawCw(); drawSpec(); if (MOVIE.on) drawMovie(); else { drawMeasTrack(); drawFrameFit(); drawMotionSearch(); drawDeep(); drawDiff(); drawScan(); } }   // v0.50: during the film only its own tracks   // v0.44: drawTrack, the measured track across passes; v0.46: drawFrameFit, every image
   const whole = allSky(); if (whole) drawAllSky(); else if (S.ecl) drawEcliptic();
+  if (!whole && !MOVIE.on) drawCorners(er);
   { const si = $('skyinfo'); if (si && si.hidden === whole) si.hidden = !whole; }   // v0.28.1: the map key only on the whole sky
   if (ts - lastTele > 150) { lastTele = ts; telemetry(); }
 }
+// the View range in the status bar; whether it fits is measured only when the text gets longer or the window changes
+// (no layout read on every update). No room: it hides, and the corners of the view still give the limits.
+const TELE = { fit: null, len: 0, txt: '', at: 0 };
+function viewTele() {
+  const v = $('vrng'); if (!v) return;
+  const t = viewRange(), now = performance.now();
+  if (t !== TELE.txt) { TELE.txt = t; v.textContent = t; }
+  if (TELE.fit === null || t.length !== TELE.len || now - TELE.at > 2000) {   // the other fields (images, passes) grow as a field loads: look again every 2 s at most
+    TELE.at = now;
+    const tl = v.closest('.tele'), dt = v.previousElementSibling;
+    v.style.display = dt.style.display = '';
+    TELE.fit = !(tl && tl.scrollWidth > tl.clientWidth + 1); TELE.len = t.length;
+    if (!TELE.fit) v.style.display = dt.style.display = 'none';
+  }
+}
 function telemetry() {
   const [ra, dec] = S.al.getRaDec();
-  $('ra').textContent = ra.toFixed(3) + '°'; $('dec').textContent = dec.toFixed(3) + '°'; $('zm').textContent = S.al.getFov()[0].toFixed(2) + '°';
+  $('ra').textContent = ra.toFixed(3) + '°'; $('dec').textContent = dec.toFixed(3) + '°'; $('zm').textContent = S.al.getFov()[0].toFixed(2) + '°'; viewTele();
   scaleBar();
 }
 // v0.25: a true angular scale in the eyepiece corner (the longest round length that fits in 150 px)
@@ -2471,6 +2573,8 @@ addEventListener('keydown', e => { if (e.key === 'Escape' && !(window.Tour && To
 $('hc').onclick = e => { const on = document.documentElement.dataset.hc !== '1'; document.documentElement.dataset.hc = on ? '1' : '0'; e.target.setAttribute('aria-pressed', on); };
 
 function go(ra, dec) { flyTo(ra, dec, 1.2).catch(() => { S.al.gotoRaDec(ra, dec); S.al.setFov(1.2); }); }
+// v0.57.12: the example positions on the whole-sky caption fill Fly to and go there
+document.querySelectorAll('.skyex [data-fly]').forEach(b => { b.onclick = () => { $('q').value = b.dataset.fly; $('sf').requestSubmit(); }; });
 $('sf').onsubmit = async e => {
   e.preventDefault(); const q = $('q').value.trim(); if (!q || !S.al) return;
   const ctq = [[/barnard/i, 'barnard'], [/eps(ilon)?\.?\s*ind(i)?\s*b/i, 'epsindb'], [/wise\s*(j?0855|0855)/i, 'wise0855'], [/^rw\s*aur/i, 'rwaur'], [/^r\s*dra(conis)?$/i, 'rdra']].find(([re]) => re.test(q));
@@ -6158,7 +6262,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.11', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.12', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
