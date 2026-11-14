@@ -786,7 +786,9 @@ async function horizons(q) {
 // Saves the cutouts this server has in memory (without PSF/VARIANCE since v0.4), the last archive searches and what the
 // page sends (agent report, chosen images) into debug-cutouts/<time>/ so the real data can be inspected offline. Refused
 // unless the request comes from this computer, and refused entirely when SKYSHIFT_PUBLIC=1 (set that on any public host).
-const isLocal = req => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) && !req.headers['x-forwarded-for'];
+// v0.57.9: a Cloudflare Tunnel (cloudflared on the same machine) also connects from 127.0.0.1: its requests carry
+// Cf-Connecting-Ip / Cf-Ray, so they count as visitors, never as this PC (SKYSHIFT_PUBLIC=1 refuses them anyway)
+const isLocal = req => ['127.0.0.1', '::1', '::ffff:127.0.0.1'].includes(req.socket.remoteAddress) && !req.headers['x-forwarded-for'] && !req.headers['cf-connecting-ip'] && !req.headers['cf-ray'];
 function readBody(req, max) {
   return new Promise((res, rej) => {
     let n = 0; const parts = [];

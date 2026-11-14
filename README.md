@@ -41,6 +41,30 @@ node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, 
   `reports/src/shots-full.cjs` retakes the screenshots with headless Chrome (no npm packages).
 - **Version badge:** the header still said v0.56.0; it now shows the running version.
 
+## v0.57.11: every feature walked through; the worst hangs found and removed (14 Nov 2026)
+A scripted walk through the whole site on the real server (real data, real sky viewer, Chrome on this PC's Intel UHD 620
+GPU): the start page, the 5 NASA targets, every view, every tool, the film, Hide Planet X, share, game, tour, the four
+languages, the about/tools/scorecard pages, embed mode and a phone screen. 52 steps; every feature works. What it found:
+- **Switching to a far field froze the page for up to 19 s.** The flight out to the whole sky and back (v0.35.2) made the
+  sky viewer redraw the whole sky in another projection while the new images loaded: one frame of 18.9 s, 32 s of frozen
+  page (Barnard's Star to R Draconis). A far switch now fades the sky out, jumps and fades it in: 5.6 s blocked in total,
+  no frame over 1.3 s. Short pans and the dive from the whole sky are unchanged.
+- **The wait panel forced a layout of the whole page twice a second** (it read its own height after writing its text):
+  17 s of a 40 s switch in a CPU profile. It now writes only what changed, and its height reaches the page through a
+  ResizeObserver. The status line and the time bar (every 1 s and 0.25 s) also write only what changed.
+- **Stacks and the Changes maps were rebuilt whenever any image arrived** (their key held the global alignment counter):
+  Deep view's 36 images rebuilt every epoch's stack 78 times (10 s of frozen page). Each stack is now keyed on its own
+  images and their alignment; Deep view: no frame over 0.2 s.
+- **Contrast slider:** every step repainted every image (0.3 s each); now the image on screen at once, the others with pauses,
+  one repaint per screen frame. **Hide Planet X** says it is working before its 0.5 s trial. **Game** buttons pressed before
+  its images are ready do nothing (they threw errors).
+- Measured after: film playback 43 frames a second, no frame over 0.12 s; all views, tools, tour and languages with no frame
+  over 0.2 s; measured motions unchanged (Epsilon Indi B 4.32″/yr, Epsilon Indi A 4.71).
+- Still there, outside this code: the sky viewer's own work when it starts (its script, 1-3 s the first time on this
+  laptop) and while a new field's sky tiles arrive (frames of about 1-2 s); a new spot's first file can log one harmless 416;
+  the SPHEREx sky asks for a Moc.fits it deliberately does not get (v0.57.2). Turning the glass blur off was measured too:
+  no real gain, so the look stays.
+
 ## v0.57.8: the page keeps answering while it works; panels scroll at once (13 Nov 2026)
 Measured in headless Chrome (Long Animation Frames API, after the first 7 s), old code and new code side by side on the
 same machine and saved images, film included. Every measured number is unchanged (Epsilon Indi B 4.316672016104891″/yr,
