@@ -1092,25 +1092,36 @@ function wholeSky(animate) {
 // pulls back to the whole sky, turns, and dives in, like a flight between two places. A spot already on screen is a short
 // pan + zoom. A newer flight cancels an older one. With "reduce motion" set in the system it still jumps.
 const FLY = { n: 0 };
+const skyEls = () => ['aladin', 'ov'].map(id => document.getElementById(id)).filter(Boolean);
 const angDist = (ra1, d1, ra2, d2) => { const r = Math.PI / 180, c = Math.sin(d1 * r) * Math.sin(d2 * r) + Math.cos(d1 * r) * Math.cos(d2 * r) * Math.cos((ra1 - ra2) * r); return Math.acos(Math.min(1, Math.max(-1, c))) / r; };
 async function flyTo(ra, dec, fov, quick = false) {   // quick: jump (the guided tour steps between tools)
   const al = S.al, me = ++FLY.n, from = al.getFov()[0], alive = () => me === FLY.n;
   const can = !quick && !reduce && al.zoomToFoV && al.animateToRaDec;
-  const end = () => { if (!alive()) return; try { al.setFrame && al.setFrame('ICRSd'); al.setProjection && al.setProjection('SIN'); } catch { /* ignore */ } al.gotoRaDec(ra, dec); al.setFov(fov);
-    const el = document.getElementById('aladin'); if (el && el.style.opacity === '0') requestAnimationFrame(() => { el.style.opacity = ''; });   // v0.57.9: a faded sky always comes back
+  const end = () => { if (!alive()) return; FLY.via = 0; try { al.setFrame && al.setFrame('ICRSd'); al.setProjection && al.setProjection('SIN'); } catch { /* ignore */ } al.gotoRaDec(ra, dec); al.setFov(fov);
+    for (const el of skyEls()) if (el.style.opacity === '0' || el.style.transform) {   // v0.57.9: a faded sky always comes back (v0.57.13: and unzoomed)
+      el.style.transition = 'none'; el.style.transform = ''; el.style.transformOrigin = '';
+      requestAnimationFrame(() => { el.style.transition = 'opacity .3s ease'; el.style.opacity = ''; });
+    }
   };
   if (!can) { end(); return; }
   try {
     let c = null; try { c = al.getRaDec(); } catch { c = null; }
     const d = c ? angDist(c[0], c[1], ra, dec) : 180;
     if (from <= 20 && d > Math.max(3, from * 1.5)) {
-      // v0.57.9: from one field to another far away the sky now fades out, jumps and fades in. The flight out to the whole
-      // sky and back (v0.35.2) made the sky viewer redraw the whole sky in another projection on every frame while the new
-      // field's images were loading: measured on an Intel UHD 620 laptop, one frame of 18.9 s and 32 s of frozen page per
-      // switch (Barnard's Star to R Draconis); with the fade, no frame over 1.8 s.
-      const el = document.getElementById('aladin');
-      if (el) { el.style.transition = 'opacity .25s ease'; el.style.opacity = '0'; await sleep(260); }
-      end(); return;   // end() fades it back in
+      // v0.57.13: from one field to another far away the trip goes by the galactic centre again (asked by the team): the
+      // sky fades out, the whole-sky map comes up centred on the galactic centre, holds a moment, then dives into the new
+      // field. The flight of v0.35.2 animated the sky viewer itself, which redrew the whole sky in another projection on
+      // every frame while the new field's images loaded (one frame of 18.9 s, 32 s of frozen page on an Intel UHD 620).
+      // Here the sky viewer draws the whole sky once and the new field once; the fades and the dive are CSS on the
+      // browser's compositor (opacity and scale), which costs the page nothing.
+      const els = skyEls(), css = (t, o, tr) => { for (const e of els) { e.style.transition = t; e.style.opacity = o; if (tr != null) e.style.transform = tr; } };
+      css('opacity .25s ease', '0'); await sleep(260); if (!alive()) return;
+      FLY.via = me; wholeSky(false); await new Promise(r => requestAnimationFrame(r));
+      css('opacity .35s ease', '1'); await sleep(1350); if (!alive()) return;
+      let p = null; try { p = al.world2pix(ra, dec); } catch { p = null; }   // the dive heads for the new field on the whole-sky map
+      for (const e of els) e.style.transformOrigin = p && isFinite(p[0]) && isFinite(p[1]) ? `${p[0]}px ${p[1]}px` : '50% 50%';
+      css('opacity .55s ease-in .1s, transform .65s cubic-bezier(.5,0,.9,.6)', '0', 'scale(6)'); await sleep(680);
+      end(); return;   // end() puts the field in place, unzooms and fades it back in
     } else if (from > 20) {   // from the whole sky (as before)
       al.animateToRaDec(ra, dec, 1.4); await sleep(1500); if (!alive()) return;
       al.zoomToFoV(Math.max(fov, 8), 1.6); await sleep(1700); if (!alive()) return;
@@ -1427,7 +1438,7 @@ function frame(ts) {
   if (!allSky()) { drawGaia(); drawCw(); drawSpec(); if (MOVIE.on) drawMovie(); else { drawMeasTrack(); drawFrameFit(); drawMotionSearch(); drawDeep(); drawDiff(); drawScan(); } }   // v0.50: during the film only its own tracks   // v0.44: drawTrack, the measured track across passes; v0.46: drawFrameFit, every image
   const whole = allSky(); if (whole) drawAllSky(); else if (S.ecl) drawEcliptic();
   if (!whole && !MOVIE.on) drawCorners(er);
-  { const si = $('skyinfo'); if (si && si.hidden === whole) si.hidden = !whole; }   // v0.28.1: the map key only on the whole sky
+  { const si = $('skyinfo'), show = whole && !FLY.via; if (si && si.hidden === show) si.hidden = !show; }   // v0.57.13: not while a flight passes by the galactic centre   // v0.28.1: the map key only on the whole sky
   if (ts - lastTele > 150) { lastTele = ts; telemetry(); }
 }
 // the View range in the status bar; whether it fits is measured only when the text gets longer or the window changes
@@ -6262,7 +6273,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.12', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.13', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
