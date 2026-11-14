@@ -33,6 +33,20 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.12: which numbers to type; where the view is, in degrees (14 Nov 2026)
+Asked by the team: visitors did not know what coordinates to type, or which patch of sky they were looking at.
+- **Whole-sky map: an RA/Dec grid in degrees.** RA lines every 30° (0° to 330°), Dec lines at −60°, −30°, 0°, +30°,
+  +60°, the celestial poles marked. The map is in the galactic frame, so the grid curves.
+- **The position under the mouse** (RA, Dec in degrees) shows next to the pointer on the whole-sky map, ready to type in Fly to.
+- **"Which numbers to type?"** on the whole-sky caption: RA 0° to 360°, Dec −90° to +90°, and three example positions
+  (Orion Nebula, Barnard's Star, Pleiades) that fly there in one tap. The quick start's first tip says the same.
+- **Zoomed in: each corner of the eyepiece gives its RA/Dec** (ICRS, degrees), and the status bar gives the RA and Dec
+  range on screen ("View"). A bottom corner covered by the film's player is skipped. When the status bar has no room
+  (narrow windows while a field loads), View hides and the corners still give the limits.
+- Kept light: the eyepiece size is measured only when it changes (resize, panels), the status-bar fit is checked every
+  2 s at most, and the "is the player in the way" hit test once a second at most (no layout read on every frame).
+- Tests: `test/test.js` 15 passed, `test/real.test.js` 9 passed; checked in Chrome at 1600 and 1920 px wide.
+
 ## v0.57.9: the full project report; the right version on screen (14 Nov 2026)
 
 - **Full report:** `reports/ARCNAVE-Full-Report-v0.57.8.pdf` (source `reports/src/report-full.html`): the challenge

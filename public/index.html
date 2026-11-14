@@ -275,7 +275,7 @@
           <li>NASA SPHEREx · NASA/IPAC IRSA</li><li>ESA Gaia DR3</li><li>NASA WISE · CatWISE2020 · AllWISE · 2MASS</li><li>IMCCE SkyBoT · Minor Planet Center</li><li>NASA JPL Horizons</li><li>CDS Aladin Lite, HiPS &amp; SIMBAD</li></ul></div>
         <div><h3 data-i18n="ft.tool">The tool</h3><ul>
           <li><a href="#" data-launch data-i18n="cta.launch">Launch ARCNAVE</a></li><li><a href="#lp-targets" data-i18n="nav.targets">Test targets</a></li><li><a href="/about.html#tested" data-i18n="ft.tested">How we tested it</a></li><li><a href="/about.html#limits" data-i18n="ft.limits">Limits, honestly</a></li><li><a href="#top" data-i18n="v5.top">Back to top</a></li></ul></div>
-        <p class="fine"><span data-i18n="ft.fine">Images are false-colour infrared. Planet X is hypothetical. No discovery is claimed.</span><span class="mono">v0.57.11</span></p>
+        <p class="fine"><span data-i18n="ft.fine">Images are false-colour infrared. Planet X is hypothetical. No discovery is claimed.</span><span class="mono">v0.57.12</span></p>
       </div>
     </footer>
   </div>
@@ -287,7 +287,7 @@
 
 <header class="top">
   <button type="button" class="homeb" id="homeb" title="Back to the start page"><svg class="ic" aria-hidden="true"><use href="#i-chev"/></svg>Home</button>
-  <button type="button" class="brand" id="brandb" aria-label="ARCNAVE: back to the start page" title="Back to the start page"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-logo"/></svg><span class="bt"><span class="wm">ARCNAVE</span><i class="spec" aria-hidden="true"></i></span><small>Real SPHEREx images, real known movers</small><span class="ver">v0.57.9</span></button>
+  <button type="button" class="brand" id="brandb" aria-label="ARCNAVE: back to the start page" title="Back to the start page"><svg class="logo" viewBox="0 0 64 64" aria-hidden="true"><use href="#i-logo"/></svg><span class="bt"><span class="wm">ARCNAVE</span><i class="spec" aria-hidden="true"></i></span><small>Real SPHEREx images, real known movers</small><span class="ver">v0.57.12</span></button>
   <form id="sf" role="search"><span class="sfi" aria-hidden="true"><svg class="ic"><use href="#i-search"/></svg></span><input id="q" aria-label="Search object name or RA Dec coordinates" placeholder="Name, or RA Dec: 190 -4" autocomplete="off" spellcheck="false"><button>Fly to</button></form>
   <div class="acts">
       <span class="fld tfov"><label for="csize" class="help" data-tip="fov">FOV</label><select id="csize"><option value="0.25">0.25°</option><option value="0.5" selected>0.5°</option><option value="1">1°</option></select></span>
@@ -309,7 +309,9 @@
 <div class="eye" aria-hidden="true"><i class="tl"></i><i class="tr"></i><i class="bl"></i><i class="br"></i></div>
 <div id="skyinfo" class="skyinfo" hidden>
   <div class="skycap"><b>The whole sky in near-infrared light</b><span>2MASS survey, the Milky Way across the middle. SPHEREx photographs all of it every six months, in 102 colours.</span>
-    <span class="skyhow">Drag to turn the sky. Scroll or pinch to zoom. Click a marker, or type a place in Fly to, and the agents fetch its SPHEREx images.</span></div>
+    <span class="skyhow">Drag to turn the sky. Scroll or pinch to zoom. Click a marker, or type a place in Fly to, and the agents fetch its SPHEREx images.</span>
+    <span class="skycoo"><b>Which numbers to type?</b> Two numbers in degrees: <b>RA</b> 0° to 360° (around the sky), then <b>Dec</b> −90° (south pole) to +90° (north pole). Point at the map to read them off the grid. Try:
+      <span class="skyex"><button type="button" data-fly="83.82 -5.39">83.82 −5.39 <i>Orion Nebula</i></button><button type="button" data-fly="269.45 4.69">269.45 4.69 <i>Barnard's Star</i></button><button type="button" data-fly="56.75 24.12">56.75 24.12 <i>Pleiades</i></button></span></span></div>
   <ul class="skyleg" aria-label="Map key">
     <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7" fill="none" stroke="rgba(238,241,247,.5)"/><circle cx="10" cy="10" r="3" fill="#eef1f7"/></svg>Famous places, ready to open</li>
     <li><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="7.5" fill="none" stroke="#ffb05a" stroke-width="2"/><circle cx="10" cy="10" r="2.3" fill="#ffb05a"/></svg>A real asteroid example</li>
@@ -318,7 +320,7 @@
   </ul>
 </div>
 <section aria-label="Status"><dl class="tele glass">
-  <dt data-tip="ra">RA</dt><dd id="ra">0</dd><dt data-tip="dec">Dec</dt><dd id="dec">0</dd><dt data-tip="lam">Image λ</dt><dd id="bd">none</dd><dt data-tip="epoch">Epoch</dt><dd id="ep">none</dd><dt data-tip="fov">FoV</dt><dd id="zm">0</dd>
+  <dt data-tip="ra">RA</dt><dd id="ra">0</dd><dt data-tip="dec">Dec</dt><dd id="dec">0</dd><dt data-tip="lam">Image λ</dt><dd id="bd">none</dd><dt data-tip="epoch">Epoch</dt><dd id="ep">none</dd><dt data-tip="fov">FoV</dt><dd id="zm">0</dd><dt title="The RA and Dec range inside the four corners of the view, in degrees">View</dt><dd id="vrng">none</dd>
   <dt data-tip="imgs">Images</dt><dd id="tn" class="lv">none</dd><dt data-tip="passes">Passes</dt><dd id="tps" class="lv">none</dd><dt data-tip="qr">Data</dt><dd id="trel" class="lv">none</dd>
 </dl><div class="scl" id="scl" role="img" aria-label="Scale"><i id="sclb"></i><span id="scll"></span></div></section>
 
