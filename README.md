@@ -11,7 +11,7 @@ Real SPHEREx images in a sky viewer, with known movers. Needs Node 18+ and inter
 - **The 5 NASA test targets, one click each** (append to the live link or to `http://localhost:8083/`):
   `#ct=barnard` · `#ct=epsindb` · `#ct=wise0855` · `#ct=rwaur` · `#ct=rdra`. Tests and limits: `#scorecard`, `/about.html`.
 - **Run it yourself:** Windows: double-click `start.bat` (opens `http://localhost:8083`). Any OS: `node server.js`, then
-  open `http://localhost:8080` (Node 18+, no install). Public server: `DEPLOY.md` (Docker + Caddy, Oracle Cloud free tier).
+  open `http://localhost:8080` (Node 18+, no install). Public server: `DEPLOY-HF-CLOUDFLARE.md` (Hugging Face Space + Cloudflare, free, no card), or `DEPLOY.md` (Docker + Caddy, Oracle Cloud free tier).
 - **Data:** NASA/IPAC IRSA (SPHEREx QR2, QR3, DR1), ESA Gaia DR3, NASA WISE/CatWISE2020, CSA NEOSSat via CADC, IMCCE SkyBoT,
   Minor Planet Center, JPL Horizons, CDS. Full credits and acknowledgements: `public/about.html`.
 - **Use of AI (SI):** the code was written with the help of an AI assistant (Claude, Anthropic); the tour narration uses
