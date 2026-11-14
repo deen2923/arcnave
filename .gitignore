@@ -23,3 +23,5 @@ reports/src/report.built.html
 # internal notes and Claude Code working files (never pushed)
 .claude/
 HANDOFF-PROMPT.md
+# wrangler (Cloudflare) local state
+.wrangler/
