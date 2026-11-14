@@ -324,18 +324,23 @@
   qa('[data-open-tb]').forEach(b => b.onclick = () => $('tb').click());
 
   /* ---------- status line: images, passes, data release, newest image; Aladin link ---------- */
+  // v0.57.9: text is written only when it changes (status runs every second, sync every 0.25 s: unconditional writes made
+  // every following layout read force a layout of the whole page)
+  const setTxt = (el, v) => { if (el && el.textContent !== v) el.textContent = v; };
+  let stImgs = null, stRel = null;
   function status() {
     if (typeof S === 'undefined') return;
     try {
       const n = S.images ? S.images.length : 0;
-      $('tn').textContent = n ? String(n) : 'none';
-      $('tps').textContent = S.eps && S.eps.length ? S.eps.map(e => fmtMonth(e.t0)).join(' · ') : 'none';
+      setTxt($('tn'), n ? String(n) : 'none');
+      setTxt($('tps'), S.eps && S.eps.length ? S.eps.map(e => fmtMonth(e.t0)).join(' · ') : 'none');
       if (n) {
-        const rel = [...new Set(S.images.map(releaseOf).filter(Boolean))], last = Math.max(...S.images.map(i => i.mjd));
-        $('trel').textContent = `${rel.length ? rel.join(' + ') : 'archive'} · newest ${fmtDay(last)}`;
+        if (stImgs !== S.images || stImgs.length !== n) { stImgs = S.images; stRel = [[...new Set(S.images.map(releaseOf).filter(Boolean))], Math.max(...S.images.map(i => i.mjd))]; }
+        const [rel, last] = stRel;
+        setTxt($('trel'), `${rel.length ? rel.join(' + ') : 'archive'} · newest ${fmtDay(last)}`);
         $('trel').classList.toggle('qr3', rel.includes('QR3'));
         $('trel').classList.toggle('newrel', typeof NASA_REL !== 'undefined' && !!NASA_REL && rel.includes(NASA_REL.newest));   // v0.57.1: the newest release NASA has out
-      } else $('trel').textContent = 'none';
+      } else setTxt($('trel'), 'none');
       if (S.al) { const [ra, dec] = S.al.getRaDec(), fov = S.al.getFov()[0];
         $('aladinl').href = `https://aladin.cds.unistra.fr/AladinLite/?target=${ra.toFixed(4)}%20${dec >= 0 ? '%2B' : ''}${dec.toFixed(4)}&fov=${Math.min(fov, 180).toFixed(3)}&survey=CDS%2FP%2F2MASS%2Fcolor`; }
     } catch { /* state mid-update */ }
@@ -441,7 +446,7 @@
   /* ---------- quick start: four tips, once, skippable (Tour menu > Quick start replays it) ---------- */
   const narrow = () => innerWidth <= 1099;
   const STEPS = [
-    { k: 1, el: () => $('sf'), h: 'Where to look', p: 'Type a name (M42, Barnard\'s Star) or an RA Dec (190 -4) here. ARCNAVE flies there and fetches the SPHEREx images.' },
+    { k: 1, el: () => $('sf'), h: 'Where to look', p: 'Type a name (M42, Barnard\'s Star) or two numbers in degrees: RA 0 to 360, then Dec -90 to +90 (e.g. 83.82 -5.39, the Orion Nebula). On the whole-sky map, point anywhere to read its RA and Dec. ARCNAVE flies there and fetches the SPHEREx images.' },
     { k: 2, el: () => document.querySelector('#g-where .chips'), sheet: 'panel', h: 'Targets in one tap', p: 'NASA\'s five test targets live here. Tap one and in about 2 minutes you get a result on real images.' },
     { k: 3, el: () => document.querySelector('#g-watch .tabs'), sheet: 'panel', h: 'Watch what moves', p: 'Time machine plays the images in order. Blink and Difference make anything that moves jump out.' },
     { k: 4, el: () => narrow() ? document.querySelector('#mnav [data-sheet=card]') : document.querySelector('.rhead'), h: 'What am I seeing?', p: 'The plain-words explanation and "How sure are we?" appear here. Want more tools? Switch on Advanced.' }
@@ -611,13 +616,13 @@
     }
     function sync() {
       const tmr = $('tmr'), live = typeof S !== 'undefined' && S.eps && S.eps.length && tmr && !tmr.hidden && S.mode !== 'change' && !html.classList.contains('landing');
-      hud.hidden = !live; document.body.classList.toggle('has-hud', !!live);
+      if (hud.hidden !== !live) hud.hidden = !live; document.body.classList.toggle('has-hud', !!live);
       if (!live) { if (timer) setPlay(false); return; }
       r.min = tm.min; r.max = tm.max; if (!dragging) r.value = tm.value;
       const one = +tm.max <= +tm.min; hud.classList.toggle('one', one);
-      const [d, s] = when(), rel = (($('trel') || {}).textContent || '').trim(); hud.querySelector('.hdate').textContent = d;
-      hud.querySelector('.hsub').textContent = s + (rel && rel !== 'none' ? ` · ${rel}` : '');   // v0.55: the data release, as in the status line
-      r.setAttribute('aria-valuetext', `${d}${s ? ', ' + s : ''}`);
+      const [d, s] = when(), rel = (($('trel') || {}).textContent || '').trim(); setTxt(hud.querySelector('.hdate'), d);
+      setTxt(hud.querySelector('.hsub'), s + (rel && rel !== 'none' ? ` · ${rel}` : ''));   // v0.55: the data release, as in the status line
+      const vt = `${d}${s ? ', ' + s : ''}`; if (r.getAttribute('aria-valuetext') !== vt) r.setAttribute('aria-valuetext', vt);
       drawTicks();
     }
     setInterval(sync, 250);

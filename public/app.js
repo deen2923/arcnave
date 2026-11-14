@@ -154,7 +154,10 @@ function buildSeq() {
   S.stacks.clear();
 }
 // Median stack of an epoch's loaded images, cached until anything is re-aligned.
-const stackKey = i => { const frs = matchedImgs(i).map(im => S.frames.get(im.url)).filter(Boolean); return { frs, key: i + '|' + frs.map(f => f.im.url).join(',') + '|' + S.alignVer }; };
+// v0.57.9: the key names each member image and its own alignment version (fv): a stack is rebuilt only when one of ITS
+// images changes. With the global S.alignVer every new image anywhere (the 36 of a Deep view, other colours) rebuilt every
+// epoch's stack and the Changes maps again (Deep view on Barnard's Star: 78 stack builds, 10 s of frozen page)
+const stackKey = i => { const frs = matchedImgs(i).map(im => S.frames.get(im.url)).filter(Boolean); return { frs, key: i + '|' + frs.map(f => f.im.url + '@' + (f.fv || 0)).join(',') }; };
 function stackOf(i) {
   const { frs, key } = stackKey(i);
   if (frs.length < 2) return rawOf(i);
@@ -499,10 +502,21 @@ function setView(v) {
   Object.assign(S.view, v);
   if ($('ctro')) $('ctro').textContent = S.view.gain === 1 ? 'normal' : S.view.gain > 1 ? `×${S.view.gain.toFixed(1)} faint` : `×${S.view.gain.toFixed(2)}`;
   if ($('invb')) $('invb').setAttribute('aria-pressed', String(S.view.invert));
-  if (S.field) { for (const f of S.frames.values()) try { paint(f); } catch { /* frame not ready */ } }
+  // v0.57.9: the image on screen and the stacks are repainted at once; the other images one at a time with pauses (all of
+  // them at once took 0.3 s per slider step on a laptop, so dragging Contrast stuttered). The thumbnails follow.
+  if (S.field) {
+    const now = new Set([S.shownFr, ...[...S.stacks.values()].map(c => c.f)].filter(Boolean));
+    for (const f of now) try { paint(f); } catch { /* frame not ready */ }
+    const run = ++VIEWP.n, rest = [...S.frames.values()].filter(f => !now.has(f));
+    (async () => { for (const f of rest) { if (run !== VIEWP.n) return; try { paint(f); } catch { /* frame not ready */ } await breathe(); } if (run === VIEWP.n) renderStrip(); })();
+  }
   try { refresh(); } catch { refreshSoon(); }
 }
-if ($('ctr')) $('ctr').oninput = e => setView({ gain: +(2 ** +e.target.value).toFixed(3) });
+const VIEWP = { n: 0, raf: 0, gain: null };
+if ($('ctr')) $('ctr').oninput = e => {   // v0.57.9: one repaint per screen frame however fast the slider moves
+  VIEWP.gain = +(2 ** +e.target.value).toFixed(3);
+  if (!VIEWP.raf) VIEWP.raf = requestAnimationFrame(() => { VIEWP.raf = 0; setView({ gain: VIEWP.gain }); });
+};
 if ($('invb')) $('invb').onclick = () => setView({ invert: !S.view.invert });
 
 // Aligner's core: epoch 1's frame is the reference; every other frame is registered onto it by matching stars (median
@@ -522,7 +536,7 @@ function alignFrame(f) {
   f.flatKeep = mv(f.keep0); f.touchedHard = mv(f.hard0);
   setFlat(f, mv(f.flat0), mv(f.touched0));
 }
-function setFlat(f, flat, touched) { f.flat = flat; f.touched = touched; paint(f); S.diff = null; S.alignVer++; f.thumb = null; }
+function setFlat(f, flat, touched) { f.fv = (f.fv || 0) + 1; f.flat = flat; f.touched = touched; paint(f); S.diff = null; S.alignVer++; f.thumb = null; }
 const shiftText = sh => !sh ? '?' : sh.method === 'reference' ? 'reference frame' : sh.method === 'stars' ? `${sh.nMatch} stars matched, scatter ${sh.spread.toFixed(2)} px` : `match quality ${(sh.ncc ?? 0).toFixed(2)}`;
 
 /* ---------- known movers (SkyBoT) ---------- */
@@ -598,7 +612,7 @@ function changeData() {
   if (!S.report && Object.keys(S.ag).length) return null;   // agents still running: build it once, after the report (it takes a second or two)
   const items = changeItems(), stacks = S.eps.map((_, e) => frameOf(e));
   if (items.length < 2 || stacks.some(f => !f)) return null;
-  const key = items.map(o => o.x.im.url).join(',') + '|' + S.alignVer + '|' + stacks.length;
+  const key = items.map(o => o.x.im.url + '@' + (o.fr.fv || 0)).join(',') + '|' + S.eps.map((_, e) => multi() ? stackKey(e).key : ((rawOf(e) || {}).fv || 0)).join(';') + '|' + stacks.length;   // v0.57.9: its own images' versions, not S.alignVer
   if (S.chg && S.chg.key === key) return S.chg;
   if (CHGJOB.key === key) return null;   // being built in a worker
   // v0.52: changeMaps (~2 s on a 24-image field) runs in the worker pool, so the report and the sky never freeze. Until it is
@@ -1082,22 +1096,21 @@ const angDist = (ra1, d1, ra2, d2) => { const r = Math.PI / 180, c = Math.sin(d1
 async function flyTo(ra, dec, fov, quick = false) {   // quick: jump (the guided tour steps between tools)
   const al = S.al, me = ++FLY.n, from = al.getFov()[0], alive = () => me === FLY.n;
   const can = !quick && !reduce && al.zoomToFoV && al.animateToRaDec;
-  const end = () => { if (!alive()) return; try { al.setFrame && al.setFrame('ICRSd'); al.setProjection && al.setProjection('SIN'); } catch { /* ignore */ } al.gotoRaDec(ra, dec); al.setFov(fov); };
+  const end = () => { if (!alive()) return; try { al.setFrame && al.setFrame('ICRSd'); al.setProjection && al.setProjection('SIN'); } catch { /* ignore */ } al.gotoRaDec(ra, dec); al.setFov(fov);
+    const el = document.getElementById('aladin'); if (el && el.style.opacity === '0') requestAnimationFrame(() => { el.style.opacity = ''; });   // v0.57.9: a faded sky always comes back
+  };
   if (!can) { end(); return; }
   try {
     let c = null; try { c = al.getRaDec(); } catch { c = null; }
     const d = c ? angDist(c[0], c[1], ra, dec) : 180;
     if (from <= 20 && d > Math.max(3, from * 1.5)) {
-      // 1. pull back to the whole sky (Aitoff keeps the view the same at small scales, so nothing jumps)
-      try { al.setProjection && al.setProjection('AIT'); } catch { /* keep */ }
-      const up = d > 60 ? 360 : Math.min(360, Math.max(30, d * 4));
-      if (from < 15) { al.zoomToFoV(25, 0.9); await sleep(950); if (!alive()) return; }   // the first degrees slowly too
-      al.zoomToFoV(up, 1.3); await sleep(1400); if (!alive()) return;
-      // 2. turn to the new spot   3. dive in (below)
-      al.animateToRaDec(ra, dec, 1.3); await sleep(1400); if (!alive()) return;
-      // same frame all the way: dive to the final size, in two steps (one linear zoom from 360° rushes the last few degrees)
-      al.zoomToFoV(Math.max(fov, 25), 1.2); await sleep(1250); if (!alive()) return;
-      al.zoomToFoV(fov, 1.2); await sleep(1250); if (!alive()) return;
+      // v0.57.9: from one field to another far away the sky now fades out, jumps and fades in. The flight out to the whole
+      // sky and back (v0.35.2) made the sky viewer redraw the whole sky in another projection on every frame while the new
+      // field's images were loading: measured on an Intel UHD 620 laptop, one frame of 18.9 s and 32 s of frozen page per
+      // switch (Barnard's Star to R Draconis); with the fade, no frame over 1.8 s.
+      const el = document.getElementById('aladin');
+      if (el) { el.style.transition = 'opacity .25s ease'; el.style.opacity = '0'; await sleep(260); }
+      end(); return;   // end() fades it back in
     } else if (from > 20) {   // from the whole sky (as before)
       al.animateToRaDec(ra, dec, 1.4); await sleep(1500); if (!alive()) return;
       al.zoomToFoV(Math.max(fov, 8), 1.6); await sleep(1700); if (!alive()) return;
@@ -2800,9 +2813,14 @@ function waitDraw() {
     sub = (w.phase === 'first' ? 'Each image comes from NASA\'s SPHEREx archive (its open copy on AWS): a few seconds each, longer on a slow connection. ' : 'You can already explore. ') +
       'Every image is kept, so this spot opens in seconds next time.';
   }
-  $('waith').textContent = head; $('waitt').textContent = `${Math.round(el)} s${eta ? ' · ' + eta : ''}`; $('waitp').textContent = sub;
-  $('waitbar').hidden = frac == null; if (frac != null) $('waitfill').style.width = Math.max(4, Math.round(frac * 100)) + '%';
-  document.body.classList.add('waiting'); document.body.style.setProperty('--wh', $('wait').offsetHeight + 'px');   // a toast moves below it
+  // v0.57.9: only what changed is written, and the panel's height reaches the page through a ResizeObserver: reading
+  // offsetHeight here twice a second forced a layout of the whole page each time (17 s of a 40 s field switch, measured)
+  const setT = (id, v) => { const e = $(id); if (e.textContent !== v) e.textContent = v; };
+  setT('waith', head); setT('waitt', `${Math.round(el)} s${eta ? ' · ' + eta : ''}`); setT('waitp', sub);
+  if ($('waitbar').hidden !== (frac == null)) $('waitbar').hidden = frac == null;
+  if (frac != null) { const wd = Math.max(4, Math.round(frac * 100)) + '%'; if ($('waitfill').style.width !== wd) $('waitfill').style.width = wd; }
+  if (!document.body.classList.contains('waiting')) document.body.classList.add('waiting');
+  if (!WAIT.ro && window.ResizeObserver) { WAIT.ro = new ResizeObserver(es => { const h = Math.round(es[0].borderBoxSize ? es[0].borderBoxSize[0].blockSize : es[0].contentRect.height); document.body.style.setProperty('--wh', h + 'px'); }); WAIT.ro.observe($('wait')); }   // a toast moves below it
 }
 
 // Fastest-moving star known (Barnard's star) is about 10.4 arcsec/yr; anything a pair-search finds faster than this between
@@ -3257,8 +3275,14 @@ function pxContext() {
   ctx.limit = SkyPlanetX.expectedLimit(ctx); ctx.a = a; ctx.b = b; ctx.earthAU = best;
   S.px.ctx = ctx; S.px.key = key; S.px.map = null; updateLabels(); return ctx;
 }
-function pxHide() {
+async function pxHide() {
   const ctx = pxContext(); if (ctx.error) { $('pxt').textContent = ctx.error; return; }
+  // v0.57.9: one trial takes about 0.5 s; the page says so first and paints, then works (the click no longer looks dead)
+  if (PXH.busy) return; PXH.busy = true; const b = $('pxgo'); if (b) b.disabled = true; stat('Hiding a fake planet, the agents are looking for it...');
+  try { await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); pxHideNow(ctx); } finally { PXH.busy = false; if (b) b.disabled = false; }
+}
+const PXH = { busy: false };
+function pxHideNow(ctx) {
   const n = S.field.n;
   if (!S.px.spot) { const p = SkyPlanetX.trialPositions(ctx.epochs[0].stack.flat, n, 25, 25, (Date.now() & 0xffff) + 1); S.px.spot = p[Math.floor(Math.random() * p.length)]; }
   const m = +$('pxm').value, r = SkyPlanetX.trial(ctx, { x: S.px.spot.x, y: S.px.spot.y, dist: pxDist(), mJy: SkyPlanetX.abToMJy(m) });
@@ -4165,10 +4189,10 @@ function gameDraw() {
 }
 function gamePlay(on) {
   clearInterval(GAME.timer); GAME.timer = null;
-  if (on) GAME.timer = setInterval(() => { GAME.i = (GAME.i + 1) % GAME.plan.ims.length; gameDraw(); }, 650);
+  if (on && GAME.plan) GAME.timer = setInterval(() => { if (!GAME.plan) return gamePlay(false); GAME.i = (GAME.i + 1) % GAME.plan.ims.length; gameDraw(); }, 650);
   $('gplay').textContent = on ? 'Pause' : 'Play'; $('gplay').setAttribute('aria-pressed', on);
 }
-function gameStep(d) { gamePlay(false); GAME.i = (GAME.i + d + GAME.plan.ims.length) % GAME.plan.ims.length; gameDraw(); }
+function gameStep(d) { if (!GAME.plan) return; gamePlay(false); GAME.i = (GAME.i + d + GAME.plan.ims.length) % GAME.plan.ims.length; gameDraw(); }
 function gameSay(t, cls = '') { const m = $('gmsg'); m.textContent = t; m.className = 'gmsg ' + cls; }
 function gameOpen(a) {
   const P = gamePlan(a); Object.assign(GAME, { on: true, plan: P, i: 0, tries: 0, hint: false, done: false, won: false, misses: [], t0: performance.now() });
@@ -4179,6 +4203,7 @@ function gameOpen(a) {
   requestAnimationFrame(() => { gameDraw(); gamePlay(true); });
 }
 function gameEnd(won) {
+  if (!GAME.plan) return;   // v0.57.9: a button pressed before the game's images are ready
   const P = GAME.plan, a = P.a; GAME.done = true; GAME.won = won; GAME.secs = Math.round((performance.now() - GAME.t0) / 1000);
   gamePlay(false); GAME.i = P.ims.indexOf(P.sg[0].im); if (GAME.i < 0) GAME.i = 0; gameDraw(); $('gctl2').hidden = true;
   const caught = `SPHEREx caught it in ${P.sg.length} image${P.sg.length === 1 ? '' : 's'}` + (P.sg.length > 1 ? `, ${fmtDur(P.hrs)} apart, and it moved ${fmtAng(P.moved)} in that time` : '') + '. In the other images, taken at other times, it was somewhere else in the sky.';
@@ -4215,7 +4240,7 @@ $('gagain') && ($('gagain').onclick = () => { const a = GAME.plan && GAME.plan.a
 $('gx') && ($('gx').onclick = () => { gamePlay(false); GAME.on = false; const d = $('game'); d.close ? d.close() : d.removeAttribute('open'); });
 $('game') && $('game').addEventListener('close', () => { gamePlay(false); GAME.on = false; });
 $('gcard') && ($('gcard').onclick = () => {
-  const a = GAME.plan.a; GAME.share = { name: a.name, secs: GAME.secs };
+  if (!GAME.plan) return; const a = GAME.plan.a; GAME.share = { name: a.name, secs: GAME.secs };
   $('game').close ? $('game').close() : $('game').removeAttribute('open');
   S.sel = { ast: a }; makeCard();
 });
@@ -6133,7 +6158,7 @@ function filmRows() {
 function filmTable(kind) {
   if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
-  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.8', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
+  if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.11', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
     rule: 'verdict: agrees when |SPHEREx − catalogue| < max(3·√(σ² + σcat²), 0.3·μcat, 0.5″/yr); unchecked when nothing was measured to compare',
     note: 'how = measured: on the SPHEREx images; predicted: the catalogue\'s positions. A candidate is something to check, never a discovery claim.', movers: rows }, null, 2)], { type: 'application/json' }), base + '.json'); return; }
