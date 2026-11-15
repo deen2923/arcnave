@@ -35,7 +35,7 @@ languages, on a phone or a laptop, and never calls anything a discovery.
 <<YouTube/Drive link to the ≤30 s video with English subtitles, OR the 7-slide deck (see section 9)>>
 
 ## 4. Link to Final Project
-https://arcnave.vldeena2008.workers.dev · Code: <<https://github.com/USERNAME/arcnave>>
+https://arcnave.vldeena2008.workers.dev · Code: https://github.com/deen2923/arcnave
 (Open the five NASA targets directly: `/#ct=barnard`, `/#ct=epsindb`, `/#ct=wise0855`, `/#ct=rwaur`, `/#ct=rdra`.)
 
 ## 5. Detailed Project Description (≈530 words)
