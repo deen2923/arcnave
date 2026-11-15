@@ -41,7 +41,7 @@ Nothing is ever called a discovery: every result says how sure it is.
 
 ## 4. Link to Final Project
 
-https://arcnave.vldeena2008.workers.dev  ·  Code: [PASTE PUBLIC GITHUB LINK]
+https://arcnave.vldeena2008.workers.dev  ·  Code: https://github.com/deen2923/arcnave
 
 One-click NASA test targets (append to the live link): `#ct=barnard` · `#ct=epsindb` · `#ct=wise0855` ·
 `#ct=rwaur` · `#ct=rdra`. Validation scorecard: `#scorecard`. Methods and limits: `/about.html`.
