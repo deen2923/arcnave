@@ -1,0 +1,33 @@
+# ARCNAVE behind a Cloudflare Tunnel (no open ports, no Caddy: Cloudflare gives the HTTPS address and caches the sky
+# tiles and saved images at its edge). Run from the deploy folder, with TUNNEL_TOKEN set in deploy/.env:
+#   docker compose -f compose.tunnel.yaml --env-file .env up -d --build
+# See DEPLOY.md (the same server with Caddy) and DEPLOY-CLOUDFLARE-ONLY.md (no server at all).
+name: arcnave
+services:
+  arcnave:
+    build: ..
+    restart: unless-stopped
+    environment:
+      PUBLIC_URL: https://${DOMAIN}
+    volumes:
+      - arcnave-data:/data          # SPHEREx/Gaia/CatWISE cache (load the PC's cache once: deploy/load-cache.sh)
+    expose:
+      - "8080"
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+  cloudflared:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    depends_on: [arcnave]
+    # the tunnel's public hostname is set in the Cloudflare dashboard: Service = http://arcnave:8080
+    command: tunnel --no-autoupdate run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN}
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "3" }
+
+volumes:
+  arcnave-data:
