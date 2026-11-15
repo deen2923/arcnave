@@ -159,11 +159,11 @@ window.ARC_LP = {
     'c.4h': 'मैं क्या देख रहा हूँ?', 'c.4p': 'आसान शब्दों में समझ और "हम कितने पक्के हैं?" यहाँ आता है। और टूल चाहिए? Advanced चालू कीजिए।'
   },
   es: {
-    'hero.p1': '102 colores infrarrojos', 'hero.p2': 'Datos reales de SPHEREx de la NASA', 'hero.p3': 'NASA Space Apps 2026', 'cta.see': 'Verlo moverse', 'see.eye': 'Verlo moverse', 'see.h': 'Un asteroide real, captado en imágenes reales de SPHEREx',
+    'hero.p1': '102 colores infrarrojos', 'hero.p2': 'Datos reales de SPHEREx de la NASA', 'hero.p3': 'SPHEREx', 'cta.see': 'Verlo moverse', 'see.eye': 'Verlo moverse', 'see.h': 'Un asteroide real, captado en imágenes reales de SPHEREx',
     'sp.dvh': 'Vista profunda', 'sp.dvp': 'Hasta 6 imágenes de cada uno de los 6 detectores de SPHEREx, alineadas con las estrellas y promediadas, así que se ven cosas más débiles. En el campo de la estrella de Barnard el ruido bajó entre 1,7 y 2,6 veces por detector.', 'sp.lch': 'Curvas de luz', 'sp.lcp': 'El brillo de una estrella a lo largo del tiempo en cualquier color, hasta 36 imágenes, junto a estrellas de comparación estables. Las demasiado brillantes se miden en su halo exterior; RW Aurigae y R Draconis se comprobaron en 6 y 3 colores.', 'sp.tsh': 'Probado a la vista', 'sp.tsp': '18 campos del cielo elegidos antes de la prueba, todos publicados, fallos incluidos. Nuestras cuentas del cielo coinciden con Astropy hasta 0,000″.',
     'nav.explore': 'Explorar', 'nav.how': 'Cómo funciona', 'nav.targets': 'Objetivos de prueba', 'nav.science': 'Ciencia', 'nav.about': 'Acerca de', 'nav.tools': 'Herramientas, fácil',
     'cta.launch': 'Abrir ARCNAVE', 'cta.barnard': 'Probar con la estrella de Barnard', 'cta.story': 'Historia de 90 segundos',
-    'hero.kick': 'NASA Space Apps Challenge 2026 · Planet X y SPHEREx',
+    'hero.kick': 'Planet X y SPHEREx',
     'start.eye': 'Empieza aquí', 'start.h': 'Abre uno de los cinco objetivos de prueba de la NASA',
     'start.lead': 'Imágenes reales de SPHEREx guardadas con ARCNAVE: cada una se abre en unos 10 a 20 segundos.',
     'start.real': 'Imágenes reales de SPHEREx',
@@ -227,7 +227,7 @@ window.ARC_LP = {
     'lim.4': '<b>Los objetos móviles desconocidos no se enlazan.</b> Un asteroide visto en una pasada está muy lejos en la siguiente, y ARCNAVE no une las dos.',
     'lim.5': '<b>La mayoría de las enanas marrones se mueve muy poco:</b> menos de un píxel de SPHEREx (6,2″) entre pasadas. Las estrellas muy brillantes se saturan y se miden en su halo exterior (límite de unos 0,1 mag).',
     'fin.h': 'El cielo está abierto. Ve a mirar.', 'fin.p': 'Sin registro, nada que instalar. Empieza por el cielo entero o ve directo a un objeto famoso.',
-    'ft.about': 'Creado por el equipo ARCNAVE para el NASA Space Apps Challenge 2026, "Planet X and SPHEREx" (Advanced).',
+    'ft.about': 'Creado por el equipo ARCNAVE.',
     'ft.ai': 'Uso de IA', 'ft.method': 'Método, datos y límites', 'ft.data': 'Créditos de datos', 'ft.tool': 'La herramienta', 'ft.tested': 'Cómo lo probamos', 'ft.limits': 'Límites, con honestidad',
     'ft.fine': 'Las imágenes son infrarrojas en falso color. El Planeta X es hipotético. No se afirma ningún descubrimiento.',
     'c.step': 'Paso', 'c.next': 'Siguiente', 'c.back': 'Atrás', 'c.skip': 'Saltar', 'c.done': 'Empezar',

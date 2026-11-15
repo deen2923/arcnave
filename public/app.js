@@ -102,7 +102,7 @@ function pickImage(ep, b) {
 // epoch (v0.6) more slots are added at other matched colours; see buildSlotsNow().
 const chosen = i => (S.slots.length && S.slots[0][i]) || pickImage(S.eps[i], S.band);
 const multi = () => S.depth > 1 && (S.slots.length > 1 || (S.extra || []).some(x => x.length));
-// v0.23: an epoch's images = its colour-matched slot images, then extra images of that pass (filled up to "Images per epoch").
+// v0.23: an epoch's images = its colour-matched slot images, then extra images of that pass (filled up to "Images per pass").
 // The extras are not colour-matched with the other passes: they are used for flipping through a pass and for finding what
 // moves inside it, never for the comparisons BETWEEN passes (stacks, Changes, Analyst epoch-to-epoch), which use matched ones.
 const matchedImgs = i => multi() ? S.slots.map(sl => sl[i]).filter(Boolean) : [chosen(i)];
@@ -125,7 +125,7 @@ function buildSlotsNow() {
   if (sl.length < S.depth) { const wide = SkySlots.buildSlots(lists, S.depth, { first: f0, tolFrac: 0.015, dets }); if (wide.length > sl.length) sl = wide; }
   S.slots = sl.length ? sl.map(x => x.items.map(it => it.im)) : [first];
   S.slotDLam = sl.length ? Math.max(...sl.map(x => x.dLam)) : 0;
-  // v0.23: fill every pass up to "Images per epoch" with its own extra images: same detector (colour range) as its first image
+  // v0.23: fill every pass up to "Images per pass" with its own extra images: same detector (colour range) as its first image
   // first, then the closest colour, at least half the field covered, preferring visits not used yet. A pass that has fewer
   // images in the archive gets all it has, and the Archivist says so.
   S.extra = S.eps.map(() => []);
@@ -144,8 +144,8 @@ function buildSlotsNow() {
   buildSeq();
 }
 // Images per pass, said plainly (equal, or one count per pass).
-const perEpochTxt = () => { const per = S.eps.map((_, e) => epochImgs(e).length); return per.every(n => n === per[0]) ? `${per[0]} per epoch` : per.join(' + '); };
-// All images of all slots in time order (what Time machine steps through).
+const perEpochTxt = () => { const per = S.eps.map((_, e) => epochImgs(e).length); return per.every(n => n === per[0]) ? `${per[0]} per pass` : per.join(' + '); };
+// All images of all slots in time order (what Step by step steps through).
 function buildSeq() {
   S.seq = [];
   S.eps.forEach((ep, e) => epochImgs(e).forEach((im, k) => S.seq.push({ e, k, im, extra: k >= S.slots.length })));
@@ -155,8 +155,8 @@ function buildSeq() {
 }
 // Median stack of an epoch's loaded images, cached until anything is re-aligned.
 // v0.57.9: the key names each member image and its own alignment version (fv): a stack is rebuilt only when one of ITS
-// images changes. With the global S.alignVer every new image anywhere (the 36 of a Deep view, other colours) rebuilt every
-// epoch's stack and the Changes maps again (Deep view on Barnard's Star: 78 stack builds, 10 s of frozen page)
+// images changes. With the global S.alignVer every new image anywhere (the 36 of a Add up images, other colours) rebuilt every
+// epoch's stack and the Changes maps again (Add up images on Barnard's Star: 78 stack builds, 10 s of frozen page)
 const stackKey = i => { const frs = matchedImgs(i).map(im => S.frames.get(im.url)).filter(Boolean); return { frs, key: i + '|' + frs.map(f => f.im.url + '@' + (f.fv || 0)).join(',') }; };
 function stackOf(i) {
   const { frs, key } = stackKey(i);
@@ -195,7 +195,7 @@ function view() {
   if ((S.mode === 'blink' && multi()) || S.mode === 'change') return { a: 0, b: E - 1 };
   return { a: 0, b: E > 1 ? Math.max(1, Math.min(S.ei, E - 1)) : 0 };
 }
-const epLabel = i => `Epoch ${i + 1}, ${fmtMonth(S.eps[i].t0)}`;
+const epLabel = i => `Pass ${i + 1}, ${fmtMonth(S.eps[i].t0)}`;
 
 /* ---------- loading a field ---------- */
 // Archivist's search: list SPHEREx images for this spot and group them into epochs. Returns true on success.
@@ -216,7 +216,11 @@ async function loadField(ra, dec, opts = {}) {
   try { r = await api(searchUrl(ra, dec)); }
   catch (e) {
     if (mine !== S.load) return false;
-    S.lastErr = 'IRSA search failed: ' + e.message; stat(S.lastErr, true); S.field = null; $('load').disabled = false; return false;
+    // v0.57.15: when NASA's archive itself is down (502/503/504, or no answer), say so in plain words: it is not this page that is broken
+    const down = /\b50[234]\b|timed? ?out|abort|failed to fetch|networkerror|load failed/i.test(String(e.message));
+    S.lastErr = down ? "NASA's SPHEREx archive (IRSA) is not answering right now, so a new place cannot be opened. That is NASA's server, not ARCNAVE: please try again in a few minutes. NASA's five test targets and the examples still open, from saved images."
+      : 'IRSA search failed: ' + e.message;
+    stat(S.lastErr, true); S.field = null; $('load').disabled = false; return false;
   }
   if (mine !== S.load) return false;   // a newer search took over
   $('load').disabled = false;
@@ -268,24 +272,30 @@ function relRender(msg) {
 }
 async function relCheck() {
   if (!S.field || !S.search) { toast('Open a patch of sky first.'); return; }
-  const b = $('relchk'); if (b) b.disabled = true; relRender('Asking the IRSA archive now...');
+  const b = $('relchk'); if (b) b.disabled = true;
+  // v0.57.17: what was found is also kept as one sentence (S.relSaid), for the star's tools to say where the button was pressed
+  const said = m => { S.relSaid = Array.isArray(m) ? String(m[0]).trim() : String(m); relRender(m); };
+  S.relSaid = ''; relRender('Asking the IRSA archive now...');
   try {
     const { ra, dec } = S.search, r = await api(searchUrl(ra, dec) + '&fresh=1');
     if (!S.search || S.search.ra !== ra) return;   // another spot was opened meanwhile
     const have = new Set(S.images.map(im => im.url)), nw = r.images.filter(im => !have.has(im.url)), gone = S.images.length - (r.images.length - nw.length);
     S.relCheck = { at: Date.now(), stale: !!r.stale, count: r.count, new: nw.length, gone };
-    if (r.stale) { relRender('IRSA did not answer just now; nothing changed. Try again later.'); return; }
+    if (r.stale) { said('IRSA did not answer just now; nothing changed. Try again later.'); return; }
     // v0.57.3: the server asks IRSA at most once a minute per spot; inside that minute a test field answers with its kept
     // list, which is not "IRSA lists the same images" (review finding)
-    if (r.frozen && !r.frozenKept) { relRender('IRSA was asked for this spot less than a minute ago. Try again in a minute.'); return; }
+    if (r.frozen && !r.frozenKept) { said('IRSA was asked for this spot less than a minute ago. Try again in a minute.'); return; }
     S.search.checkedAt = r.checkedAt || new Date().toISOString();
-    if (!nw.length) { relRender(`Up to date: IRSA lists the same ${r.count} images.` + (gone > 0 ? ` (${gone} no longer listed.)` : '')); return; }
+    if (!nw.length) { said(`Up to date: IRSA lists the same ${r.count} images.` + (gone > 0 ? ` (${gone} no longer listed.)` : '')); return; }
     const rels = [...new Set(nw.map(releaseOf).filter(Boolean))].join(', ') || 'a release', newest = fmtDay(Math.max(...nw.map(i => i.mjd)));
     // v0.56.3: on a frozen spot the new list replaces the old one only when asked (its images are not saved yet: slower)
     const frozen = !!r.frozenKept, swap = frozen ? ` IRSA now lists ${r.count} images; ${gone > 0 ? `${gone} of the ${S.images.length} shown here are no longer listed (replaced by the new release). ` : ''}Switching downloads them, so it is slower the first time.` : '';
-    relRender([`${nw.length} new image${nw.length === 1 ? '' : 's'} at IRSA (${rels}, newest ${newest}).${swap} `,
-      h('button', { type: 'button', class: 'hbtn', onclick: () => { if (frozen) S.latest.add(spotKey(S.field.ra, S.field.dec)); runAgents({ ra: S.field.ra, dec: S.field.dec }); } }, frozen ? 'Switch this spot to the new list' : 'Run the agents again with them')]);
-  } catch (e) { relRender('Could not ask IRSA: ' + e.message); }
+    said([`${nw.length} new image${nw.length === 1 ? '' : 's'} at IRSA (${rels}, newest ${newest}).${swap} `,
+      h('button', { type: 'button', class: 'hbtn', onclick: () => { if (frozen) S.latest.add(spotKey(S.field.ra, S.field.dec)); runAgents({ ra: S.field.ra, dec: S.field.dec }); } }, frozen ? 'Switch this spot to the new list' : 'Load the images again with them')]);
+  } catch (e) {   // v0.57.17: an archive that is down gets a plain sentence (the proxy's HTML error page was printed here)
+    said(/\b50[234]\b|timed? ?out|abort|failed to fetch|networkerror|load failed|<html|<!doctype/i.test(String(e.message))
+      ? "NASA's SPHEREx archive (IRSA) is not answering right now, so it cannot be asked for new images. The images on screen are not affected: please try again in a few minutes."
+      : 'Could not ask IRSA: ' + String(e.message).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 160)); }
   finally { if (b) b.disabled = false; }
 }
 if ($('relchk')) $('relchk').onclick = () => relCheck();
@@ -597,7 +607,7 @@ function diffCanvas(fa, fb) {
   S.diff = { a: fa, b: fb, cv }; return cv;
 }
 /* ---------- Changes view (v0.8): every epoch in its own colour, or every image in a colour of time ---------- */
-// The images in time order that the view uses: all loaded images (several per epoch) or the one image of each epoch.
+// The images in time order that the view uses: all loaded images (several per pass) or the one image of each epoch.
 function changeItems() {
   const list = multi() && S.seq.length ? S.seq.filter(x => !x.extra) : S.eps.map((ep, e) => ({ e, im: chosen(e), i: e, pos: 1, n: 1 }));
   return list.map(x => ({ x, fr: S.frames.get(x.im.url) })).filter(o => o.fr);
@@ -703,7 +713,7 @@ function renderChgStory(d, L) {
   const movers = [...new Set(by.known.map(pk => pk.known).filter(Boolean))].slice(0, 4), ctT = S.ct && CHALLENGE[S.ct] && CHALLENGE[S.ct].pmra && S.eps.length > 1 ? CHALLENGE[S.ct] : null, ctId = S.ct;
   const nKnown = new Set(knownPaths().filter(p => p.inField).map(p => p.id + '|' + p.e)).size;
   if (movers.length || ctT || nKnown || S.eps.length > 1) L.append(h('div', { class: 'chgmov' }, h('b', {}, 'Watch it move'),
-    h('button', { class: 'hbtn', onclick: () => movieStart() }, '🎬 Animate the movers'),   // v0.50
+    h('button', { class: 'hbtn', onclick: () => movieStart() }, '🎬 Play the movers as a video'),   // v0.50
     h('button', { onclick: () => motionSearch() }, MS.res && MS.res.run === S.run ? `🔍 Moving stars (${MS.res.flagged.length})` : '🔍 Find moving stars'),   // v0.45
     h('button', { onclick: () => DS.res && DS.res.run === S.run ? showDS() : deepSearch() }, DS.res && DS.res.run === S.run ? `🔭 Deep search (${DS.res.flagged.length})` : '🔭 Deep search: every image'),   // v0.47
     h('button', { onclick: () => DF.res && DF.res.run === S.run ? showDiff() : diffSearch() }, DF.res && DF.res.run === S.run ? `◐ Slow movers (${DF.res.flagged.length})` : '◐ Slow movers: difference images'),   // v0.48
@@ -790,7 +800,7 @@ function renderChgPanel() {
   if (!d) { L.append(CHGJOB.key ? 'Comparing every image with the others to find what changed…' : 'Run the agents on a field with at least two epochs to see what changed.'); return; }
   if (S.cv === 'st') renderChgStory(d, L);
   else if (S.cv === 'ep') {
-    d.r.cols.forEach((c, e) => L.append(h('span', {}, h('i', { style: `background:${chgCss(c.map(v => v * 255))}` }), `Epoch ${e + 1} (${fmtMonth(S.eps[e].t0)}) only`)));
+    d.r.cols.forEach((c, e) => L.append(h('span', {}, h('i', { style: `background:${chgCss(c.map(v => v * 255))}` }), `Pass ${e + 1} (${fmtMonth(S.eps[e].t0)}) only`)));
     L.append(h('span', {}, h('i', { style: 'background:#fff' }), 'in every epoch: unchanged'));
   } else {
     const it = d.items, first = it[0].x.im, last = it[it.length - 1].x.im;
@@ -860,7 +870,7 @@ function candReport(pk) {
     `Known asteroid on this spot at this time (ARCNAVE SkyBoT/MPC check): ${S.inside ? 'none matched' : 'not checked'}`,
     `Repeat check: ${rep}`,
     `See it: ${location.href}`,
-    'Data: NASA SPHEREx via NASA/IPAC IRSA. Tool: ARCNAVE (NASA Space Apps 2026).',
+    'Data: NASA SPHEREx via NASA/IPAC IRSA. Tool: ARCNAVE.',
   ].join('\n');
 }
 function reportBox(pk) {
@@ -1011,7 +1021,7 @@ function showElsewhere(ra, dec, what) {
   c.append(h('h3', {}, '🔗 ' + (what ? 'Elsewhere: ' + what : 'This spot elsewhere')),
     h('p', { style: 'font-size:.78rem;color:var(--dust)' }, `RA ${(+ra).toFixed(5)}°, Dec ${(+dec).toFixed(5)}° · opens in a new tab`),
     elsewhereLinks(ra, dec, { r: S.field ? Math.min(1, S.field.size / 2) : 0.25 }),
-    h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'Every resource NASA lists for this challenge, and the archives Backyard Worlds volunteers use to check a mover.'),
+    h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'Other archives that hold this spot, and the ones Backyard Worlds volunteers use to check a mover.'),
     h('button', { onclick: () => { S.report ? showReport() : (c.hidden = true); } }, 'Close'));
 }
 if ($('elsb')) $('elsb').onclick = () => showElsewhere();
@@ -1176,7 +1186,7 @@ function eyeRect() {
   addEventListener('resize', mark);
   if (e) { e.addEventListener('transitionend', mark); if (window.ResizeObserver) new ResizeObserver(mark).observe(e); }
   if (window.MutationObserver) new MutationObserver(mark).observe(document.body, { attributes: true, attributeFilter: ['class'] }); }   // panels collapse / clear view move the eyepiece
-// is something (the film's player) over the sky at this point? A hit test reads layout, so it is asked once a second at most
+// is something (the video's player) over the sky at this point? A hit test reads layout, so it is asked once a second at most
 const COVER = { at: 0, v: {} };
 function coveredAt(k, x, y) {
   const now = performance.now();
@@ -1194,7 +1204,7 @@ function drawCorners(r) {
   for (const [x, y, al, dy] of C) {
     const s = at(x, y); if (!s) continue;
     const tx = al === 'left' ? x + 36 : x - 36;
-    if (dy < 0 && coveredAt(al, al === 'left' ? tx + 60 : tx - 60, y - 12)) continue;   // the film's player covers it
+    if (dy < 0 && coveredAt(al, al === 'left' ? tx + 60 : tx - 60, y - 12)) continue;   // the video's player covers it
     box(`RA ${fmtRa(s[0])}  Dec ${fmtDec(s[1])}`, tx, y + dy * 12, al);
   }
   ctx.restore();
@@ -1318,7 +1328,7 @@ function drawAsteroidPaths() {
 // image, so a 250-image spot froze the page for many seconds in total). Now, while the same images are listed, only the
 // thumbnails whose picture changed are redrawn (paint() counts versions); a new list still rebuilds it as before.
 const STRIP = { key: '', th: new Map() };
-const thTitle = x => `Epoch ${x.e + 1}, image ${x.pos} of ${x.n}: ${fmtDay(x.im.mjd)}, ${lamOf(x.im).toFixed(3)} µm, detector ${x.im.det}`;
+const thTitle = x => `Pass ${x.e + 1}, image ${x.pos} of ${x.n}: ${fmtDay(x.im.mjd)}, ${lamOf(x.im).toFixed(3)} µm, detector ${x.im.det}`;
 const thumbDraw = (cv, fr) => { const c = cv.getContext('2d'); c.imageSmoothingEnabled = true; c.clearRect(0, 0, 40, 40); c.drawImage(fr.canvas, 0, 0, 40, 40); cv._pv = fr.pv; cv._fr = fr; };
 function renderStrip() {
   const box = $('strip'); if (!box) return;
@@ -1382,7 +1392,7 @@ function frame(ts) {
   const er = eyeRect();
   try { const c = S.al.getRaDec(), f = S.al.getFov(); key = `${c[0].toFixed(6)},${c[1].toFixed(6)},${f[0].toFixed(6)},${W},${H},${S.mode},${S.lab},${er ? Math.round(er.left) + ':' + Math.round(er.right) : ''},${f[0] > 40 && S.mouse ? S.mouse.join(':') : ''}`; } catch { /* draw anyway */ }
   if (S.mode === 'blink' || S.mode === 'time') key += ',' + Math.floor(ts / (S.mode === 'blink' && !multi() ? 700 : 650));
-  // v0.56: the film's glide, lock-on ring and "from here to there" callout are drawn at ~30 frames a second while a pass
+  // v0.56: the video's glide, lock-on ring and "from here to there" callout are drawn at ~30 frames a second while a pass
   // changes (and 10 a second for the pulse after), instead of the 5 a second that made the glide jump
   if (MOVIE.on) key += ',' + Math.floor(ts / (ts - MOVIE.t0 < MOVIE.step ? 33 : 100));
   if (key && key === lastKey && ts > busyUntil && ts - lastDraw < 200) return;
@@ -1393,7 +1403,7 @@ function frame(ts) {
     const { a, b } = view(), fa = viewFrame(a), fb = viewFrame(b), A = moversOf(a), B = moversOf(b);
     const withEp = (s, i) => s && { ...s, ep: i };
     if (multi() && (S.mode === 'time' || S.mode === 'blink') && S.seq.length) {
-      // one real image at a time: Time machine = the slider's image; Blink = flip-book through an epoch's images (or all)
+      // one real image at a time: Step by step = the slider's image; Blink = flip-book through an epoch's images (or all)
       let x;
       if (S.mode === 'time') x = seqAt();
       else { const list = blinkList(), k = reduce ? (S.flipIdx || 0) % list.length : Math.floor(ts / 650) % list.length; x = list[k]; }
@@ -1401,7 +1411,7 @@ function frame(ts) {
       drawImg(T, fr && fr.canvas); S.shownFr = fr; rings(withEp(m, x.e), 'rgba(255,176,90,.9)'); drawSightings(x.im);
       if (S.blinkAt !== x.i) { S.blinkAt = x.i; markStrip(); }
       ctx.fillStyle = '#ffb05a'; ctx.font = '500 13px Archivo,sans-serif';
-      ctx.fillText(`Epoch ${x.e + 1} · image ${x.pos} of ${x.n} · ${fmtDay(x.im.mjd)} ${mjdDate(x.im.mjd).toISOString().slice(11, 16)} UTC · ${lamOf(x.im).toFixed(2)} µm${S.frames.get(x.im.url) ? '' : fr ? ' (still loading: showing this pass\'s first image)' : ' (loading)'}`, W / 2 - 190, 110);
+      ctx.fillText(`Pass ${x.e + 1} · image ${x.pos} of ${x.n} · ${fmtDay(x.im.mjd)} ${mjdDate(x.im.mjd).toISOString().slice(11, 16)} UTC · ${lamOf(x.im).toFixed(2)} µm${S.frames.get(x.im.url) ? '' : fr ? ' (still loading: showing this pass\'s first image)' : ' (loading)'}`, W / 2 - 190, 110);
     }
     else if (S.mode === 'time') { drawImg(T, fa && fa.canvas); S.shownFr = fa; rings(withEp(A, a), 'rgba(255,176,90,.9)', null, a > 0 ? withEp(moversOf(0), 0) : null); }
     else if (S.mode === 'blink') {
@@ -1434,9 +1444,9 @@ function frame(ts) {
     ctx.save(); ctx.setTransform(dpr * T.a, dpr * T.b, dpr * T.c, dpr * T.d, dpr * T.e, dpr * T.f);
     ctx.strokeStyle = 'rgba(159,176,220,.45)'; ctx.lineWidth = 1 / Math.max(0.0001, Math.hypot(T.a, T.b)); ctx.strokeRect(0, 0, f.n, f.n); ctx.restore();
     if (S.flagsOn && (S.mode === 'time' || S.mode === 'blink')) { const fc = flagCanvas(S.shownFr); if (fc) drawImg(T, fc); }
-    drawTracks(); if (!MOVIE.on) { drawCands(); drawAsteroidPaths(); drawChallenge(); }   // v0.50: the film names its own movers
+    drawTracks(); if (!MOVIE.on) { drawCands(); drawAsteroidPaths(); drawChallenge(); }   // v0.50: the video names its own movers
   }
-  if (!allSky()) { drawGaia(); drawCw(); drawSpec(); if (MOVIE.on) drawMovie(); else { drawMeasTrack(); drawFrameFit(); drawMotionSearch(); drawDeep(); drawDiff(); drawScan(); } }   // v0.50: during the film only its own tracks   // v0.44: drawTrack, the measured track across passes; v0.46: drawFrameFit, every image
+  if (!allSky()) { drawGaia(); drawCw(); drawSpec(); if (MOVIE.on) drawMovie(); else { drawMeasTrack(); drawFrameFit(); drawMotionSearch(); drawDeep(); drawDiff(); drawScan(); } }   // v0.50: during the video only its own tracks   // v0.44: drawTrack, the measured track across passes; v0.46: drawFrameFit, every image
   const whole = allSky(); if (whole) drawAllSky(); else if (S.ecl) drawEcliptic();
   if (!whole && !MOVIE.on) drawCorners(er);
   { const si = $('skyinfo'), show = whole && !FLY.via; if (si && si.hidden === show) si.hidden = !show; }   // v0.57.13: not while a flight passes by the galactic centre   // v0.28.1: the map key only on the whole sky
@@ -1487,7 +1497,7 @@ addEventListener('keydown', e => {
   if (e.target.closest && e.target.closest('input,select,textarea,dialog,[contenteditable]')) return;
   if (!S.eps.length || S.lab) return;
   if (S.mode === 'blink') setMode(S.preBlink && S.preBlink !== 'blink' ? S.preBlink : 'time'); else { S.preBlink = S.mode; setMode('blink'); }
-  toast(S.mode === 'blink' ? 'Blink: flipping between passes (B again to go back)' : 'Back to ' + ({ time: 'Time machine', swipe: 'Swipe', diff: 'Difference', change: 'Changes', px: 'Hide Planet X' }[S.mode] || S.mode), 2200);
+  toast(S.mode === 'blink' ? 'Blink: flipping between passes (B again to go back)' : 'Back to ' + ({ time: 'Step by step', swipe: 'Swipe', diff: 'Difference', change: 'Changes', px: 'Hide Planet X' }[S.mode] || S.mode), 2200);
 });
 /* ---------- v0.34 (Phase 2): data release, metadata, contamination flags, embed ---------- */
 // The data release is part of every IRSA file path (.../spherex/qr2/level2/...): "QR2" = Quick Release 2.
@@ -1559,7 +1569,7 @@ function updateLabels() {
   if (multi()) {
     const E = S.eps.length;
     if (S.mode === 'time') { const x = seqAt(); im = x.im; $('tmo').textContent = `${x.i + 1} of ${S.seq.length} · E${x.e + 1} #${x.pos}`; $('ep').textContent = `${x.e + 1} of ${E}, image ${x.pos}/${x.n}`; }
-    else if (S.mode === 'blink') { $('tmo').textContent = S.bi < E ? `Epoch ${S.bi + 1}: ${blinkList().length} images` : `All ${S.seq.length} images`; $('ep').textContent = S.bi < E ? `${S.bi + 1} (flip-book)` : 'all (flip-book)'; }
+    else if (S.mode === 'blink') { $('tmo').textContent = S.bi < E ? `Pass ${S.bi + 1}: ${blinkList().length} images` : `All ${S.seq.length} images`; $('ep').textContent = S.bi < E ? `${S.bi + 1} (flip-book)` : 'all (flip-book)'; }
     else $('tmo').textContent = `${epLabel(a)} vs ${epLabel(b)} (stacks of ${S.slots.length})`;
   }
   const fr = S.frames.get(im.url), g = geo(im), measured = fr && fr.lamReal != null;
@@ -1585,7 +1595,7 @@ function showList() {
   const c = $('card'); c.replaceChildren();
   if (!S.eps.length) { c.hidden = true; return; }
   const { b } = view(), set = moversOf(b); c.hidden = false;
-  c.append(h('h3', {}, 'Known movers'), S.report ? h('button', { onclick: showReport }, 'Agent report') : null);
+  c.append(h('h3', {}, 'Known movers'), S.report ? h('button', { onclick: showReport }, 'Report on this patch') : null);
   if (!set || set.loading) { c.append(h('p', {}, 'Asking SkyBoT (or the Minor Planet Center if SkyBoT is unreachable)...')); return; }
   if (set.err) { c.append(h('p', {}, 'Unavailable: ' + set.err)); return; }
   c.append(h('p', {}, `${set.items.length} known solar-system object${set.items.length === 1 ? '' : 's'} in this field at ${fmtDay(set.mjd)}. Rings do not guarantee a visible detection.`), ...(set.src === 'MPC' ? [h('p', { style: 'font-size:.78rem;color:var(--dust)' }, MPC_NOTE)] : []));
@@ -1692,7 +1702,12 @@ function recolour() {
   runAgents({ ra: S.field.ra, dec: S.field.dec, label: `Same field at ${S.band.toFixed(2)} µm` }, { skipNav: true, keepMode: true, band: S.band });
 }
 $('load').onclick = () => { if (!S.al) return; if (allSky()) { toast('Zoom in on a spot first, or click a marker on the sky.'); return; } const [ra, dec] = S.al.getRaDec(); runAgents({ ra, dec, label: 'Current view' }, { skipNav: true }); };
-$('csize').onchange = () => { if (S.field) toast('Press "Run agents here" to apply the new field size.'); };
+// v0.57.17: a new field size is applied at once: the patch that is open is opened again at that size (it used to wait for
+// "Open the spot in view"). If the archive cannot give that size now, the size goes back and a test target opens again as it was.
+$('csize').onchange = () => { if (!S.field) return; const f = S.field, ct = S.ct, v = $('csize').value, old = String(f.size); if (v === old) return;
+  toast(`Field of view ${v}°: opening this patch again at the new size.`, 5000);
+  Promise.resolve(runAgents({ ra: f.ra, dec: f.dec, label: ct && CHALLENGE[ct] ? 'Test target: ' + CHALLENGE[ct].name : `Same patch, ${v}° field` }, { skipNav: true, ...(ct ? { ct, focus: 'ct:' + ct } : {}) }))
+    .then(() => { if (!S.field && $('csize').value === v) { $('csize').value = old; if (ct) runChallenge(ct); } }).catch(() => { /* the status line says why */ }); };
 $('ipe').onchange = e => {
   S.depth = +e.target.value; writeHash();
   if (S.field) runAgents({ ra: S.field.ra, dec: S.field.dec, label: 'Same field' }, { skipNav: true });
@@ -1726,7 +1741,7 @@ const CHALLENGE = {
   epsindb: { name: 'Epsilon Indi B', kind: 'motion', band: 4.6, ra0: 331.04383, dec0: -56.782694, ep: 51491.54, pmra: 3981.977, pmdec: -2466.832, plx: 274.84,   // plx: Gaia DR3 for Epsilon Indi A, the same system (v0.46)
     companion: { name: 'Epsilon Indi A', ra0: 330.840223, dec0: -56.786256, ep: 51544.5, pmra: 3966.661, pmdec: -2536.192 },
     what: 'A pair of brown dwarfs (too small to shine like stars) orbiting the star Epsilon Indi A, 12 light years away. They move 4.7″ per year.',
-    res: { badge: ['ok', '✓ Motion seen'], text: 'At 4.6 µm (brown dwarfs are bright there) it moved 4.4″ between Apr 2025 and Apr 2026, where its known motion predicts 4.7″. Over all four passes (Apr 2025 to Sep 2026, 515 days) the film (🎬 Animate) measures 4.3 ± 0.3″ a year south-east. Its parent star Epsilon Indi A, 6.5′ away in the same images, moved 5.3″ the same way (predicted 4.7″); four other bright stars moved 0 to 0.9″. The two brown dwarfs (0.7″ apart) are one dot to SPHEREx. Its spectrum (button below, about 40 s): brightest near 4.1 µm, with deep dips near 1.4 µm and from 2.3 to 3.6 µm where water and methane absorb, as expected for a cool brown dwarf; at J and H it matches 2MASS within 7 %.' } },
+    res: { badge: ['ok', '✓ Motion seen'], text: 'At 4.6 µm (brown dwarfs are bright there) it moved 4.4″ between Apr 2025 and Apr 2026, where its known motion predicts 4.7″. Over all four passes (Apr 2025 to Sep 2026, 515 days) the video (🎬 Play as a video) measures 4.3 ± 0.3″ a year south-east. Its parent star Epsilon Indi A, 6.5′ away in the same images, moved 5.3″ the same way (predicted 4.7″); four other bright stars moved 0 to 0.9″. The two brown dwarfs (0.7″ apart) are one dot to SPHEREx. Its spectrum (button below, about 40 s): brightest near 4.1 µm, with deep dips near 1.4 µm and from 2.3 to 3.6 µm where water and methane absorb, as expected for a cool brown dwarf; at J and H it matches 2MASS within 7 %.' } },
   // WISE 0855 needs every image at 4.4-5 um (43 in a 0.25 deg field) and a fit that separates it from a background object
   // 4-11" away (bg: its position measured on 24 images at 1.2 um, where WISE 0855 is invisible; scatter 0.6").
   wise0855: { name: 'WISE 0855−0714', kind: 'motion', band: 4.7, depth: 30, size: '0.25', center: [133.79513, -7.24515], bg: [133.758127, -7.241136],
@@ -1735,7 +1750,7 @@ const CHALLENGE = {
     res: { badge: ['ok', '✓ Detected (faint)'], text: 'Too faint to see by eye in one image, but there. ARCNAVE used all 43 images at 4.4 to 5 µm (where it shines) and fitted two dots at once: a background object that does not move (4 to 11″ away, measured at 1.2 µm where WISE 0855 is invisible) and a dot moving along WISE 0855’s known path. The moving dot is found at 11.8σ (only 0.8 % of 261 random spots in the same images reach that). Letting the motion vary (in steps of 2″ per year), the best fit is 8″ per year west, 2″ north: its known motion is 8.1″ west, 0.7″ north; a dot that does not move fits worse. At 1.2 µm the moving dot is absent, as it must be. Its brightness, 0.50 mJy (AB 17.15), matches what WISE measured (W2 13.9, about AB 17.2). Its 2010 position, 2′ away, is empty.' } },
   rwaur: { name: 'RW Aurigae', kind: 'variable', lc: 4.0, ra0: 76.9564535, dec0: 30.4013327,
     what: 'A young star still surrounded by its dusty disk. It brightens and fades, sometimes by several magnitudes when dust passes in front.',
-    res: { badge: ['ok', '✓ Change seen'], text: 'Too bright for SPHEREx at almost every colour: its centre is saturated in 104 of 109 images of one pass, so ARCNAVE measures its outer glow (a ring 13 to 26″ from the centre). Measured on 30 Oct 2026 at six separate colours from 3.9 to 4.8 µm (49 different images), it faded in every one of them: from Sep 2025 to Sep 2026 by 0.74 mag on average (0.59 to 0.92 mag per colour; average of each pass −0.30, −0.01 and +0.44 mag: brighter, average, fainter), about 10 times the uncertainty of that average (0.07 mag). Comparison stars measured the same way in the same images scatter by 0.13 mag (median). The Light curve button shows one of the six colours (4.0 µm). Method note: an earlier version reported +0.19 mag measured on the saturated centre; withdrawn on 29 Oct 2026.' } },
+    res: { badge: ['ok', '✓ Change seen'], text: 'Too bright for SPHEREx at almost every colour: its centre is saturated in 104 of 109 images of one pass, so ARCNAVE measures its outer glow (a ring 13 to 26″ from the centre). Measured on 30 Oct 2026 at six separate colours from 3.9 to 4.8 µm (49 different images), it faded in every one of them: from Sep 2025 to Sep 2026 by 0.74 mag on average (0.59 to 0.92 mag per colour; average of each pass −0.30, −0.01 and +0.44 mag: brighter, average, fainter), about 10 times the uncertainty of that average (0.07 mag). Comparison stars measured the same way in the same images scatter by 0.13 mag (median). The Brightness over time button shows one of the six colours (4.0 µm). Method note: an earlier version reported +0.19 mag measured on the saturated centre; withdrawn on 29 Oct 2026.' } },
   rdra: { name: 'R Draconis', kind: 'variable', band: 0.85, lc: 0.85, ra0: 248.167472, dec0: 66.7549882,
     what: 'A pulsating red giant (Mira-type variable) that brightens and fades over about eight months.',
     res: { badge: ['ok', '✓ Change seen'], text: 'Too bright for SPHEREx: its centre is saturated in every image, so ARCNAVE measures its outer glow (a ring 13 to 26″ from the centre). Measured on 30 Oct 2026 at three separate colours, 0.75, 0.80 and 0.85 µm (25 clean images), all three show the same pulse: bright in mid-July 2025, 1.1 to 1.3 mag fainter in October 2025, then 0.8 to 1.4 mag brighter again by 14 Nov 2025. Steady comparison stars measured the same way scatter by 0.10 to 0.13 mag. At 0.9 µm and redder even the glow is too bright to measure cleanly (images a few days apart disagree), so those colours are not used; in 2026 the glow is too bright at these colours too. Near the ecliptic pole SPHEREx sees it all year (2454 images, split into three 6-month passes). Method note: an earlier version reported 0.33 to 0.35 mag measured on the saturated centre; withdrawn on 29 Oct 2026.' } }
@@ -1748,7 +1763,7 @@ function runChallenge(id) {
   S.depth = t.depth || 8; $('ipe').value = 8; $('csize').value = t.size || '0.5';
   try { history.replaceState(null, '', '#ct=' + id); } catch { /* ignore */ }
   const p = t.center || ctAt(t, 61040);
-  return runAgents({ ra: +p[0].toFixed(5), dec: +p[1].toFixed(5), label: 'NASA challenge target: ' + t.name }, { focus: 'ct:' + id, ct: id, ...(t.band ? { band: t.band } : {}) });
+  return runAgents({ ra: +p[0].toFixed(5), dec: +p[1].toFixed(5), label: 'Test target: ' + t.name }, { focus: 'ct:' + id, ct: id, ...(t.band ? { band: t.band } : {}) });
 }
 // The motion measured live on the images on screen: the target's patch in the last pass is slid over the first pass until
 // they match (whole-pixel steps of 0.1, brightness scaled), after the images were lined up on the stars.
@@ -1799,19 +1814,19 @@ function showChallenge(id) {
   const live = t.kind === 'motion' && t.res.badge[0] === 'ok' && !t.bg ? ctMeasure(id) : null, two = t.bg && S.eps.length ? ctTwoSource(t) : null;
   const pos = ctAt(t, S.eps.length ? epMid(S.eps.length - 1) : 61040), q = `${pos[0].toFixed(5)} ${pos[1] >= 0 ? '+' : ''}${pos[1].toFixed(5)}`;
   c.append(h('h3', {}, t.name), h('span', { class: 'badge ' + t.res.badge[0] }, t.res.badge[1]),
-    h('p', {}, h('b', {}, 'NASA challenge target. '), t.what),
+    h('p', {}, h('b', {}, 'Test target. '), t.what),
     h('p', {}, h('b', {}, 'What SPHEREx shows: '), t.res.text),
     ...(live && live.me ? [h('p', {}, h('b', {}, 'Measured just now on these images: '), `moved ${live.me.meas.toFixed(1)}″ in ${Math.round(live.days)} days; its known motion predicts ${live.me.pred.toFixed(1)}″` +
       (live.comp ? `. ${t.companion.name}: ${live.comp.meas.toFixed(1)}″ (predicted ${live.comp.pred.toFixed(1)}″)` : '') + '.')] : []),
     ...(two ? [h('p', {}, h('b', {}, 'Measured just now on these images: '), `moving dot ${two.mJy.toFixed(2)} mJy` + (two.ab ? ` (AB ${two.ab.toFixed(2)})` : '') +
       `, formal S/N ${two.snr.toFixed(1)} from ${two.used} images (formal S/N is about twice the calibrated one, because neighbouring pixels share noise).`)] : []),
-    h('p', { class: 'legend' }, t.kind === 'motion' ? 'Cyan ring: where its known motion puts it in the pass on screen. Use Blink or Time machine to watch it shift against the stars.' : 'Cyan ring: the star. Use Time machine to flip through the passes.'),
+    h('p', { class: 'legend' }, t.kind === 'motion' ? 'Cyan ring: where its known motion puts it in the pass on screen. Use Blink or Step by step to watch it shift against the stars.' : 'Cyan ring: the star. Use Step by step to flip through the passes.'),
     h('p', { style: 'font-size:.8rem' }, 'Check it yourself: ', h('a', { href: 'https://aladin.cds.unistra.fr/AladinLite/?target=' + encodeURIComponent(q) + '&fov=0.1', target: '_blank', rel: 'noopener' }, 'Aladin sky atlas'), ' (Gaia, WISE, 2MASS at this spot).'),
     h('p', { style: 'font-size:.8rem;color:var(--dust)' }, 'Measured by ARCNAVE on real NASA SPHEREx images (IRSA), 2026-10-28. Not a new discovery.'),
     ...(t.pmra && S.eps.length > 1 ? [h('button', { class: 'hbtn', onclick: () => replayAcross(t, t.name, () => showChallenge(id)) }, '▶ Track its motion across passes'), ' '] : []),
     h('button', { class: t.pmra && S.eps.length > 1 ? '' : 'hbtn', onclick: () => { S.al.gotoRaDec(pos[0], pos[1]); S.al.setFov(0.1); setMode('blink'); } }, 'Watch it in Blink'), ' ',
     h('button', { onclick: () => spectrumAt(pos[0], pos[1], { name: t.name, posAt: m => ctAt(t, m) }) }, 'Its spectrum'), ' ',
-    ...(t.lc ? [h('button', { onclick: () => spectrumAt(pos[0], pos[1], { name: t.name, posAt: m => ctAt(t, m), lcOnly: t.lc }) }, `Light curve at ${t.lc} µm`), ' '] : []),
+    ...(t.lc ? [h('button', { onclick: () => spectrumAt(pos[0], pos[1], { name: t.name, posAt: m => ctAt(t, m), lcOnly: t.lc }) }, `Brightness over time at ${t.lc} µm`), ' '] : []),
     h('button', { onclick: showReport }, 'Back to report'));
 }
 // Cyan ring at the target's expected spot in the pass on screen
@@ -2054,7 +2069,7 @@ function lcSvg(LC) {
   const W_ = 360, H_ = 180, L = 44, R = 10, T = 10, B = 30;
   const tgt = lcMags(LC.pts), comps = LC.comps.map(c => lcMags(c.pts)), all = [...tgt, ...comps.flat()];
   const ns = 'http://www.w3.org/2000/svg', el = (t, a) => { const e = document.createElementNS(ns, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
-  const svg = el('svg', { viewBox: `0 0 ${W_} ${H_}`, class: 'specsvg', role: 'img', 'aria-label': 'Light curve: change in brightness (magnitudes) against date' });
+  const svg = el('svg', { viewBox: `0 0 ${W_} ${H_}`, class: 'specsvg', role: 'img', 'aria-label': 'Brightness over time: change in brightness (magnitudes) against date' });
   if (!all.length) return svg;
   const t0 = Math.min(...all.map(p => p.mjd)) - 10, t1 = Math.max(...all.map(p => p.mjd)) + 10;
   let lo = Math.min(-0.1, ...all.map(p => p.dm)), hi = Math.max(0.1, ...all.map(p => p.dm)); const pad = (hi - lo) * 0.1; lo -= pad; hi += pad;
@@ -2075,7 +2090,7 @@ function lcSvg(LC) {
   return svg;
 }
 function lcBlock(sp) {
-  const LC = sp.lc, out = [h('h3', { style: 'margin-top:.6rem;font-size:.95rem' }, `Light curve at ${LC.lam.toFixed(2)} µm`)];
+  const LC = sp.lc, out = [h('h3', { style: 'margin-top:.6rem;font-size:.95rem' }, `Brightness over time at ${LC.lam.toFixed(2)} µm`)];
   if (LC.status) { out.push(h('p', {}, LC.status)); return out; }
   out.push(lcSvg(LC), h('p', { class: 'flagleg' }, h('span', {}, h('i', { style: 'background:#ff6bd6;border-radius:50%' }), 'this star'), h('span', {}, h('i', { style: 'background:none;border:1.5px solid rgba(190,198,215,.9);border-radius:50%' }), `${LC.comps.length} comparison star${LC.comps.length === 1 ? '' : 's'} (Gaia, not variable as far as known)`)));
   if (!LC.finished) { out.push(h('p', {}, `Measuring ${LC.done} of ${LC.n} images (${LC.found} put it at this colour)...`)); return out; }
@@ -2097,7 +2112,7 @@ function lcBlock(sp) {
   // v0.55 U1: run it again through another detector (each sees a different stretch of colours)
   const dets = lcDets(sp);
   if (dets.length > 1) out.push(h('p', { class: 'lcdet' }, h('b', {}, 'Detector: '), ...dets.map(d => { const on = LC.lam >= d.lo && LC.lam <= d.hi, dn = String(d.det).replace(/^D?/, 'D');
-    return [h('button', { type: 'button', 'aria-pressed': String(on), title: on ? `This light curve is from detector ${dn}` : `Light curve at ${d.mid.toFixed(2)} µm, the middle of detector ${dn}`,
+    return [h('button', { type: 'button', 'aria-pressed': String(on), title: on ? `This light curve is from detector ${dn}` : `Brightness over time at ${d.mid.toFixed(2)} µm, the middle of detector ${dn}`,
       onclick: on ? null : () => lightCurve(sp, +d.mid.toFixed(2)) }, `${dn} · ${d.lo.toFixed(2)}–${d.hi.toFixed(2)} µm`), ' ']; })));
   out.push(h('p', { style: 'font-size:.78rem;color:var(--dust)' }, `Images in which the star falls where SPHEREx sees ${LC.lam.toFixed(2)} µm (±${(0.012 * LC.lam).toFixed(3)} µm), up to 36 spread over time; same simple aperture photometry as the spectrum.`));
   const csv = 'mjd,date,wavelength_um,flux_mJy,error_mJy\n' + LC.pts.slice().sort((a, b) => a.mjd - b.mjd).map(p => [p.mjd.toFixed(5), fmtDay(p.mjd), p.lam.toFixed(4), p.mJy.toFixed(4), p.err.toFixed(4)].join(',')).join('\n');
@@ -2108,7 +2123,7 @@ function showSpectrum() {
   const sp = SPEC.sp; if (!sp || !(S.sel && S.sel.spec)) return;
   const c = $('card'); c.replaceChildren(); c.hidden = false;
   const q = `${sp.ra.toFixed(5)} ${sp.dec >= 0 ? '+' : ''}${sp.dec.toFixed(5)}`;
-  c.append(h('h3', {}, (sp.lcOnly ? 'Light curve of ' : 'Spectrum of ') + (sp.name || 'this star')), h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'RA, Dec ' + q));
+  c.append(h('h3', {}, (sp.lcOnly ? 'Brightness over time of ' : 'Spectrum of ') + (sp.name || 'this star')), h('p', { style: 'font-size:.78rem;color:var(--dust)' }, 'RA, Dec ' + q));
   if (sp.msg) { c.append(h('p', {}, sp.msg)); return; }
   if (sp.lc) c.append(...lcBlock(sp));
   if (!sp.passes.size) { c.append(h('button', { onclick: () => { SPEC.run++; SPEC.sp = null; S.sel = null; S.report ? showReport() : (c.hidden = true); refreshSoon(); } }, 'Close')); return; }
@@ -2126,7 +2141,7 @@ function showSpectrum() {
     if (good.length >= 5) { const top = good.reduce((a, b) => b.mJy > a.mJy ? b : a); c.append(h('p', {}, `Brightest near ${top.lam.toFixed(2)} µm (${top.mJy >= 10 ? top.mJy.toFixed(0) : top.mJy.toFixed(1)} mJy).`)); }
     else if (P.pts.length >= 5) c.append(h('p', {}, 'Too faint to measure well in single images (hollow dots: below 3 times the noise).'));
     if (good.length && !(sp.lc && !sp.lc.finished)) { const b = good.reduce((a, q) => q.mJy / q.err > a.mJy / a.err ? q : a);
-      c.append(h('p', {}, h('button', { onclick: () => lightCurve(sp, +b.lam.toFixed(2)) }, `Light curve at ${b.lam.toFixed(2)} µm`), ' (its clearest colour: brightness over time, all passes)')); }
+      c.append(h('p', {}, h('button', { onclick: () => lightCurve(sp, +b.lam.toFixed(2)) }, `Brightness over time at ${b.lam.toFixed(2)} µm`), ' (its clearest colour: brightness over time, all passes)')); }
     const ck = catCheck(sp, P);
     if (ck.length) c.append(h('p', {}, h('b', {}, 'Check against other surveys: '), ck.map(k => `${k.b} ${k.ratio.toFixed(2)}×`).join(', ') +
       ' (SPHEREx ÷ 2MASS/WISE near the same colour; 1.00 = same brightness. Differences come from different filters, different dates, and this quick method).' +
@@ -2242,7 +2257,7 @@ function gaiaObj(s) { return { ra0: s.ra, dec0: s.dec, ep: G_EPOCH, pmra: s.pmra
    and whether they agree. The rule is the motion searches' own (cwMatch): a difference counts only above 3 times both errors
    combined, and never below 30 % of the catalogue motion or 0.5″/yr. o: { mu, smu, cat, catMu, catSmu, diff } in ″/yr
    (diff: the difference as a vector when known; otherwise the difference in size). */
-// the comparison itself (also used by the film's CSV/JSON export, U5): result 'agrees' | 'differs' | 'unchecked'
+// the comparison itself (also used by the video's CSV/JSON export, U5): result 'agrees' | 'differs' | 'unchecked'
 function catCmp(o) {
   if (o.mu == null || o.catMu == null) return { k: 'unc', result: 'unchecked', diff: null, lim: null };
   const diff = o.diff != null ? o.diff : Math.abs(o.mu - o.catMu), lim = Math.max(3 * Math.hypot(o.smu || 0, o.catSmu || 0), 0.3 * o.catMu, 0.5);
@@ -2412,7 +2427,7 @@ function cwMeasure(s) {
     flagRow(posOf(cwObj(s))),   // v0.55 U6
     h('p', { style: 'font-size:.8rem;color:var(--dust)' }, 'Method: the Barnard\'s Star method (the last pass slid over the first after lining the images up on the stars). A faint source is often too faint for it: then try 🔭 Deep search or 🎯 Motion scan in Changes, which use every image. Brown dwarfs are brightest at 3.8-5 µm, so pick that colour first.')));
 }
-$('mvb').onclick = () => movieStart();   // v0.54: the film, also from Overlays
+$('mvb').onclick = () => movieStart();   // v0.54: the video, also from Overlays
 $('cwb').onclick = e => { CW.on = !CW.on; e.currentTarget.setAttribute('aria-pressed', CW.on); updCwNote(); if (CW.on) cwLoad(); refreshSoon(); };
 // a CatWISE mover at this place and time with this motion (for the searches' labels); null when none
 function cwMatch(ra, dec, mjd, muE, muN, smu) {
@@ -2495,7 +2510,7 @@ async function deepView() {
 function showDeep() {
   const R = DEEP.res; if (!R || !(S.sel && S.sel.deep)) return;
   const c = $('card'); c.replaceChildren(); c.hidden = false;
-  c.append(h('h3', { class: 'deepw' }, `Deep view, ${epLabel(R.e)}`));
+  c.append(h('h3', { class: 'deepw' }, `Add up images, ${epLabel(R.e)}`));
   if (!R.stk) { c.append(h('p', {}, `Reading ${R.done} of ${R.n} images (up to 6 per detector, ${R.plan.map(x => x.ims.length).join(' + ')})...`)); return; }
   const comp = deepComposite(R.stk); comp.style.cssText = 'width:100%;image-rendering:pixelated;border-radius:6px;margin:.3rem 0'; comp.setAttribute('role', 'img'); comp.setAttribute('aria-label', 'False-colour deep image of this patch: blue short wavelengths, red long');
   c.append(comp, h('p', { style: 'font-size:.8rem;color:var(--dust)' }, 'False colour: blue = detectors 1-2 (0.75-1.6 µm), green = 3-4 (1.6-3.8 µm), red = 5-6 (3.8-5 µm). Hot stars look blue, cool stars and dust red.'));
@@ -2515,7 +2530,7 @@ function showDeep() {
 }
 $('deepb').onclick = () => deepView();
 /* ---------- v0.55 U3: the detector colour composite ON THE SKY ----------
-   The Deep view's false-colour picture (deepComposite: blue = D1+D2, green = D3+D4, red = D5+D6, each detector's images of the
+   The Add up images's false-colour picture (deepComposite: blue = D1+D2, green = D3+D4, red = D5+D6, each detector's images of the
    pass on screen lined up and added) drawn over the field instead of only in the card. Nothing new is measured: it reuses
    deepView's stacks. It belongs to one field, one pass and one view: another spot, pass or view turns it off. */
 const COMP = { on: false, cv: null, field: null, e: null, mode: null, dets: [] };
@@ -2646,7 +2661,7 @@ const NOTES = [
   'Known-object positions come from IMCCE SkyBoT (or, when SkyBoT cannot be reached, the Minor Planet Center checker) for a geocentric observer. SPHEREx is in low Earth orbit, so near objects can be off by about an arcminute.',
   'Nothing here is a discovery claim. Planet X is hypothetical and is not searched for.'];
 const sleep = ms => new Promise(r => setTimeout(r, ms));
-/* v0.57.5: the page stays alive during the long searches. Measured on Barnard's field in Chrome, starting the film froze the
+/* v0.57.5: the page stays alive during the long searches. Measured on Barnard's field in Chrome, starting the video froze the
    page 22 s in all, 5.5 s at once: the 24 images' star shapes (F.epsfGrid, ~0.4 s each) were built back to back inside the
    first measurement, and the loops gave the page a turn only every 20-25 sources (0.8-3 s). Now the star shapes are built
    one image at a time with a pause in between, and the loops pause every ~50 ms. Same inputs, same cached shapes: every
@@ -2769,7 +2784,7 @@ async function runAgents(target, opts = {}) {
     // bytes; measured: about 50 s with 4), and the other 5 per pass download afterwards and the report is redone with all 8 (runAgents deepen). Prewarm
     // and the validation runs (S.noQuick) and any other depth always load everything first.
     if (!opts.deepen && !S.noQuick && S.depth === 8 && S.netLoads > 0 && E > 1) { S.depthWanted = S.depth; S.depth = 3; }
-    // Several images per epoch: the colour may have changed while loading, so rebuild the slots, then load them all.
+    // Several images per pass: the colour may have changed while loading, so rebuild the slots, then load them all.
     buildSlotsNow(); renderStrip();
     // v0.17: ask which known objects were there now, while the images download (it used to start after all 24 had arrived
     // and could add a minute at the end). The answers are kept, so the Analyst finds them ready.
@@ -2778,7 +2793,7 @@ async function runAgents(target, opts = {}) {
     await Promise.all(idx.map(i => ensureFrame(i))); if (!live()) return;
     if (multi()) {
       // v0.14.2 progressive loading: IRSA takes 25 to 45 s per cutout and the server asks for 4 at a time (more gives 503s),
-      // so 24 images take 2 to 3 minutes. First one image per epoch (the first wave), shown at once as a preview, then the
+      // so 24 images take 2 to 3 minutes. First one image per pass (the first wave), shown at once as a preview, then the
       // rest for the deeper stacks and the report. Measured live: preview in about 30 s instead of waiting for all 24.
       await Promise.all(S.eps.map((_, i) => ensureFrame(i).catch(() => { /* retried with the rest */ })));
       if (!live()) return;
@@ -2812,9 +2827,9 @@ async function runAgents(target, opts = {}) {
     const scat = shifts.length ? shifts.map(z => z.spread).sort((p, q) => p - q)[shifts.length >> 1] : null;
     if (E < 2 && !multi()) setAgent('ali', 'done', 'Reference frame ready (single epoch)');
     else if (multi()) setAgent('ali', shifts.length >= loaded.length - 1 && !S.missing ? 'done' : 'warn', `${loaded.length} of ${S.seq.length} images aligned on the stars` +
-      (S.missing ? ` (${S.missing} could not be downloaded: IRSA busy, try Run agents again later)` : '') +
+      (S.missing ? ` (${S.missing} could not be downloaded: IRSA busy, try loading the images again later)` : '') +
       (scat != null ? ` (median scatter ${scat.toFixed(2)} px)` : '') + (sh && sh.ok && E > 1 ? `; epoch ${E} moved ${sh.dx.toFixed(2)}, ${sh.dy.toFixed(2)} px onto epoch 1` : ''));
-    else if (sh && sh.ok) setAgent('ali', 'done', `Epoch ${E} moved ${sh.dx.toFixed(2)}, ${sh.dy.toFixed(2)} px onto epoch 1 (${shiftText(sh)})`);
+    else if (sh && sh.ok) setAgent('ali', 'done', `Pass ${E} moved ${sh.dx.toFixed(2)}, ${sh.dy.toFixed(2)} px onto epoch 1 (${shiftText(sh)})`);
     else setAgent('ali', 'warn', `Could not refine the alignment (${shiftText(sh)}). Using sky coordinates only`);
     setAgent('arc', E > 1 ? 'done' : 'warn', `${S.images.length} images in ${E} epoch${E > 1 ? 's' : ''}; ` +
       (multi() ? `${S.seq.length} images (${perEpochTxt()}): ${S.slots.length} colour-matched across epochs (colours differ by at most ${S.slotDLam.toFixed(3)} µm), used to compare the epochs` +
@@ -2857,7 +2872,7 @@ async function runAgents(target, opts = {}) {
     setAgent('rep', 'done', 'Report ready. Click a marker for details, or download it');
     if (!multi()) prefetchEpochs(run);
     if (opts.focus) focusExample(opts.focus);
-    stat(`Agents finished: ${E > 1 ? 'Difference view of epoch 1 vs ' + E : 'single epoch'}.`);
+    stat(`Done: ${E > 1 ? 'Difference view of epoch 1 vs ' + E : 'single epoch'}.`);
     if (S.depthWanted) deepenLater(run, label, opts);   // v0.56: the quick report is out; now the rest, in the background
   } catch (e) {
     if (!live() || e.message === 'cancelled') return;
@@ -2867,7 +2882,7 @@ async function runAgents(target, opts = {}) {
 
 /* v0.56: after a quick first report (4 images per pass on a new field), download the images the chosen depth adds, without
    touching what is on screen, then redo the run at that depth: every image is then in memory, so the agents take a few
-   seconds and the report comes back with the deeper stacks. Waits while a card or the film is open, so nothing the user is
+   seconds and the report comes back with the deeper stacks. Waits while a card or the video is open, so nothing the user is
    looking at is pulled away. Any newer run (another field, a new colour) cancels it. */
 async function deepenLater(run, label, opts) {
   const want = S.depthWanted, live = () => run === S.run; if (!want || !S.field) return;
@@ -2878,7 +2893,7 @@ async function deepenLater(run, label, opts) {
   const say = () => { if (live()) setAgent('rep', 'done', `Report ready from ${keep.depth} images per pass. Deepening to ${want} per pass in the background: ${done} of ${ims.length} images...`); };
   say();
   await Promise.all(todo.map(im => ensureImg(im).then(() => { done++; say(); }, () => { /* the redo reports what is missing */ })));
-  for (let k = 0; k < 600 && live() && ((S.sel && !S.sel.report) || MOVIE.on || S.lab); k++) await sleep(500);   // a card, the film or a lab view is open: wait
+  for (let k = 0; k < 600 && live() && ((S.sel && !S.sel.report) || MOVIE.on || S.lab); k++) await sleep(500);   // a card, the video or a lab view is open: wait
   if (!live()) return;
   S.depth = want; $('ipe').value = want; S.depthWanted = 0;
   toast(`Deeper stacks ready: the report now uses ${want} images per pass.`, 5000);
@@ -2976,7 +2991,7 @@ function starShape(f) {
 // (wavelength, detector or distortion differences). Changes found then are artefacts, so none are reported.
 const GATE = { nearMissMin: 5, nearMissFrac: 0.05 };
 
-// After a run, quietly load the other epochs' images so the Time machine slider is instant. One at a time, never blocks.
+// After a run, quietly load the other epochs' images so the Step by step slider is instant. One at a time, never blocks.
 async function prefetchEpochs(run) {
   for (let i = 0; i < S.eps.length; i++) {
     if (run !== S.run) return;
@@ -3069,7 +3084,7 @@ function analyse(a, b, E) {
       }
       const seenIn = c.kind === 'gone' ? fa : fb, sp = c.kind === 'gone' ? from : to, ref = starShape(seenIn);
       const shape = { value: peakShape(seenIn.flat, f.n, sp.x, sp.y), stars: ref && ref.median, nStars: ref && ref.n };
-      // several images per epoch: in how many images of the epoch where it is seen is it really there, and is it absent from all
+      // several images per pass: in how many images of the epoch where it is seen is it really there, and is it absent from all
       // images of the other epoch?
       let repeat = null;
       if (multi()) {
@@ -3150,7 +3165,7 @@ function buildReport(label, E, a, b, res) {
     return { index: i, date: fmtDay(im.mjd), imageId: im.id, detector: im.det, lam: +lamOf(im).toFixed(4), lamMeasured: fr && fr.lamReal != null, lam0: im.lam0, lam1: im.lam1,
       coverage: g ? +g.cover.toFixed(3) : null, detectorPos: g ? { x: Math.round(g.pos.x), y: Math.round(g.pos.y) } : null, predictionCheck: fr ? fr.check : null, badPixels: fr ? fr.mask : null }; });
   const alignmentText = E < 2 ? 'Single epoch, nothing to register.'
-    : sh && sh.ok ? `Epoch ${E} moved ${sh.dx.toFixed(2)}, ${sh.dy.toFixed(2)} px onto epoch 1 (${shiftText(sh)}).`
+    : sh && sh.ok ? `Pass ${E} moved ${sh.dx.toFixed(2)}, ${sh.dy.toFixed(2)} px onto epoch 1 (${shiftText(sh)}).`
       : 'Alignment could not be refined. Sky coordinates only.';
   return { generated: new Date().toISOString(), tool: 'ARCNAVE', target: { ra: f.ra, dec: f.dec, label },
     field: { sizeDeg: f.size, pixelScaleArcsec: +(PX * 3600).toFixed(2), gridPx: f.n }, wavelengthUm: S.band, imagesFound: S.images.length, epochCount: E, epochs,
@@ -3167,7 +3182,7 @@ function showReport() {
   const r = S.report, c = $('card'); c.replaceChildren(); S.sel = null;
   if (!r) { c.hidden = true; return; }
   c.hidden = false;
-  c.append(h('h3', {}, 'Agent report'),
+  c.append(h('h3', {}, 'Report on this patch'),
     h('p', {}, `${r.target.label ? r.target.label + ' · ' : ''}RA ${r.target.ra.toFixed(3)}°, Dec ${r.target.dec.toFixed(3)}°, ${r.field.sizeDeg}° field`),
     h('p', {}, h('b', {}, 'Images: '), r.epochs.map(e => `E${e.index + 1} ${e.date} at ${e.lam.toFixed(3)} µm` + (e.coverage != null && e.coverage < 0.99 ? ` (covers ${Math.round(e.coverage * 100)}%)` : '')).join(' · ')),
     h('p', {}, h('b', {}, 'Alignment: '), r.alignmentText));
@@ -3191,7 +3206,7 @@ function showReport() {
       h('b', {}, (x.confirmed ? '✓ ' : '') + x.name), h('small', {}, `V ${Number.isFinite(x.vmag) ? x.vmag.toFixed(1) : '?'} · seen in ${x.sightings.length} image${x.sightings.length === 1 ? '' : 's'} of epoch ${x.sightings[0].e + 1}` + (x.confirmed ? '' : ' · a check fails')))));
     c.append(h('p', { style: 'font-size:.78rem;color:var(--dust)' }, `Other sources at one visit only, matching no known object: ${ins.unRepeat || 0} seen in two exposures in a row ` +
       `(an unknown or faint mover, or a detector artefact), ${ins.unOnce || 0} in a single image with nothing to check against. All unconfirmed; none is claimed as a discovery. ` +
-      `Only the ones seen in two exposures in a row are marked "?" in Time machine and Blink. They are not linked to each other: with 3 or 4 visits per pass, two dots can always be joined by a line, so a link would be a guess.`));
+      `Only the ones seen in two exposures in a row are marked "?" in Step by step and Blink. They are not linked to each other: with 3 or 4 visits per pass, two dots can always be joined by a line, so a link would be a guess.`));
   }
   c.append(h('p', {}, h('b', {}, `Known objects in field (${r.knownObjects.length})`)));
   if (!r.knownObjects.length) c.append(h('p', { style: 'font-size:.82rem;color:var(--dust)' }, 'None listed by the orbit catalogue inside this footprint.'));
@@ -3318,7 +3333,7 @@ function showCand(k) {
     for (let j = -12; j <= 12; j++) for (let q = -12; q <= 12; q++) { const X = Math.round(p.x) + q, Y = Math.round(p.y) + j; if (X >= 0 && Y >= 0 && X < n && Y < n) k.cropMax = Math.max(k.cropMax, fr.flat[Y * n + X] - fr.st.med); } }
   const badge = { confirmed: ['ok', '✓ Confirmed known asteroid'], artefact: ['near', 'Likely artefact, not a real object'], near: ['near', 'Near a known object, but not a match'], unconfirmed: ['unc', 'Unconfirmed change'] }[st];
   c.append(h('h3', {}, 'Candidate C' + k.id), h('span', { class: 'badge ' + badge[0] }, badge[1]),
-    h('div', { class: 'proof' }, proofCrop(k, a, `Epoch ${a + 1}`), proofCrop(k, b, `Epoch ${b + 1}`)),
+    h('div', { class: 'proof' }, proofCrop(k, a, `Pass ${a + 1}`), proofCrop(k, b, `Pass ${b + 1}`)),
     h('p', { class: 'legend' }, 'Dashed circle: the change. ', k.proof && k.proof.near ? h('span', {}, '+ : where the orbit catalogue predicts ' + k.proof.near.name + '.') : ''),
     h('p', {}, h('b', {}, 'What: '), { pair: 'A source moved between the epochs', new: 'Appears only in the later epoch', gone: 'Visible only in the first epoch' }[k.kind]),
     h('p', {}, h('b', {}, 'Position: '), `RA ${k.to.ra.toFixed(4)}°, Dec ${k.to.dec.toFixed(4)}°`));
@@ -3357,7 +3372,7 @@ $('dbg').onclick = async () => {
   } catch (e) { toast('Could not save: ' + e.message); }
   b.disabled = false;
 };
-$('aauto').onclick = e => { S.auto = !S.auto; e.target.setAttribute('aria-pressed', S.auto); e.target.textContent = 'Auto-run on Fly to: ' + (S.auto ? 'on' : 'off'); };
+$('aauto').onclick = e => { S.auto = !S.auto; e.target.setAttribute('aria-pressed', S.auto); e.target.textContent = 'Load images after Fly to: ' + (S.auto ? 'on' : 'off'); };
 
 /* ---------- Hide Planet X (v0.10): an injection-recovery test, not a search ---------- */
 // A fake planet is added to the aligned images of epochs 1 and N (lib/planetx.js), the stacks are rebuilt and the
@@ -3372,7 +3387,7 @@ function pxLabels() {
 }
 // The two compared epochs with their images, as lib/planetx.js wants them. Cached until anything is re-aligned.
 function pxContext() {
-  const E = S.eps.length; if (E < 2 || !window.SkyPlanetX) return { error: 'Hide Planet X needs two epochs of a field. Run the agents on a field first.' };
+  const E = S.eps.length; if (E < 2 || !window.SkyPlanetX) return { error: 'Hide Planet X needs two epochs of a field. Load the images of a field first.' };
   // Compare the two passes where Earth was farthest apart: a distant planet's jump is parallax, so passes a year apart (Earth
   // back in the same place) would show almost no jump and the fake would subtract itself out like a star (seen on 189.957 -4.182).
   let a = 0, b = E - 1, best = -1;
@@ -3394,7 +3409,7 @@ function pxContext() {
 async function pxHide() {
   const ctx = pxContext(); if (ctx.error) { $('pxt').textContent = ctx.error; return; }
   // v0.57.9: one trial takes about 0.5 s; the page says so first and paints, then works (the click no longer looks dead)
-  if (PXH.busy) return; PXH.busy = true; const b = $('pxgo'); if (b) b.disabled = true; stat('Hiding a fake planet, the agents are looking for it...');
+  if (PXH.busy) return; PXH.busy = true; const b = $('pxgo'); if (b) b.disabled = true; stat('Hiding a fake planet, ARCNAVE is looking for it...');
   try { await new Promise(r => requestAnimationFrame(() => setTimeout(r, 0))); pxHideNow(ctx); } finally { PXH.busy = false; if (b) b.disabled = false; }
 }
 const PXH = { busy: false };
@@ -3420,7 +3435,7 @@ function showPx(r, ctx) {
   S.sel = { px: true }; const c = $('card'); c.replaceChildren(); c.hidden = false;
   const both = r.foundA && r.foundB, e1 = r.epochs[1], out1 = !(e1.at.x >= 0 && e1.at.y >= 0 && e1.at.x <= S.field.n - 1 && e1.at.y <= S.field.n - 1);
   c.append(h('button', { class: 'x', 'aria-label': 'Close', onclick: () => { c.hidden = true; S.sel = null; } }, '×'));
-  c.append(h('p', { class: 'pxbig ' + (r.found ? 'ok' : 'no') }, r.found ? '✓ Found by the agents' : '✗ Missed'));
+  c.append(h('p', { class: 'pxbig ' + (r.found ? 'ok' : 'no') }, r.found ? '✓ Found by ARCNAVE' : '✗ Missed'));
   c.append(h('p', {}, `Fake planet: ${r.dist} AU away, AB ${r.ab.toFixed(2)} (${fmtMJy(r.mJy)}) at ${lamOf(chosen(ctx.a)).toFixed(2)} µm.`));
   const sh = r.shift || {}, shTxt = [[ctx.a, sh.snrA], [ctx.b, sh.snrB]].filter(([, v]) => v != null && v >= 5).map(([e, v]) => `epoch ${e + 1}: ${v.toFixed(0)}σ`).join(', ');
   if (r.found && !r.foundPlain) c.append(h('p', {}, `Found only by the motion-following stack (${shTxt}): it moves ${(r.epochs[0].moveDuringEpochPx * PX * 3600).toFixed(0)}″ during one pass, so the plain median of the pass's images wipes it out; shifting each image back along the path a body ${r.dist} AU away would follow, then stacking, keeps it.`));
@@ -3600,7 +3615,7 @@ async function prewarmRun(p) {
       const job = f.ct ? runChallenge(f.ct) : f.ex ? runExample(f.ex) : runAgents({ ra: f.ra, dec: f.dec, label: f.name || `Prewarm ${i + 1}` });
       try { await Promise.race([job, timeout]); } catch (e) { S.run++; throw e; }
       if (f.ct || f.ex || start) { try { GAIA.on = true; GAIA.key = null; await gaiaLoad(); r.gaia = !!(GAIA.data && GAIA.data.stars); } catch { r.gaia = false; } }
-      if (start) { try { await cwLoad(); r.catwise = !!CW.data; } catch { r.catwise = false; } }   // v0.56: the film's WISE movers too
+      if (start) { try { await cwLoad(); r.catwise = !!CW.data; } catch { r.catwise = false; } }   // v0.56: the video's WISE movers too
       r.report = !!S.report; r.found = S.images.length; r.perEpoch = S.eps.map((_, e) => epochImgs(e).length); r.images = r.perEpoch.reduce((a, n) => a + n, 0);
       const bad = AGENTS.map(([k]) => S.ag[k] || {}).find(a => a.state === 'err'); if (bad) r.error = bad.msg;
     } catch (e) { r.error = e.message; }
@@ -3614,7 +3629,7 @@ async function prewarmRun(p) {
 
 /* ---------- Validation scorecard (v0.12, local runs only) ---------- */
 // Open http://localhost:8081/#scorecard on a local run. The agents and the Hide Planet X map run, exactly as a user would
-// run them (8 images per epoch, 0.5 deg field), on a grid of fields FIXED IN ADVANCE: ecliptic longitude 0, 60 ... 300
+// run them (8 images per pass, 0.5 deg field), on a grid of fields FIXED IN ADVANCE: ecliptic longitude 0, 60 ... 300
 // deg x ecliptic latitude 0, +40, -40 deg. The grid is not chosen from results, and every field is reported, including
 // those with no data or that fail. Each result goes to scorecard/<id>.json (server.js). #scorecard&from=5 resumes at the
 // 6th field, #scorecard&only=L060B+40 runs one.
@@ -3648,7 +3663,7 @@ async function scorecardRun(p) {
       catch (e) { S.run++; throw e; }   // S.run++ cancels the stuck run
       out.agentSecs = Math.round((performance.now() - t0) / 1000);
       out.agents = AGENTS.map(([k]) => ({ id: k, state: (S.ag[k] || {}).state, msg: (S.ag[k] || {}).msg }));
-      out.images = S.images.length; out.epochs = S.eps.length; out.perEpoch = S.slots.length;   // images per epoch really used (fewer when colours do not match)
+      out.images = S.images.length; out.epochs = S.eps.length; out.perEpoch = S.slots.length;   // images per pass really used (fewer when colours do not match)
       out.epochDates = S.eps.map(e => fmtMonth(e.t0));
       out.candidates = S.cands.length; out.knownInField = S.known.length;
       const bad = out.agents.find(a => a.state === 'err');
@@ -3656,7 +3671,7 @@ async function scorecardRun(p) {
       else if (!S.report) { out.status = 'error'; out.error = 'no report'; }
       else if (S.eps.length < 2) { out.status = 'one-epoch'; }
       else {
-        // with one image per epoch the other epochs' images load in the background after the report (prefetchEpochs):
+        // with one image per pass the other epochs' images load in the background after the report (prefetchEpochs):
         // wait for them (seen live on L300B+00: the map was tried before they arrived)
         let ctx = pxContext();
         for (let k = 0; k < 120 && ctx.error && /not loaded/.test(ctx.error); k++) { await sleep(1500); ctx = pxContext(); }
@@ -3959,7 +3974,7 @@ function renderMovertest() {
     table(A, 'meas', 'Measured at its known place: motion found at 5σ or more, and right within 3σ'),
     table(A, 'blind', 'Found by the deep search on its own (blind), as a visitor would'),
     h('p', { class: 'ntc' }, `Share of the fakes of each kind (S/N per image for an optimal fit; speed in ″ per year). Milky Way plane: ${s.plane.fields} fields, blind ${mvShare(mvCells(s.plane, 'blind'), [[2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]]) ?? '-'}% for S/N 12+ and 2+″/yr; elsewhere ${mvShare(mvCells(s.rest, 'blind'), [[2, 1], [2, 2], [2, 3], [3, 1], [3, 2], [3, 3]]) ?? '-'}%. ` +
-      `Fields: ${MV.rows.map(r => r.status === 'ok' ? '' : r.id + ' ' + (r.why || r.status)).filter(Boolean).join('; ') || 'all measured'}. Run it on any field yourself: Planet X & agents › 🧪 Mover test.`));
+      `Fields: ${MV.rows.map(r => r.status === 'ok' ? '' : r.id + ' ' + (r.why || r.status)).filter(Boolean).join('; ') || 'all measured'}. Run it on any field yourself: Planet X test › 🧪 Mover test.`));
 }
 // v0.55: the same in one line, in the Planet X section: how faint a Planet X and how slow a star can be caught
 async function fillPxLook() {
@@ -4034,8 +4049,8 @@ const thin = (list, max) => list.length <= max ? list : Array.from({ length: max
 function cardPlan() {
   if (!S.field || !S.eps.length) return null;
   const g = cardGrid(), n = S.field.n, sel = S.sel || {};
-  const epochFrame = (e, marks = []) => { const fr = frameOf(e); return fr && { fr, top: `Epoch ${e + 1}`, sub: fr.stack ? `${fmtMonth(chosen(e).mjd)} · median of ${fr.stack} images · ${lamOf(chosen(e)).toFixed(2)} µm` : imLabel(chosen(e)), marks, mjd: chosen(e).mjd, lam: lamOf(chosen(e)) }; };
-  const imFrame = (im, e, marks = []) => { const fr = S.frames.get(im.url); return fr && { fr, top: `Epoch ${e + 1}`, sub: imLabel(im), marks, mjd: im.mjd, lam: lamOf(im) }; };
+  const epochFrame = (e, marks = []) => { const fr = frameOf(e); return fr && { fr, top: `Pass ${e + 1}`, sub: fr.stack ? `${fmtMonth(chosen(e).mjd)} · median of ${fr.stack} images · ${lamOf(chosen(e)).toFixed(2)} µm` : imLabel(chosen(e)), marks, mjd: chosen(e).mjd, lam: lamOf(chosen(e)) }; };
+  const imFrame = (im, e, marks = []) => { const fr = S.frames.get(im.url); return fr && { fr, top: `Pass ${e + 1}`, sub: imLabel(im), marks, mjd: im.mjd, lam: lamOf(im) }; };
   if (sel.ast) {   // known asteroid caught moving inside one epoch: flip through that epoch's images
     const a = sel.ast, sg = a.sightings.slice().sort((p, q) => p.mjd - q.mjd), e = sg[0].e, col = a.confirmed ? '#5ff0a0' : '#ffb05a';
     const ims = epochImgs(e).filter(im => S.frames.get(im.url)).sort((p, q) => p.mjd - q.mjd);
@@ -4062,7 +4077,7 @@ function cardPlan() {
         : st === 'artefact' && k.proof && k.proof.reason === 'glare' ? 'The glare of a very bright star that changed brightness between the epochs, not a new object.' : st === 'artefact' ? 'Most likely an image artefact (a cosmic ray or a hot pixel), not a real object.'
         : 'Unconfirmed: could be a real change, a variable star or an image artefact. Not a discovery claim.', slug: 'change-' + k.id };
   }
-  if (sel.it) {   // a known mover (SkyBoT ring): one frame per epoch, a + where the orbit puts it at each epoch's time
+  if (sel.it) {   // a known mover (SkyBoT ring): one frame per pass, a + where the orbit puts it at each epoch's time
     const it = sel.it, key = itemKey(it), E = S.eps.length, eps = thin([...Array(E).keys()], 8);
     const at = e => { const m = moversOf(e), o = m && m.items && m.items.find(x => itemKey(x) === key), q = o && F.skyToGrid(o.ra, o.dec, g); return q && { x: q[0], y: q[1], color: '#ffb05a', plus: true }; };
     const q0 = F.skyToGrid(it.ra, it.dec, g); if (!q0) return null;
@@ -4095,7 +4110,7 @@ function wrapText(g, s, x, y, max, lh) {
   for (const w of words) { const t = line ? line + ' ' + w : w; if (g.measureText(t).width > max && line) { g.fillText(line, x, y); y += lh; line = w; } else line = t; }
   if (line) g.fillText(line, x, y); return y + lh;
 }
-function drawCardFrame(g, plan, i, an = { k: 1, lock: 1 }) {   // v0.56 an: the film's glide (k) and lock-on ring (lock), 0..1
+function drawCardFrame(g, plan, i, an = { k: 1, lock: 1 }) {   // v0.56 an: the video's glide (k) and lock-on ring (lock), 0..1
   const { W: CW, H: CH, X, Y, S: SZ } = CARD, f = plan.frames[i], n = S.field.n, half = plan.half, k = SZ / (2 * half);
   const sx = plan.cx + 0.5 - half, sy = plan.cy + 0.5 - half;   // canvas coords of the crop's corner (pixel x spans x..x+1)
   g.setTransform(1, 0, 0, 1, 0, 0); g.fillStyle = '#05070f'; g.fillRect(0, 0, CW, CH);
@@ -4114,7 +4129,7 @@ function drawCardFrame(g, plan, i, an = { k: 1, lock: 1 }) {   // v0.56 an: the 
   if (x1 > x0 && y1 > y0) { g.imageSmoothingEnabled = k < 14; g.imageSmoothingQuality = 'high'; g.drawImage(f.fr.canvas, x0, y0, x1 - x0, y1 - y0, X + (x0 - sx) * k, Y + (y0 - sy) * k, (x1 - x0) * k, (y1 - y0) * k); }
   const toC = p => [X + (p.x + 0.5 - sx) * k, Y + (p.y + 0.5 - sy) * k];
   const st = f.stage, ease = an.k * an.k * (3 - 2 * an.k), cur = st && toC(st.cur); let pv = st && st.prev && toC(st.prev), Fx = 1;
-  // a shift of a few ″ is a pixel or two here: as in the film, the step is drawn longer by a stated factor (the ring stays
+  // a shift of a few ″ is a pixel or two here: as in the video, the step is drawn longer by a stated factor (the ring stays
   // on the star in this pass; the dashed circle goes back along the measured direction)
   if (pv) { const dd = Math.hypot(pv[0] - cur[0], pv[1] - cur[1]); if (dd < 50) { Fx = dd > 0.05 ? Math.min(300, Math.round(56 / dd)) : 1; pv = [cur[0] + (pv[0] - cur[0]) * Fx, cur[1] + (pv[1] - cur[1]) * Fx]; } }
   const head = st && (pv ? [pv[0] + (cur[0] - pv[0]) * ease, pv[1] + (cur[1] - pv[1]) * ease] : cur);
@@ -4173,7 +4188,7 @@ function drawCardFrame(g, plan, i, an = { k: 1, lock: 1 }) {   // v0.56 an: the 
   cardText(g, `${fmtDay(t0)}${days > 0.01 ? ' → ' + fmtDay(t1) + ` (${fmtDur(days * 24)})` : ''} · ${l1 - l0 < 0.01 ? l0.toFixed(2) : l0.toFixed(2) + '–' + l1.toFixed(2)} µm infrared`, X, y, SZ);
   y += 20; g.fillStyle = '#ffc46b'; cardText(g, plan.fact, X, y, SZ);
   y += 22; g.fillStyle = '#8e98ae'; g.font = font(500, 12); y = wrapText(g, plan.note, X, y, SZ, 16);
-  g.fillStyle = '#5a6378'; g.font = font(500, 11); g.fillText(plan.credit || 'Images: NASA SPHEREx via IRSA · Orbits: ' + (viaMpc() ? 'Minor Planet Center' : 'IMCCE SkyBoT') + ' · False colour', X, CH - 16);   // v0.55: plan.credit (the film's own)
+  g.fillStyle = '#5a6378'; g.font = font(500, 11); g.fillText(plan.credit || 'Images: NASA SPHEREx via IRSA · Orbits: ' + (viaMpc() ? 'Minor Planet Center' : 'IMCCE SkyBoT') + ' · False colour', X, CH - 16);   // v0.55: plan.credit (the video's own)
 }
 function encodeGif(job) {   // in a worker when possible, so the page never freezes
   return new Promise((res, rej) => {
@@ -4720,7 +4735,7 @@ async function motionSearch() {
   const say = (txt, i, m) => srchSay(MS, '🔍 Moving stars: searching', txt, m ? `Measuring ${i} of ${m} stars...` : null, motionSearch);   // v0.55 U9
   try {
     const eps = []; for (let k = 0; k < S.eps.length; k++) { const fr = frameOf(k); if (fr) eps.push({ k, fr }); }
-    if (eps.length < 2) { say('The aligned images of two passes are not loaded yet. Run the agents first.'); return; }
+    if (eps.length < 2) { say('The aligned images of two passes are not loaded yet. Load the images of a spot first.'); return; }
     const A = eps[0].fr, later = eps.slice(1);
     say('Finding the bright stars of the first pass...');
     try { await gaiaLoad(); } catch { /* checked below */ }   // v0.56: always for THIS field (it kept the last field's stars)
@@ -5220,8 +5235,8 @@ function drawFrameFit() {
    4. Each flagged source is checked against Gaia DR3 (known mover / Gaia says it hardly moves / a different motion /
       unconfirmed candidate). Gaia movers that should show and were not flagged are counted. Never a discovery claim. */
 const DS = { res: null, busy: false };
-// v0.55: this was a second "function deepStack": declared later with the same name, it silently replaced the Deep view's
-// per-detector stack (v0.37), so the Deep view and its colour picture showed one all-image stack 6 times. Renamed only.
+// v0.55: this was a second "function deepStack": declared later with the same name, it silently replaced the Add up images's
+// per-detector stack (v0.37), so the Add up images and its colour picture showed one all-image stack 6 times. Renamed only.
 function allStack() {
   const n = S.field.n, sum = new Float32Array(n * n), cnt = new Uint16Array(n * n); let nImg = 0;
   for (let e = 0; e < S.eps.length; e++) for (const im of epochImgs(e)) {
@@ -5262,7 +5277,7 @@ async function deepSearch() {
     try { await gaiaLoad(); } catch { /* checked below */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
     if (!GAIA.data) { say('Gaia DR3 did not answer, and every image is lined up on Gaia here. Try again in a minute.'); return; }
     await warmEpsf(() => run === S.run && !DS.stop); await fieldFloorWarm(() => run === S.run && !DS.stop); if ((run !== S.run || DS.stop)) return;   // v0.57.5: star shapes first, one image at a time
-    const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded for a deep stack. Run the agents first (Images per epoch: 4 or more).'); return; }
+    const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded for a deep stack. Load the images of a spot first (Images per pass: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 5, 2000).filter(p => p.x > 12 && p.y > 12 && p.x < n - 13 && p.y < n - 13);
     const src = pk.filter((p, i) => !pk.some((q, j) => j < i && Math.hypot(q.x - p.x, q.y - p.y) < 3)).slice(0, 500);
     const all = [];
@@ -5296,7 +5311,7 @@ async function deepSearch() {
       .sort((a, b) => b.snr - a.snr)
       .filter((fl, i, arr) => !arr.some((o, j) => j < i && Math.hypot((o.ra - fl.ra) * Math.cos(fl.dec * Math.PI / 180), o.dec - fl.dec) * 3600 < 1.5 * arc))   // one source, two peaks: keep the brighter
       .sort((a, b) => b.ff.fit.sig - a.ff.fit.sig);
-    // v0.55: what the cards, the film and the charts show: the same fit with the field's floor in the errors
+    // v0.55: what the cards, the video and the charts show: the same fit with the field's floor in the errors
     for (const fl of flagged) { const o = fl.ff, fd = ffCore((e, fr) => toRaw(fr, fl.src.x, fl.src.y), { H: 3, minSnr: 3, plx: o.plx || undefined, muCat: o.muCat ?? fl.pm ?? null });
       if (fd && !fd.fail && fd.fit) { fl.ffRaw = o; fl.ff = fd; } }
     const grid = { ra0: f.ra, dec0: f.dec, s: f.s, n }, mjd0 = epMid(0);
@@ -5305,7 +5320,7 @@ async function deepSearch() {
     showDS();
   } finally { DS.busy = false; srchDone(DS); }   // v0.55 U9
 }
-// v0.55: was a second "function showDeep", which silently replaced the Deep view's card (v0.37). Renamed only.
+// v0.55: was a second "function showDeep", which silently replaced the Add up images's card (v0.37). Renamed only.
 /* ---------- v0.55 Phase 2: mover injection test ----------
    How well does ARCNAVE find and measure moving stars in THIS field? Fake moving point sources, of known speed, direction
    and brightness, are added to the real images (every image, at the place each one has reached by that image's date, with
@@ -5328,7 +5343,7 @@ async function moverTest() {
   try {
     say('Choosing empty places for the fakes...'); await sleep(30);
     try { await gaiaLoad(); } catch { /* registration needs Gaia; checked by the fits */ }   // v0.56: always for THIS field (it kept the last field's stars)
-    const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Run the agents first (Images per epoch: 4 or more).'); return; }
+    const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Load the images of a spot first (Images per pass: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 4, 4000);
     let sd = 7; const rnd = () => { sd = (sd * 16807) % 2147483647; return sd / 2147483647; };
     const free = (x, y, list) => x > 26 && y > 26 && x < n - 27 && y < n - 27 && !pk.some(p => Math.hypot(p.x - x, p.y - y) < 8) && !list.some(q => Math.hypot(q.x - x, q.y - y) < 14) && D.flat[Math.round(y) * n + Math.round(x)] === D.flat[Math.round(y) * n + Math.round(x)];
@@ -5547,7 +5562,7 @@ async function diffSearch() {
     }
     const passes = [...new Set(pairs.map(p => p.e))].sort((p, q) => p - q);
     if (!passes.length) { say('No pass has an image of the same colour as pass 1 here, so nothing can be subtracted.'); return; }
-    const D = allStack(); if (!D.st) { say('The images are not loaded yet. Run the agents first.'); return; }
+    const D = allStack(); if (!D.st) { say('The images are not loaded yet. Load the images of a spot first.'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 5, 2000).filter(p => p.x > 12 && p.y > 12 && p.x < n - 13 && p.y < n - 13);
     const src = pk.filter((p, i) => !pk.some((q, j) => j < i && Math.hypot(q.x - p.x, q.y - p.y) < 3)).slice(0, 500)
       .filter(p => !pk.some(q => q.flux > 10 * p.flux && Math.hypot(q.x - p.x, q.y - p.y) < 5));   // not in a much brighter star's glow
@@ -5770,7 +5785,7 @@ async function motionScan() {
     say('Stacking every image and finding sources...'); await sleep(30);
     try { await gaiaLoad(); } catch { /* labels say unchecked */ } const cwP = cwLoad();   // v0.56: Gaia always for THIS field (it kept the last field's stars)
     await warmEpsf(() => run === S.run && !TSC.stop); await fieldFloorWarm(() => run === S.run && !TSC.stop); if ((run !== S.run || TSC.stop)) return;   // v0.57.5: star shapes first, one image at a time
-    const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Run the agents first (Images per epoch: 4 or more).'); return; }
+    const D = allStack(); if (!D.st || D.nImg < 4) { say('Too few images are loaded. Load the images of a spot first (Images per pass: 4 or more).'); return; }
     const pk = F.detectPeaks(D.flat, n, D.st, 5, 2000).filter(p => p.x > 14 && p.y > 14 && p.x < n - 15 && p.y < n - 15);
     const blankNear = p => { const X = Math.round(p.x), Y = Math.round(p.y); for (let j = -2; j <= 2; j++) for (let i = -2; i <= 2; i++) if (!(D.flat[(Y + j) * n + X + i] === D.flat[(Y + j) * n + X + i])) return true; return false; };
     const src = pk.filter((p, i) => !pk.some((q, j) => j < i && Math.hypot(q.x - p.x, q.y - p.y) < 3)).slice(0, 500)
@@ -5908,7 +5923,7 @@ function drawScan() {
 
 /* ---------- v0.50: animate the movers, pass by pass ----------
    For any field: the moving stars that ARCNAVE's searches measured (🔭 deep search, ◐ difference images, 🎯 motion scan,
-   🔍 bright stars; if none has run yet, 🔍 and 🔭 run first) are played as a film. One timer steps through the passes:
+   🔍 bright stars; if none has run yet, 🔍 and 🔭 run first) are played as a video. One timer steps through the passes:
    the sky shows each pass's image (time machine view), and every mover's MEASURED track grows pass by pass, with a marker
    gliding to its new place. A card shows a small cut-out per mover (the same window in every pass, one brightness scale),
    so the star itself is seen to shift against its neighbours. Positions are measurements (frame by frame, lined up on
@@ -5917,8 +5932,8 @@ function drawScan() {
    searches' own (known mover / unconfirmed candidate). */
 const MOVIE = { on: false, timer: 0, e: 0, t0: 0, step: 1400, movers: [], run: -1, prevMode: null, tiles: [], spot: true, off: null,
   mo: false, follow: false, fi: 0 };   // v0.55: mo = motion only (the sky hidden, the measured tracks alone); follow = the view goes mover by mover
-// v0.57.8: the film's tracks (trackAcross, 0.1-0.5 s each, for 🔍's stars and the catalogues' movers) are worked out one at
-// a time with pauses before the film starts; movieMovers() then reuses them. Same function on the same images and settings
+// v0.57.8: the video's tracks (trackAcross, 0.1-0.5 s each, for 🔍's stars and the catalogues' movers) are worked out one at
+// a time with pauses before the video starts; movieMovers() then reuses them. Same function on the same images and settings
 // (any re-alignment, new run or fitter change means they are worked out again).
 const TRK = { key: '', m: new Map() };
 const msObj = fl => fl.gaia && fl.label === 'known' ? gaiaObj(fl.gaia) : { ra0: fl.ra, dec0: fl.dec, ep: epMid(MS.res.passes[0]), pmra: 0, pmdec: 0, noCat: true };
@@ -5959,7 +5974,7 @@ function movieMovers() {
     list.push({ name: name || `Moving star ${list.length + 1}`, label, src, mu, dir, cw: fl && fl.cw, cwNear: fl && fl.cwNear, pm: fl && fl.pm, how: (fl && fl.how) || 'measured', catPm: fl && fl.catPm, slow: fl && fl.slow,
       // v0.55 U4: a search's own error (its frame-by-frame fit) and its Gaia match, for the SPHEREx vs catalogue row
       smu: fl ? (fl.smu ?? (fl.ff && fl.ff.fit ? fl.ff.fit.smu : fl.fff && fl.fff.fit ? fl.fff.fit.smu : fl.smu)) : undefined, gaia: fl && fl.gaia,
-      satNote: fl && fl.satNote,   // v0.55: "13 of 17 images" when a saturated star is shown by its catalogue motion instead
+      tnote: fl && fl.tnote, satNote: fl && fl.satNote,   // v0.55: "13 of 17 images" when a saturated star is shown by its catalogue motion instead
       // v0.55: a frame-by-frame pass keeps its measured offsets (E, N), their errors and the parallax shift, for the epochs chart
       passes: passes.map(q => ({ e: q.e, ra: q.ra, dec: q.dec, g: F.skyToGrid(q.ra, q.dec, grid), mjd: q.mjd ?? null,
         E: q.E ?? null, N: q.N ?? null, sE: q.sE ?? null, sN: q.sN ?? null, sE0: q.sE0 ?? null, pE: q.pE || 0, pN: q.pN || 0 })) });
@@ -6026,6 +6041,13 @@ function movieMovers() {
   };
   if (P > 1 && GAIA.data) GAIA.data.stars.filter(s => s.pmra != null && gPm(s) * days / 365.25 >= 1).forEach(s => catAdd(gaiaObj(s), 'Gaia DR3 ' + s.id, '★ Gaia', gPm(s), { gaia: s }));
   if (P > 1 && CW.data) CW.src.filter(s => !s.twinOf && cwMover(s) && cwPm(s) * days / 365.25 >= 1).forEach(s => catAdd(cwObj(s), 'CatWISE ' + s.name, '◆ WISE', cwPm(s), { cw: s }));
+  // v0.57.18: the field's own test target is always in the video. When no search and no catalogue list brought it (WISE 0855:
+  // too faint for a pass-by-pass track, and CatWISE may not answer), its known motion is shown, dashed, and said to be so.
+  { const T0 = S.ct && CHALLENGE[S.ct];
+    if (P > 1 && T0 && T0.pmra != null && !list.some(m => m.name && m.name.indexOf(T0.name) === 0)) {
+      const pm = Math.hypot(T0.pmra, T0.pmdec) / 1000, exp = S.eps.map((_, e) => { if (!frameOf(e)) return null; const p = ctAt(T0, epMid(e)); return { e, ra: p[0], dec: p[1] }; }).filter(Boolean);
+      if (exp.length >= 2 && exp.every(q => inField(F.skyToGrid(q.ra, q.dec, grid)))) add(T0.name, 'predicted', '★ catalogue', exp, pm, dirOf(T0), { pm, catPm: pm, how: 'predicted',
+        tnote: `Its known path (${pm.toFixed(2)}″/yr): too faint to see in one image. ARCNAVE measures it from all the images together; the result is on its card.` }); } }
   // nothing moves enough here: the field's fastest Gaia stars, as Gaia predicts them (clearly "too small to measure")
   if (P > 1 && !list.length && GAIA.data) GAIA.data.stars.filter(s => s.pmra != null && gPm(s) >= 0.1 && s.g < 17).sort((a, b) => gPm(b) - gPm(a)).slice(0, 3)
     .forEach(s => catAdd(gaiaObj(s), 'Gaia DR3 ' + s.id, '★ Gaia', gPm(s), { gaia: s, slow: true }));
@@ -6040,12 +6062,20 @@ function movieFromTo(m) {
     (tot < 6.2 ? ` (${(tot / 6.15).toFixed(2)} of a SPHEREx pixel)` : '');
 }
 function movieShowPass(e) {
-  if (multi() && S.seq.length) { const i = S.seq.findIndex(x => x.e === e && !x.extra); S.ti = i >= 0 ? i : S.seq.findIndex(x => x.e === e); }
+  if (multi() && S.seq.length) {
+    // v0.57.18: every pass of the video in the same colour, so that only what moves changes between them: the matched set
+    // of images with the longest wavelength (bright stars saturate least there, cool movers are brightest). It used to show
+    // the image that came first in time in each pass: Barnard's Star at 4.9 µm in one pass and 3.4 µm in the next.
+    if (MOVIE.slotRun !== S.run) { MOVIE.slotRun = S.run; MOVIE.slot = -1; let best = -1;
+      S.slots.forEach((sl, k) => { const ims = (sl || []).filter(Boolean); if (ims.length < S.eps.length) return; const lam = Math.min(...ims.map(im => im.lam || 0)); if (lam > best) { best = lam; MOVIE.slot = k; } }); }
+    const im = MOVIE.slot >= 0 && S.slots[MOVIE.slot] ? S.slots[MOVIE.slot][e] : null;
+    let i = im ? S.seq.findIndex(x => x.im === im) : -1; if (i < 0) i = S.seq.findIndex(x => x.e === e && !x.extra);
+    S.ti = i >= 0 ? i : S.seq.findIndex(x => x.e === e); }
   S.ei = e; updateLabels(); markStrip(); refreshSoon();
 }
 function movieStep(d) {
   const P = S.eps.length, was = MOVIE.e; MOVIE.e = ((MOVIE.e + d) % P + P) % P; MOVIE.t0 = performance.now();
-  if (d > 0 && MOVIE.e < was) MOVIE.fi++;   // v0.55: after a full run through the passes, the next mover (v0.56: on stage too, not only when following)
+  if (d > 0 && MOVIE.e < was && !MOVIE.pin) MOVIE.fi++;   // v0.55: after a full run through the passes, the next mover (v0.56: on stage too, not only when following)
   movieShowPass(MOVIE.e); movieTiles(); if (MOVIE.follow) movieFollow();
 }
 // v0.55 follow: the view centres on one mover, zoomed so its whole track fills about a third of the screen
@@ -6053,14 +6083,18 @@ function movieFollow(first) {
   const m = movieStageMover(); if (!m || !S.al) return;   // v0.56: the mover on stage
   const ra = m.passes.map(q => q.ra), de = m.passes.map(q => q.dec), cd = Math.cos(de[0] * Math.PI / 180);
   const span = Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de));
-  try { const fov = Math.max(0.025, Math.min(0.2, span * 3)); S.al.setFov(fov);
+  // v0.57.18: close enough that the whole track is about 80 screen pixels long, so it is drawn at its true size and the ring
+  // sits on the star (it was 3 times the track: a 6" track was 20 pixels, drawn several times longer than real)
+  try { const fov = Math.max(0.028, Math.min(0.2, Math.max(span * 3, span * innerWidth / 80))); S.al.setFov(fov);
     // v0.56: on a wide screen the card covers the left side, so the mover goes in the middle of the sky that is left
     const cr = $('card') && !$('card').hidden && innerWidth > 700 ? $('card').getBoundingClientRect() : null, shift = cr && cr.left < 60 && cr.right < innerWidth * 0.6 ? cr.right / 2 : 0;
-    S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2 + shift * (S.al.getFov()[0] / innerWidth) / cd, (Math.max(...de) + Math.min(...de)) / 2); } catch { /* keep the view */ }
+    S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2 + shift * (S.al.getFov()[0] / innerWidth) / cd, (Math.max(...de) + Math.min(...de)) / 2);
+    if (innerWidth <= 700) { const c0 = S.al.getRaDec(), fv = S.al.getFov()[0]; S.al.gotoRaDec(c0[0], c0[1] - 0.22 * fv * innerHeight / innerWidth); }   // phones: above the card sheet
+  } catch { /* keep the view */ }
   const lab = document.getElementById('mvlab'); if (lab && first !== undefined) lab.dataset.follow = m.name;
   refreshSoon();
 }
-// back to the view that shows every mover (as when the film started)
+// back to the view that shows every mover (as when the video started)
 function movieFrame() {
   const ms = MOVIE.movers; if (!ms.length || !S.al) return; const ra = ms.map(m => m.passes[0].ra), de = ms.map(m => m.passes[0].dec), cd = Math.cos(S.field.dec * Math.PI / 180);
   try { S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2, (Math.max(...de) + Math.min(...de)) / 2); S.al.setFov(Math.min(S.field.size * 1.1, Math.max(0.08, 3.2 * Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de))))); } catch { /* keep */ }
@@ -6068,7 +6102,7 @@ function movieFrame() {
 }
 function moviePlay(on) {
   clearInterval(MOVIE.timer); MOVIE.timer = 0;
-  if (on) MOVIE.timer = setInterval(() => { if (!MOVIE.on || MOVIE.run !== S.run || !(S.sel && S.sel.movie)) return movieStop(true); movieStep(1); }, MOVIE.step);   // another card opened: the film stops
+  if (on) MOVIE.timer = setInterval(() => { if (!MOVIE.on || MOVIE.run !== S.run || !(S.sel && S.sel.movie)) return movieStop(true); movieStep(1); }, MOVIE.step);   // another card opened: the video stops
   const b = document.getElementById('mvplay'); if (b) { b.textContent = on ? 'Pause' : 'Play'; b.setAttribute('aria-pressed', String(on)); }
 }
 function movieStop(keepCard) {
@@ -6079,15 +6113,15 @@ async function movieStart() {
   if (!S.field || S.eps.length < 2) { toast('An animation needs at least two passes of this field.', 5000); return; }
   movieStop(true);
   const c = $('card'), run = S.run;
-  // v0.56: every search the film needs runs first, unless it already ran on this field: 🔍 bright stars, 🔭 deep search and
-  // 🎯 motion scan (faint movers, all images added up along 625 trial motions), so bright and faint movers share one film
+  // v0.56: every search the video needs runs first, unless it already ran on this field: 🔍 bright stars, 🔭 deep search and
+  // 🎯 motion scan (faint movers, all images added up along 625 trial motions), so bright and faint movers share one video
   const ran = R => R.res && R.res.run === S.run, todo = [[MS, '🔍 Find moving stars', motionSearch], [DS, '🔭 Deep search', deepSearch], [TSC, '🎯 Motion scan (faint stars)', motionScan]].filter(([R]) => !ran(R));
   if (todo.length) {
-    c.replaceChildren(h('h3', {}, '🎬 Finding the moving stars first'), h('p', {}, `Running ${todo.map(t => t[1]).join(', then ')} on every pass of this field, then the film starts with every mover they find.`)); c.hidden = false;
+    c.replaceChildren(h('h3', {}, '🎬 Finding the moving stars first'), h('p', {}, `Running ${todo.map(t => t[1]).join(', then ')} on every pass of this field, then the video starts with every mover they find.`)); c.hidden = false;
     if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card');
-    for (const [R, , fn] of todo) { await fn(); if (run !== S.run || R.stop) return; }   // v0.55 U9: Cancel stops the film too
+    for (const [R, , fn] of todo) { await fn(); if (run !== S.run || R.stop) return; }   // v0.55 U9: Cancel stops the video too
   }
-  // v0.54: the Gaia and WISE movers join the film, so both catalogues must be here (at most 45 s; without them the film
+  // v0.54: the Gaia and WISE movers join the video, so both catalogues must be here (at most 45 s; without them the video
   // shows what the searches measured)
   await Promise.race([Promise.all([Promise.resolve(gaiaLoad()).catch(() => {}), Promise.resolve(cwLoad()).catch(() => {})]), sleep(45000)]); if (run !== S.run) return;
   await movieWarm(() => run === S.run); if (run !== S.run) return;
@@ -6096,11 +6130,20 @@ async function movieStart() {
   // zoom so that every mover is on screen (or the whole field when there is none)
   const ms = MOVIE.movers; if (ms.length) { const ra = ms.map(m => m.passes[0].ra), de = ms.map(m => m.passes[0].dec), cd = Math.cos(S.field.dec * Math.PI / 180);
     S.al.gotoRaDec((Math.max(...ra) + Math.min(...ra)) / 2, (Math.max(...de) + Math.min(...de)) / 2);
-    S.al.setFov(Math.min(S.field.size * 1.1, Math.max(0.08, 3.2 * Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de))))); }   // room around them: the side panels cover the edges, and v0.54's stretched paths need room
+    // v0.57.17: the image is seen only between the side panels, so the room left around the movers follows that share of the
+    // window (it was a fixed 3.2: on 1280 to 1500px screens the first mover sat half under the controls)
+    const hid = document.body.classList.contains('clearv'), pn = document.querySelector('.panel');
+    const seen = innerWidth < 1100 ? 0.5 : Math.max(0.25, (innerWidth - (pn && !hid && !document.body.classList.contains('lcol') ? pn.getBoundingClientRect().width : 0) - (hid ? 0 : Math.min(500, Math.max(380, 0.3 * innerWidth)))) / innerWidth);
+    S.al.setFov(Math.min(S.field.size * 1.1, Math.max(0.08, Math.max(3.2, 1 / (0.62 * seen)) * Math.max((Math.max(...ra) - Math.min(...ra)) * cd, Math.max(...de) - Math.min(...de))))); }   // room around them: the side panels cover the edges, and v0.54's stretched paths need room
   else S.al.gotoRaDec(S.field.ra, S.field.dec);
   // v0.54 phones: the card sheet covers the lower half of the sky, so the movers are put in the upper part (north is up)
   if (ms.length && innerWidth <= 700) { try { const c0 = S.al.getRaDec(), fv = S.al.getFov()[0]; S.al.gotoRaDec(c0[0], c0[1] - 0.22 * fv * innerHeight / innerWidth); } catch { /* keep the centre */ } }
-  movieCard(); movieShowPass(0); movieTiles();
+  // v0.57.18: on a test target's field the video opens on the target itself and stays on it (Follow, pinned), close enough
+  // that its own shift from pass to pass is seen. Follow off shows every mover of the field again.
+  if (MOVIE.pin) { MOVIE.pin = false; MOVIE.follow = false; }
+  { const T = S.ct && CHALLENGE[S.ct], sl = movieStageList(), ti = T ? sl.findIndex(m => m.name && m.name.indexOf(T.name) === 0) : -1;
+    if (ti >= 0) { MOVIE.fi = ti; MOVIE.follow = true; MOVIE.pin = true; } }
+  movieCard(); movieShowPass(0); movieTiles(); if (MOVIE.pin) movieFollow(true);
   if (!matchMedia('(prefers-reduced-motion: reduce)').matches) moviePlay(true);
 }
 /* v0.55 line of epochs: for one mover, how far it is along its direction of motion in each pass (″, against the date),
@@ -6151,11 +6194,11 @@ function movieCard() {
   const lab = h('p', { class: 'mvlab', id: 'mvlab' });
   c.append(h('h3', {}, '🎬 Moving stars, pass by pass'),
     h('p', {}, (() => { const meas = ms.filter(m => m.how !== 'predicted').length, pred = ms.length - meas, passTxt = `${S.eps.length} passes (${S.eps.map(ep => fmtMonth(ep.t0)).join(', ')})`;
-      if (!ms.length) return `No moving star was found in this field, so the film shows the ${passTxt} with nothing marked: like most of the sky, every star here stays put.`;
-      if (ms.every(m => m.slow)) return `No star here moves enough for SPHEREx to see: Gaia's fastest here move ${ms.map(m => m.catPm.toFixed(2) + '″').join(', ')} per year, a few hundredths of a SPHEREx pixel between the passes. The film shows where Gaia predicts them in each of the ${passTxt}, drawn much longer so the path can be seen (it says how much). SPHEREx cannot measure motions this small.`;
+      if (!ms.length) return `No moving star was found in this field, so the video shows the ${passTxt} with nothing marked: like most of the sky, every star here stays put.`;
+      if (ms.every(m => m.slow)) return `No star here moves enough for SPHEREx to see: Gaia's fastest here move ${ms.map(m => m.catPm.toFixed(2) + '″').join(', ')} per year, a few hundredths of a SPHEREx pixel between the passes. The video shows where Gaia predicts them in each of the ${passTxt}, drawn much longer so the path can be seen (it says how much). SPHEREx cannot measure motions this small.`;
       return `${ms.length} moving star${ms.length === 1 ? '' : 's'} in this field, played through all ${passTxt}: ${meas} measured on the SPHEREx images (solid track)` + (pred ? `, ${pred} as the catalogue predicts it (dashed: too small or too faint to measure here)` : '') + '. A circle marks where each one was in every pass, numbered P1, P2…, so you can follow it from here to there.'; })()),
     lab,
-    // v0.55 U5: save the film (GIF, WebM) and its movers (CSV, JSON)
+    // v0.55 U5: save the video (GIF, WebM) and its movers (CSV, JSON)
     h('p', { class: 'mvexp' }, h('b', {}, 'Save: '), h('button', { type: 'button', id: 'mvgif', onclick: () => filmGif() }, '🎞 GIF'), ' ',
       window.MediaRecorder ? h('button', { type: 'button', id: 'mvwebm', onclick: () => filmWebm() }, '🎥 WebM') : null, ' ',
       h('button', { type: 'button', id: 'mvcsv', onclick: () => filmTable('csv') }, 'Movers CSV'), ' ', h('button', { type: 'button', id: 'mvjson', onclick: () => filmTable('json') }, 'Movers JSON')),
@@ -6166,11 +6209,11 @@ function movieCard() {
       h('button', { id: 'mvspot', 'aria-pressed': String(MOVIE.spot), onclick: ev => { MOVIE.spot = !MOVIE.spot; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.spot)); ev.currentTarget.textContent = MOVIE.spot ? '🔦 Spotlight on' : '🔦 Spotlight off'; } }, MOVIE.spot ? '🔦 Spotlight on' : '🔦 Spotlight off'),
       // v0.55: motion only (the sky hidden: only the measured places, errors and tracks) and follow (the view goes mover by mover)
       h('button', { id: 'mvmo', 'aria-pressed': String(MOVIE.mo), title: 'Hide the sky and show only what moved: the place measured in each pass, its error and the track', onclick: ev => { MOVIE.mo = !MOVIE.mo; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.mo)); refreshSoon(); } }, '✦ Motion only'),
-      ms.length ? h('button', { id: 'mvfol', 'aria-pressed': String(MOVIE.follow), title: 'Zoom to one mover at a time; the next one after each full run through the passes', onclick: ev => { MOVIE.follow = !MOVIE.follow; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.follow)); if (MOVIE.follow) movieFollow(true); else movieFrame(); movieTiles(); } }, '🎯 Follow') : null),
+      ms.length ? h('button', { id: 'mvfol', 'aria-pressed': String(MOVIE.follow), title: 'Zoom to one mover at a time; the next one after each full run through the passes', onclick: ev => { MOVIE.follow = !MOVIE.follow; MOVIE.pin = false; ev.currentTarget.setAttribute('aria-pressed', String(MOVIE.follow)); if (MOVIE.follow) movieFollow(true); else movieFrame(); movieTiles(); } }, '🎯 Follow') : null),
     ms.length ? h('div', { class: 'mvgrid' }, ...MOVIE.tiles.map(t => t.el)) : null,
     ms.length > 6 ? h('p', { style: 'font-size:.8rem' }, `The first 6 are shown as cut-outs; all ${ms.length} are animated on the sky.`) : null,
     ms.length ? h('ul', { class: 'mslist' }, ...ms.map((m, i) => h('li', {}, h('b', { style: `color:${movieCol(m)}` }, `${i + 1}. ${m.name}`), ` ${m.mu.toFixed(2)}″ per year toward the ${m.dir} (found by ${m.src}); `,
-      h('span', { class: 'badge ' + (m.label === 'target' ? 'ok' : m.label === 'predicted' ? 'near' : msLabel(m)[0]) }, m.label === 'target' ? '✓ Known mover: the NASA target' : m.label === 'predicted' ? (m.satNote ? `Too bright for SPHEREx (saturated in ${m.satNote}): ${m.src.replace(/^\S+ /, '')}'s motion shown, ${m.catPm.toFixed(2)}″/yr` : `Predicted by ${m.src.replace(/^\S+ /, '')} (${m.catPm.toFixed(2)}″/yr): ${m.slow ? 'too small' : 'too faint or too small'} for SPHEREx to measure here`) : m.how === 'measured' && m.catPm != null ? `✓ Measured here${m.smu ? ` (${m.mu.toFixed(2)} ± ${m.smu.toFixed(2)}″/yr, every image)` : ''}; ${m.src.replace(/^\S+ /, '')} agrees (${m.catPm.toFixed(2)}″/yr)` : msLabel(m)[1]),
+      h('span', { class: 'badge ' + (m.label === 'target' ? 'ok' : m.label === 'predicted' ? 'near' : msLabel(m)[0]) }, m.label === 'target' ? '✓ Known mover: the NASA target' : m.label === 'predicted' ? (m.tnote ? m.tnote : m.satNote ? `Too bright for SPHEREx (saturated in ${m.satNote}): ${m.src.replace(/^\S+ /, '')}'s motion shown, ${m.catPm.toFixed(2)}″/yr` : `Predicted by ${m.src.replace(/^\S+ /, '')} (${m.catPm.toFixed(2)}″/yr): ${m.slow ? 'too small' : 'too faint or too small'} for SPHEREx to measure here`) : m.how === 'measured' && m.catPm != null ? `✓ Measured here${m.smu ? ` (${m.mu.toFixed(2)} ± ${m.smu.toFixed(2)}″/yr, every image)` : ''}; ${m.src.replace(/^\S+ /, '')} agrees (${m.catPm.toFixed(2)}″/yr)` : msLabel(m)[1]),
       h('div', { style: 'font-size:.82rem;margin-top:2px' }, (m.how === 'predicted' ? 'Predicted ' : 'Moved ') + movieFromTo(m) + '.'),
       movieCat(m) ? catRow(movieCat(m)) : null,   // v0.55 U4
       flagRow(m.passes.filter(q => q.g).map(q => ({ e: q.e, x: q.g[0], y: q.g[1] }))),   // v0.55 U6
@@ -6180,8 +6223,8 @@ function movieCard() {
   if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('card');
 }
 /* ---------- v0.55 U5: export ----------
-   The film as a GIF (the Discovery card's own frame painter and GIF worker, one frame per pass, cropped on the film's main
-   mover) or WebM (the same frames played into MediaRecorder, no library); the film's movers as CSV/JSON (passes, positions,
+   The video as a GIF (the Discovery card's own frame painter and GIF worker, one frame per pass, cropped on the video's main
+   mover) or WebM (the same frames played into MediaRecorder, no library); the video's movers as CSV/JSON (passes, positions,
    μ ± σ, the catalogue and the U4 verdict); a PNG of the sky as on screen. Everything is made on the viewer's device. */
 const EXP = { busy: false, last: null };
 function saveBlob(blob, name) {
@@ -6189,13 +6232,13 @@ function saveBlob(blob, name) {
   EXP.last = { name, size: blob.size, type: blob.type }; toast(`Saved ${name} (${blob.size >= 1048576 ? (blob.size / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(blob.size / 1024)) + ' kB'})`, 4000);
 }
 const expSlug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'field';
-// one mover's SPHEREx vs catalogue numbers, as the film card's row shows them (null: nothing measured to compare)
+// one mover's SPHEREx vs catalogue numbers, as the video card's row shows them (null: nothing measured to compare)
 function movieCat(m) {
   if (m.how !== 'measured' || (m.catPm ?? m.pm) == null) return null;
   return { mu: m.mu, smu: m.smu ?? null, catMu: m.catPm ?? m.pm, catSmu: m.cw ? cwSig(m.cw) : null,
     cat: m.cw || /WISE/.test(m.src) ? 'CatWISE2020' : m.gaia || /Gaia/.test(m.src) ? 'Gaia DR3' : m.label === 'target' ? 'published value' : null };
 }
-// the film as card frames: one per pass, cropped on its main mover (the NASA target, else the first measured one)
+// the video as card frames: one per pass, cropped on its main mover (the NASA target, else the first measured one)
 function filmPlan() {
   if (!S.field || !MOVIE.on) return null;
   const ms = MOVIE.movers, n = S.field.n, main = ms.find(m => m.label === 'target') || ms.find(m => m.how === 'measured') || ms[0];
@@ -6206,7 +6249,7 @@ function filmPlan() {
   half = Math.min(n / 2, half);
   const short = m => m.name.replace(/^Gaia DR3 (\d{4})\d+/, 'Gaia $1…').replace(/ \(.*\)$/, '');
   const frames = S.eps.map((_, e) => { const fr = frameOf(e), im = chosen(e); if (!fr || !im) return null;
-    // v0.56: the main mover is on stage, as in the film: spotlight, the pass before as a dashed ghost with its date, a
+    // v0.56: the main mover is on stage, as in the video: spotlight, the pass before as a dashed ghost with its date, a
     // ring locking on to this pass's place and the dated "here → there" callout
     const ci = main ? main.passes.findIndex(q => q.e === e && q.g) : -1, pq = ci > 0 && main.passes[ci - 1].g ? main.passes[ci - 1] : null;
     const stage = ci >= 0 ? { col: movieCol(main), cur: { x: main.passes[ci].g[0], y: main.passes[ci].g[1] }, prev: pq && { x: pq.g[0], y: pq.g[1], date: movieDate(pq) },
@@ -6219,7 +6262,7 @@ function filmPlan() {
     : cmp ? (cmp.result === 'agrees' ? [`✓ Measured; ${c.cat || 'the catalogue'} agrees`, '#5ff0a0'] : [`Measured; ${c.cat || 'the catalogue'} differs`, '#ffb05a']) : ['Unconfirmed candidate', '#9b8cff'];
   return { title: main ? main.name : 'SPHEREx sky over time', badge, cx, cy, half, frames, ra: sky[0], dec: sky[1], slug: 'film-' + (main ? main.name : 'field'),
     credit: 'Images: NASA SPHEREx via IRSA · Motions: ARCNAVE, Gaia DR3, CatWISE2020 · False colour',
-    fact: main ? `${main.mu.toFixed(2)}${main.smu ? ' ± ' + main.smu.toFixed(2) : ''}″ per year toward the ${main.dir} · ${ms.length} mover${ms.length === 1 ? '' : 's'} in the film` : `${frames.length} passes · no mover`,
+    fact: main ? `${main.mu.toFixed(2)}${main.smu ? ' ± ' + main.smu.toFixed(2) : ''}″ per year toward the ${main.dir} · ${ms.length} mover${ms.length === 1 ? '' : 's'} in the video` : `${frames.length} passes · no mover`,
     note: 'Real SPHEREx images, one per pass. Spotlight: dashed circle = the pass before, ring = this pass, both dated. Other rings: this pass; +: passes before.' + (main && main.how === 'predicted' ? ' Positions are the catalogue\'s prediction, not a measurement.' : '') + ' Not a discovery claim.' };
 }
 async function filmFrames(plan) {
@@ -6228,8 +6271,8 @@ async function filmFrames(plan) {
 }
 async function filmGif() {
   if (EXP.busy) return; const plan = filmPlan();
-  if (!plan || plan.frames.length < 2) { toast('The film needs at least two passes with images loaded.'); return; }
-  EXP.busy = true; toast('Making the film GIF...', 8000);
+  if (!plan || plan.frames.length < 2) { toast('The video needs at least two passes with images loaded.'); return; }
+  EXP.busy = true; toast('Making the video GIF...', 8000);
   try { const { g } = await filmFrames(plan), frames = [];
     // v0.56: between passes the spotlit mover glides (3 short frames) and its ring locks on (2), then the pass holds
     const push = delay => frames.push({ rgba: g.getImageData(0, 0, CARD.W, CARD.H).data, delay });
@@ -6244,10 +6287,10 @@ async function filmGif() {
 }
 async function filmWebm() {
   if (EXP.busy) return; const plan = filmPlan();
-  if (!plan || plan.frames.length < 2) { toast('The film needs at least two passes with images loaded.'); return; }
+  if (!plan || plan.frames.length < 2) { toast('The video needs at least two passes with images loaded.'); return; }
   const type = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'].find(t => window.MediaRecorder && MediaRecorder.isTypeSupported(t));
   if (!type) { toast('This browser cannot record video. Save the GIF instead.'); return; }
-  EXP.busy = true; toast('Recording the film (a few seconds)...', 12000);
+  EXP.busy = true; toast('Recording the video (a few seconds)...', 12000);
   try { const { cv, g } = await filmFrames(plan), rec = new MediaRecorder(cv.captureStream(30), { mimeType: type, videoBitsPerSecond: 3e6 }), parts = [];
     rec.ondataavailable = ev => { if (ev.data && ev.data.size) parts.push(ev.data); };
     const done = new Promise(r => { rec.onstop = r; });
@@ -6263,7 +6306,7 @@ async function filmWebm() {
   } catch (e) { console.error(e); toast('Could not record the video: ' + e.message); }
   EXP.busy = false;
 }
-// the film's movers: every pass of every mover, with μ ± σ, the catalogue's motion and the U4 verdict
+// the video's movers: every pass of every mover, with μ ± σ, the catalogue's motion and the U4 verdict
 function filmRows() {
   return MOVIE.movers.map((m, i) => { const c = movieCat(m), cmp = c ? catCmp(c) : null;
     return { mover: i + 1, name: m.name, label: m.label, foundBy: m.src, how: m.how, muArcsecPerYr: +m.mu.toFixed(4), muErr: m.smu != null ? +m.smu.toFixed(4) : null, direction: m.dir,
@@ -6272,7 +6315,7 @@ function filmRows() {
       passes: m.passes.map(q => ({ pass: q.e + 1, midMjd: +epMid(q.e).toFixed(4), date: fmtDay(epMid(q.e)), ra: +q.ra.toFixed(7), dec: +q.dec.toFixed(7) })) }; });
 }
 function filmTable(kind) {
-  if (!MOVIE.on) { toast('Play the film first (Motion › Animate).'); return; }
+  if (!MOVIE.on) { toast('Press Play as a video first.'); return; }
   const rows = filmRows(), f = S.field, base = `arcnave_film_movers_${f.ra.toFixed(3)}_${f.dec.toFixed(3)}`;
   if (kind === 'json') { saveBlob(new Blob([JSON.stringify({ tool: 'ARCNAVE', version: '0.57.14', made: new Date().toISOString(), field: { ra: f.ra, dec: f.dec },
     passes: S.eps.map((ep, e) => ({ pass: e + 1, midMjd: +epMid(e).toFixed(4), month: fmtMonth(ep.t0) })),
@@ -6322,11 +6365,11 @@ function movieTiles() {
     g.fillStyle = 'rgba(5,7,14,.7)'; g.fillRect(0, 0, SZ, 16); g.fillStyle = '#e6fffb'; g.font = '600 10px Inter,system-ui,sans-serif'; g.fillText(`Pass ${e + 1} · ${fmtMonth(S.eps[e].t0)}`, 4, 11);
   }
 }
-/* v0.56 on stage: the film tells one mover's story at a time, "here on this date, and by the next pass it had gone there".
+/* v0.56 on stage: the video tells one mover's story at a time, "here on this date, and by the next pass it had gone there".
    A spotlight beam falls on it, the place of the pass before stays as a dashed ghost circle with its date, the marker
    glides to the new place and a ring locks on to it, and a callout gives both dates and the true shift (″, measured
    positions; the drawn path may be stretched, the numbers never are). */
-// the order on stage: the NASA target, then what SPHEREx measured, then catalogue predictions (the film's own order otherwise)
+// the order on stage: the NASA target, then what SPHEREx measured, then catalogue predictions (the video's own order otherwise)
 function movieStageList() { const rk = m => m.label === 'target' ? 0 : m.how === 'predicted' ? 2 : 1; return MOVIE.movers.filter(m => m.passes.length >= 2).map((m, j) => [m, j]).sort((a, b) => rk(a[0]) - rk(b[0]) || a[1] - b[1]).map(x => x[0]); }
 function movieStageMover() { const ms = movieStageList(); return ms.length ? ms[MOVIE.fi % ms.length] : null; }
 function movieShift(a, b) {   // from pass a to pass b of one mover, on the sky: ″, direction, days

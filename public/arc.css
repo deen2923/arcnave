@@ -29,7 +29,7 @@
   --z-sky:0;--z-ov:1;--z-frame:2;--z-dock:6;--z-bar:20;--z-sheet:25;--z-drawer:30;--z-intro:40;--z-tour:50;--z-landing:60;--z-coach:70;
   --ease:cubic-bezier(.2,.8,.2,1);
   /* layout */
-  --hb:60px;--sb:32px;--lw:clamp(330px,24vw,392px);--rw:clamp(310px,22vw,370px);
+  --hb:60px;--sb:32px;--lw:clamp(330px,28.5vw,392px);--rw:clamp(310px,22vw,370px);
   /* legacy names still used inline by app.js-generated markup (style="color:var(--dust)" etc.) */
   --void:var(--bg0);--ink:var(--bg1);--glass:var(--surface);--raise:rgba(255,255,255,.045);--line:var(--stroke);--line2:var(--stroke-2);
   --text:var(--fg);--dust:var(--fg-3);--ir:var(--amber);--cy:var(--teal);--vi:var(--violet);--ok:var(--green);--bad:var(--red);--focus:var(--amber);
@@ -1734,3 +1734,67 @@ body:not(.adv) .begstory{display:flex}
    thread (keeping LCD text), so while the page worked (images loading, a search) a panel did not move for up to seconds.
    Now they scroll at once, whatever the page is doing. */
 #card,.strip,:is(#drawer,#tdrawer),#intro,:is(#dcd,#game),#glossp,.acts,html.landing #landing,.els .neorow{will-change:scroll-position}
+
+/* ---------- v0.57.17: the star's own tools in the right panel, next to the star (#deck) ---------- */
+#deck{flex:none;display:grid;gap:5px;padding:.6rem .8rem .7rem;border-bottom:1px solid var(--stroke)}
+#deck[hidden]{display:none}
+.dk-h{display:flex;align-items:baseline;justify-content:space-between;gap:.6rem;min-width:0;margin-bottom:2px}
+.dk-h b{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:var(--t-sm);font-weight:650}
+#deck #dkpos{flex:none;display:inline;min-height:0;height:auto;padding:0 0 1px;border:0;border-bottom:1px dashed rgba(94,234,212,.55);border-radius:0;background:none;box-shadow:none;font:500 .68rem/1.3 var(--f-mono);color:var(--ir-2,#5eead4);white-space:nowrap}
+#deck #dkpos:hover{color:var(--fg);border-bottom-color:var(--fg)}
+.dk-r{display:flex;align-items:center;gap:4px;min-width:0}
+#deck .dk-r button,#deck .dk-b{flex:1 1 auto;display:inline-flex;align-items:center;justify-content:center;gap:.3rem;box-sizing:border-box;min-width:0;min-height:0;height:27px;padding:0 .4rem;border:1px solid var(--stroke);border-radius:8px;background:rgba(255,255,255,.03);box-shadow:none;font:500 .72rem/1 var(--f-ui);color:var(--fg);white-space:nowrap;text-decoration:none;cursor:pointer}
+#deck .dk-r button .ic{width:10px;height:10px;flex:none}
+#deck .dk-r button:hover,#deck .dk-b:hover{border-color:var(--ir-2,#5eead4);background:rgba(94,234,212,.08)}
+#deck .dk-r button[aria-pressed=true]{background:rgba(94,234,212,.18);border-color:var(--ir-2,#5eead4);color:var(--ir-3,#99f6e4)}
+.dk-k{flex:none;font:600 .6rem/1 var(--f-mono);letter-spacing:.06em;text-transform:uppercase;color:var(--fg-3)}
+#dkband{flex:1 1 60px;min-width:44px;height:22px;margin:0 2px}
+#dkbo{flex:none;min-width:4.4em;text-align:right;font:500 .7rem/1 var(--f-mono);color:var(--fg)}
+.dk-t{flex:1 1 0;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font:500 .7rem/1.2 var(--f-mono);color:var(--fg)}
+#deck .dk-r .dk-i{flex:none;width:27px;padding:0;font-size:.85rem}
+:root[data-theme="light"] #deck .dk-r button[aria-pressed=true]{color:#0f766e}
+:root[data-theme="light"] #deck #dkpos{color:#0f766e;border-bottom-color:#0f766e}
+/* tablets and phones: the panels are sheets there, so the tools are one line across the top of the image that scrolls sideways */
+@media(max-width:1099px){
+  #deck{position:fixed;z-index:7;top:calc(var(--hb) + 10px);left:calc(var(--dw) + 24px);right:12px;display:flex;align-items:center;gap:12px;padding:.35rem .5rem;border:1px solid var(--stroke);border-radius:var(--r2);background:rgba(8,13,28,.94);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);overflow-x:auto;scrollbar-width:none}
+  #deck::-webkit-scrollbar{display:none}
+  .dk-h,.dk-r{flex:none;margin:0}.dk-h b{display:none}
+  #dkband{flex:0 0 96px}
+  html.landing #deck,html.embed #deck,body.intro #deck,body.clearv #deck,body.touring #deck{display:none}
+}
+@media(max-width:700px){#deck{left:0;right:0;top:var(--hb);border-radius:0;border-left:0;border-right:0}}
+/* the play bar: its date and caption stay inside the bar when the image area is narrow (they ran under the right panel) */
+/* with a star open, the 90-second story card leaves the controls (Tour in the top bar has it): the five targets and the film move up */
+body.has-field:not(.adv) .begstory{display:none}
+/* before a star is open, only step 1 (where to look) is shown: the ways to watch and the result have nothing to act on yet */
+body:not(.has-field):not(.adv):not(.touring) :is(#g-watch,#g-result){display:none}
+/* start page: the RA / Dec box sits right under the sentence, the one example under it; no language list (English only) */
+#landing .lp-hero .lp-q{margin-top:1.4rem}
+/* the five test targets, compact, at the top of the start page */
+#landing .lp-t5{width:100%;margin:.2rem 0 0}
+#landing .lp-t5h{margin:0 0 .6rem;font-size:var(--t-sm);color:var(--fg-3)}
+#landing .lp-t5l{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+#landing .lp-tc{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:.7rem;box-sizing:border-box;width:100%;min-width:0;min-height:0;padding:.5rem .6rem;border-radius:var(--r2);border:1px solid var(--stroke-2);background:rgba(255,255,255,.03);box-shadow:none;text-align:left;white-space:normal;transition:border-color var(--d2),background var(--d2),transform var(--d2)}
+#landing .lp-tc:hover{border-color:var(--ir-2,#5eead4);background:rgba(94,234,212,.07);transform:translateY(-1px)}
+#landing .lp-tc img{flex:none;width:52px;height:52px;border-radius:8px;object-fit:cover}
+#landing .lp-tc span{display:grid;gap:3px;flex:1 1 auto;min-width:0;text-align:left;justify-items:start}
+#landing .lp-tc b{font:600 .9rem/1.2 var(--f-ui);color:var(--fg)}
+#landing .lp-tc small{font:400 .72rem/1.3 var(--f-ui);color:var(--fg-3)}
+@media(max-width:1000px){#landing .lp-t5l{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){#landing .lp-t5l{grid-template-columns:1fr}.lp-hero .lp-t5{order:4}.lp-hero .lp-q{order:4;margin-top:1.2rem}.lp-hero .lp-scope{order:5}}
+@media(prefers-reduced-motion:reduce){#landing .lp-tc:hover{transform:none}}
+#landing .lp-nav .langsel{display:none}
+/* whole-sky screen: one explanation, in the right panel where explanations live (it lay on top of the map, and the panel
+   said the same again); the list of steps shows once something has run */
+@media(min-width:1100px){
+  body:has(#skyinfo:not([hidden])) #rempty{display:none}
+  body:has(#skyinfo:not([hidden])):has(#card[hidden]) .rdock>section,body:not(.ran) .rdock>section{display:none}
+  body:has(#card:not([hidden])) .skycap{display:none}
+  .skycap,body.waiting .skycap,body.lcol .skycap,body.clearv .skycap{left:auto;right:0;top:calc(var(--hb) + 58px);box-sizing:border-box;width:var(--rw);z-index:calc(var(--z-dock) + 1);padding:1rem 1rem 0;border:0;border-radius:0;background:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+  body.clearv .skycap{display:none}
+}
+/* the right panel's heading stays on one line when the panel is at its narrowest (it wrapped into two, button too) */
+.rhead b,.rhead .gloss{white-space:nowrap}.rhead .gloss{flex:none}
+@media(min-width:1100px) and (max-width:1500px){.rhead{gap:.5rem;padding-inline:.8rem}.rhead>svg{display:none}.rhead b{letter-spacing:.08em}}
+.hud .hwhen{min-width:0}
+.hud .hsub{white-space:normal;text-align:right}

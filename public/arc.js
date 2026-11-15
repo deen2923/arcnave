@@ -61,7 +61,7 @@
   const hideIntro = () => { if (typeof closeIntro === 'function') closeIntro(); else { document.body.classList.remove('intro'); $('intro').hidden = true; } };
   function launch() {
     showTool(); hideIntro();
-    loadTool().then(() => ready(() => { hideIntro(); $('go').click(); setTimeout(() => coach.auto(), 900); }));
+    loadTool().then(() => ready(() => { hideIntro(); $('go').click(); }));   // v0.57.17: no pop-up tips on arrival: the right panel says where to type (Tour, Quick start still has them)
   }
   function launchCt(id) { showTool(); hideIntro(); loadTool().then(() => ready(() => { hideIntro(); runChallenge(id); })); }
   function launchTour(kind) { showTool(); loadTool().then(() => ready(() => window.Tour && Tour.start(kind))); }
@@ -73,6 +73,11 @@
       if (typeof S === 'undefined') return Date.now() - t0 < ms && setTimeout(go, 250);
       const running = Object.values(S.ag || {}).some(a => a && a.state === 'run'); if (running) started = true;
       if (S.report && (started || !running)) return fn(); if (Date.now() - t0 < ms) setTimeout(go, 250); }; go(); };
+  // an Advanced group of the controls, shown open with one of its buttons in focus (as 'share' below does)
+  const openGrp = (id, focusId) => { const g = $(id); if (!g) return null; if (!document.body.classList.contains('adv')) setLevel(true);
+    g.classList.remove('shut'); const gh = g.querySelector('.gh'); if (gh) gh.setAttribute('aria-expanded', 'true');
+    if (typeof phoneSheet === 'function' && innerWidth <= 700) phoneSheet('panel'); g.scrollIntoView({ block: 'center' });
+    const b = focusId && $(focusId); if (b) b.focus({ preventScroll: true }); return b || null; };
   function launchTry(kind, ct) {
     showTool(); hideIntro();
     loadTool().then(() => ready(() => {
@@ -91,6 +96,72 @@
       });
     }));
   }
+  /* ---------- v0.57.17: the star's own tools next to the star (#deck) ----------
+     What the challenge asks for, as the working controls themselves, on screen with the star: video, movers, add / subtract,
+     the 102 bands, the six detectors, spectrum, Gaia / WISE, flags, data release, link, embed, Astropy, Aladin (RA / Dec
+     and field of view are in the top bar). Each one drives the app's own buttons and functions and shows their state; nothing is measured here. */
+  const deck = $('deck');
+  if (deck) {
+    const tabTo = m => { const t = document.querySelector(`[role=tab][data-m="${m}"]`); if (t) t.click(); };
+    const film = () => typeof MOVIE !== 'undefined' && MOVIE.on;
+    const stopFilm = () => { if (film() && typeof movieStop === 'function') movieStop(); };   // the video's card goes with it
+    const on = id => { const b = $(id); return !!b && b.getAttribute('aria-pressed') === 'true'; };
+    const tap = id => { const b = $(id); if (b) b.click(); return b; };
+    const say = (t, ms = 6500) => { if (typeof toast === 'function') toast(t, ms); };
+    const target = () => (S.ct && typeof CHALLENGE !== 'undefined' && CHALLENGE[S.ct]) || null;
+    const dkb = $('dkband'), dkbo = $('dkbo'); let held = false, relOf = null, relTxt = ['none', ''], named = null;
+    const ACT = {
+      radec: () => { const q = $('q'); if (!q) return; if (S.field) q.value = `${S.field.ra.toFixed(4)} ${S.field.dec.toFixed(4)}`; q.focus(); q.select(); say('Type RA and Dec in degrees (for example 190 -4), or a name, then press Fly to.'); },
+      video: () => { if (film()) return movieStop(); if (typeof movieStart === 'function') movieStart(); },
+      step: () => { stopFilm(); tabTo('time'); say('Step by step: every image of this patch, one by one, in time order. Use the play bar on the image.'); },
+      blink: () => { stopFilm(); tabTo('blink'); say('Blink: the first and the last pass, one after the other. Whatever moved jumps.'); },
+      changes: () => { stopFilm(); tabTo('change'); say('Changes: whatever moved or changed between the passes is ringed and explained.'); },
+      add: () => { stopFilm(); if (S.mode !== 'time') tabTo('time'); tap('deepb'); },
+      sub: () => { stopFilm(); tabTo('diff'); say('Subtracted: the first pass taken away from the last. Stars cancel; a mover leaves a light and a dark blob.'); },
+      spec: () => { const t = target();
+        if (t && typeof spectrumAt === 'function' && !(S.sel && S.sel.spec)) { const pos = ctAt(t, S.eps.length ? epMid(S.eps.length - 1) : 61040); stopFilm();
+          spectrumAt(pos[0], pos[1], { name: t.name, posAt: m => ctAt(t, m) }); say(`Reading the spectrum of ${t.name}: about 100 colours, straight from NASA's archive (about a minute).`); return; }
+        tap('specb'); if (on('specb')) say('Spectrum is on: tap any star on the image to read about 100 colours of it (about a minute).'); },
+      gaia: () => { tap('gaiab'); },
+      wise: () => { tap('cwb'); },
+      flags: () => { if (!on('flagsb')) { stopFilm(); if (S.mode !== 'time' && S.mode !== 'blink') tabTo('time'); say('Flags: the pixels the SPHEREx pipeline flagged (saturation, ghosts, cosmic rays) are coloured on the image.'); } tap('flagsb'); },
+      rel: () => { if (typeof relCheck !== 'function') return; say("Asking NASA's archive whether new SPHEREx images of this patch are out...", 20000);
+        Promise.resolve(relCheck()).then(() => { if (S.relSaid) say(S.relSaid + (S.relCheck && S.relCheck.new && !S.relCheck.stale ? ' Advanced, Data release, loads them.' : ''), 10000); }).catch(() => { /* said in the panel */ }); },
+      link: () => { tap('share'); },
+      embed: () => { tap('embb'); },
+      py: () => { tap('pyb'); }
+    };
+    const set = (el, k, v) => { if (el && el.getAttribute(k) !== v) el.setAttribute(k, v); };
+    const txt = (el, v) => { if (el && el.textContent !== v) el.textContent = v; };
+    const sync = () => {
+      if (typeof S === 'undefined' || html.classList.contains('landing')) return;
+      if (!document.body.classList.contains('ran') && S.ag && Object.keys(S.ag).length) document.body.classList.add('ran');
+      const f = S.field; if (deck.hidden !== !f) { deck.hidden = !f; document.body.classList.toggle('has-field', !!f); } if (!f) return;
+      const t = target(), m = S.mode, fl = film();
+      if (t) named = { ra: f.ra, dec: f.dec, name: t.name };
+      txt($('dkn'), t ? t.name : named && Math.abs(named.ra - f.ra) < 2e-4 && Math.abs(named.dec - f.dec) < 2e-4 ? named.name : 'This patch of sky');
+      txt($('dkpos'), `RA ${f.ra.toFixed(3)}° Dec ${f.dec >= 0 ? '+' : '−'}${Math.abs(f.dec).toFixed(3)}°`);
+      const deep = !!(S.sel && S.sel.deep), st = { video: fl, step: !fl && !deep && m === 'time', blink: !fl && m === 'blink', changes: m === 'change', add: deep, sub: m === 'diff',
+        spec: on('specb') || !!(S.sel && S.sel.spec), gaia: on('gaiab'), wise: on('cwb'), flags: on('flagsb') };
+      qa('[data-dk]', deck).forEach(b => { const k = b.dataset.dk; if (k in st) set(b, 'aria-pressed', String(st[k])); });
+      if (!held) { if (+dkb.value !== S.band) dkb.value = S.band; txt(dkbo, (+S.band).toFixed(2) + ' µm'); }
+      if (S.images !== relOf) { relOf = S.images; const ims = S.images || [], rel = [...new Set(ims.map(releaseOf).filter(Boolean))].sort();
+        relTxt = [rel.length ? `${rel.join(' + ')} · newest ${fmtDay(Math.max(...ims.map(i => i.mjd)))}` : 'none', rel.length ? `SPHEREx data releases of the ${ims.length} images of this patch: ${rel.join(', ')}. Newest image: ${fmtDay(Math.max(...ims.map(i => i.mjd)))}. A new release is searched by itself, with no change to ARCNAVE.` : 'The SPHEREx data releases these images come from'];
+      }
+      txt($('dkrel'), relTxt[0]); set($('dkrel'), 'title', relTxt[1]);
+      const al = $('aladinl'), d = $('dkal'); if (al && d && d.getAttribute('href') !== al.getAttribute('href')) d.setAttribute('href', al.getAttribute('href'));
+    };
+    dkb.addEventListener('input', () => { held = true; dkbo.textContent = (+dkb.value).toFixed(2) + ' µm'; });
+    dkb.addEventListener('change', () => { held = false; const b = $('band'); if (!b || typeof S === 'undefined' || !S.field) return; b.value = dkb.value; b.dispatchEvent(new Event('input')); b.dispatchEvent(new Event('change')); });
+    deck.addEventListener('click', e => {
+      const b = e.target.closest('[data-dk]'); if (!b || typeof S === 'undefined') return;
+      const k = b.dataset.dk, fn = ACT[k]; if (!fn) return;
+      if (k !== 'radec' && !S.report) { say(Object.values(S.ag || {}).some(a => a && a.state === 'run') ? 'The images of this patch are still arriving: one moment.' : 'Open a patch of sky first.'); return; }
+      try { fn(b); } catch (err) { say('That did not open here.'); }
+      setTimeout(sync, 80); setTimeout(sync, 700);
+    });
+    setInterval(sync, 400);
+  }
   function showLanding() {
     if (html.classList.contains('embed')) return;
     html.classList.add('landing'); landing.scrollTop = 0; startStars();
@@ -106,6 +177,8 @@
       }
       // v0.55: the hero picture: the real film frame, or the real Lindbloom blink (its 366 kB GIF loads only when asked for)
       const mt = e.target.closest('[data-media]'); if (mt) { setMedia(mt.dataset.media); return; }
+      // v0.57.16: an objective that is answered on this page (the RA/Dec box, the five target cards): go to it
+      const go = e.target.closest('[data-goto]'); if (go) { const el = $(go.dataset.goto); if (el) { el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'center' }); if (el.tagName === 'INPUT') setTimeout(() => el.focus({ preventScroll: true }), reduce ? 0 : 450); } return; }
       const b = e.target.closest('[data-launch],[data-launch-ct],[data-launch-tour],[data-try]'); if (!b) return;
       e.preventDefault();
       if (b.dataset.mode) setLevel(b.dataset.mode === 'adv');   // v0.55: a card that opens the tool in Beginner or Advanced
@@ -147,7 +220,7 @@
         const g = new Image(); g.onload = () => { img.src = g.src; }; g.src = img.dataset.anim; };
       // v0.43: only once the start page is really shown. A link straight into the tool never sees it, so it never downloads
       // or decodes the 358 kB GIF (it did, measured on the tool page); going back to the start page later starts it then.
-      // v0.55: the film frame is the first picture now; the blink's GIF is fetched only when its tab is opened
+      // v0.55: the video frame is the first picture now; the blink's GIF is fetched only when its tab is opened
       blinkStart = () => { if (blinkOn) return; blinkOn = true; swap(); }; }
     // v0.56.1: the hero shows the Lindbloom blink only (no film tab), so it plays once the start page is really shown
     const blinkIfShown = () => { if (!html.classList.contains('landing')) return false; blinkStart(); return true; };
@@ -267,7 +340,7 @@
 
   /* ---------- Beginner / Advanced ---------- */
   function setLevel(adv) {
-    document.body.classList.toggle('adv', adv); store.set('arcnave.level', adv ? 'adv' : 'beg');
+    document.body.classList.toggle('adv', adv); store.set('arcnave.level2', adv ? 'adv' : 'beg');
     qa('[data-lvl]').forEach(b => b.setAttribute('aria-pressed', String((b.dataset.lvl === 'adv') === adv)));
   }
   qa('[data-lvl]').forEach(b => b.onclick = () => {
@@ -275,7 +348,7 @@
     setLevel(adv);
     if (typeof toast === 'function') toast(adv ? `Advanced: ${qa('.adv:not(body):not(dd)').length} more tools and settings, marked with a violet dot.` : 'Beginner: the main tools only, as numbered steps.', 3500);
   });
-  setLevel(store.get('arcnave.level') === 'adv');
+  setLevel(store.get('arcnave.level2') === 'adv');
 
   /* ---------- left panel collapse (desktop) ---------- */
   if ($('pcol')) $('pcol').onclick = () => { document.body.classList.add('lcol'); $('popen').focus(); };
@@ -289,7 +362,7 @@
   };
   qa('[data-share-sheet]').forEach(b => b.onclick = () => $('share').click());
 
-  /* ---------- Light curve in the Measure group: tap a star, and app.js's own light curve runs at the slider's colour ---------- */
+  /* ---------- Brightness over time in the Measure group: tap a star, and app.js's own light curve runs at the slider's colour ---------- */
   // The same route the R Draconis / RW Aurigae cards use (spectrumAt with lcOnly). Arming reuses the Spectrum tap (S.specArm),
   // so the star is picked and centred exactly as for a spectrum.
   let lcArm = false;
@@ -315,7 +388,7 @@
   let lastTool = null;
   const toolLit = () => {
     const card = $('card'), h = card && !card.hidden && card.querySelector('h3'), t = h ? h.textContent : '';
-    const showing = lastTool && (lastTool === 'deepb' ? /^Deep view/.test(t) : /^Spectrum of/.test(t));
+    const showing = lastTool && (lastTool === 'deepb' ? /^Add up images/.test(t) : /^Spectrum of/.test(t));
     if (!showing && card && (card.hidden || t)) lastTool = (lastTool && !t) ? lastTool : null;   // keep while the card is still being built
     ['specb', 'lcb', 'deepb'].forEach(id => $(id) && $(id).classList.toggle('is-on', !!showing && id === lastTool));
   };
@@ -392,10 +465,10 @@
   const SEC = {
     'g-when': ['Time', 'Step through the passes, or every image in time order. Stars stay put; anything that shifts is moving.'],
     'g-colour': ['Bands & spectra', 'SPHEREx sees 102 infrared colours. The Color slider picks one; Spectrum measures a star in all of them; Colour composite paints the patch in three detector groups (blue, green, red).'],
-    'g-motion': ['Motion', 'What moves between passes: the film, a bright-star search, a deep search for faint sources and slow-mover difference images. Each find is labelled known mover, catalogue prediction or candidate.'],
+    'g-motion': ['Motion', 'What moves between passes: the video, a bright-star search, a deep search for faint sources and slow-mover difference images. Each find is labelled known mover, catalogue prediction or candidate.'],
     'g-over': ['Overlays', 'Other surveys on top of the SPHEREx images: Gaia and WISE stars with arrows for their motion, the ecliptic, and the base sky behind.'],
     'g-measure': ['Measure', 'Ask one star: its light curve (brightness over time, with a significance), or a deep view that adds up each detector\'s images.'],
-    'g-test': ['Planet X & agents', 'A sensitivity test, not a search: hide a fake planet and see whether the agents find it. Also the false-alarm and brightness tests.'],
+    'g-test': ['Planet X test', 'A sensitivity test, not a search: hide a fake planet and see whether the agents find it. Also the false-alarm and brightness tests.'],
     'g-share': ['Share & report', 'A link to this view, embed code, Python that fetches the same images, a discovery card and a PNG of the sky.'],
     'g-data': ['Data release', 'Which SPHEREx releases and passes are loaded, how old the archive list is, and a button to ask NASA/IPAC IRSA for new images now.']
   };
@@ -448,7 +521,7 @@
   const STEPS = [
     { k: 1, el: () => $('sf'), h: 'Where to look', p: 'Type a name (M42, Barnard\'s Star) or two numbers in degrees: RA 0 to 360, then Dec -90 to +90 (e.g. 83.82 -5.39, the Orion Nebula). On the whole-sky map, point anywhere to read its RA and Dec. ARCNAVE flies there and fetches the SPHEREx images.' },
     { k: 2, el: () => document.querySelector('#g-where .chips'), sheet: 'panel', h: 'Targets in one tap', p: 'NASA\'s five test targets live here. Tap one and in about 2 minutes you get a result on real images.' },
-    { k: 3, el: () => document.querySelector('#g-watch .tabs'), sheet: 'panel', h: 'Watch what moves', p: 'Time machine plays the images in order. Blink and Difference make anything that moves jump out.' },
+    { k: 3, el: () => document.querySelector('#g-watch .tabs'), sheet: 'panel', h: 'Watch what moves', p: 'Step by step plays the images in order. Blink and Difference make anything that moves jump out.' },
     { k: 4, el: () => narrow() ? document.querySelector('#mnav [data-sheet=card]') : document.querySelector('.rhead'), h: 'What am I seeing?', p: 'The plain-words explanation and "How sure are we?" appear here. Want more tools? Switch on Advanced.' }
   ];
   const coach = {

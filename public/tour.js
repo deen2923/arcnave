@@ -45,7 +45,7 @@
   };
   const INTRO = [
     ['#intro .hl', 'The whole sky, photographed every six months. Find what moves.', 'முழு வானம், ஒவ்வொரு ஆறு மாதத்துக்கும் ஒரு படம். நகர்வதைக் கண்டுபிடியுங்கள்.'],
-    ['#intro .lede', 'Pick any spot on the sky. Agents fetch the real NASA SPHEREx images of it, line them up and show you what changed.', 'வானில் எந்த இடத்தையும் தேர்ந்தெடுங்கள். ஏஜென்ட்கள் அதன் உண்மையான நாசா SPHEREx படங்களைக் கொண்டு வந்து, வரிசைப்படுத்தி, என்ன மாறியது என்று காட்டும்.'],
+    ['#intro .lede', 'Pick any spot on the sky. ARCNAVE fetches the real NASA SPHEREx images of it, line them up and show you what changed.', 'வானில் எந்த இடத்தையும் தேர்ந்தெடுங்கள். ஏஜென்ட்கள் அதன் உண்மையான நாசா SPHEREx படங்களைக் கொண்டு வந்து, வரிசைப்படுத்தி, என்ன மாறியது என்று காட்டும்.'],
     ['#intro .hist', 'In 1930 Clyde Tombaugh found Pluto by flipping between two photographs taken days apart. ARCNAVE does the same with a space telescope.', '1930-ல் கிளைட் டாம்பா, சில நாள் இடைவெளியில் எடுத்த இரண்டு படங்களை மாறி மாறிப் பார்த்து புளூட்டோவைக் கண்டுபிடித்தார். ARCNAVE அதையே ஒரு விண்வெளித் தொலைநோக்கியுடன் செய்கிறது.'],
     ['#go', 'Explore the whole sky', 'முழு வானையும் ஆராயுங்கள்'],
     ['#intro .tourb', '90-second story', '90 வினாடிக் கதை'],
@@ -57,7 +57,7 @@
     ['#intro [data-ex=proof] b', 'Catch a real asteroid', 'ஒரு உண்மையான சிறுகோளைப் பிடியுங்கள்'],
     ['#intro [data-ex=proof] span', '3865 Lindbloom, caught moving in real SPHEREx images and checked against its known orbit', '3865 லிண்ட்ப்ளூம்: உண்மையான SPHEREx படங்களில் நகரும்போது பிடிபட்டு, அதன் அறியப்பட்ட சுற்றுப்பாதையுடன் சரிபார்க்கப்பட்டது'],
     ['#intro [data-ex=false] b', 'See a false alarm caught', 'ஒரு பொய் எச்சரிக்கை பிடிபடுவதைப் பாருங்கள்'],
-    ['#intro [data-ex=false] span', 'One image per epoch shows a 922σ "change". It is a hot pixel', 'ஒரு சுற்றுக்கு ஒரு படம் மட்டும் பார்த்தால் 922σ "மாற்றம்" தெரிகிறது. அது ஒரு கெட்ட பிக்சல் (hot pixel) மட்டுமே'],
+    ['#intro [data-ex=false] span', 'One image per pass shows a 922σ "change". It is a hot pixel', 'ஒரு சுற்றுக்கு ஒரு படம் மட்டும் பார்த்தால் 922σ "மாற்றம்" தெரிகிறது. அது ஒரு கெட்ட பிக்சல் (hot pixel) மட்டுமே'],
     ['#intro .rlab span:nth-child(2)', '102 colours of infrared, one tick each', '102 அகச்சிவப்பு நிறங்கள், ஒவ்வொன்றும் ஒரு கோடு'],
     ['#intro .look', 'Behind this: the whole sky in near-infrared light (2MASS survey), the Milky Way across the middle.', 'இதன் பின்னால்: அருகிய-அகச்சிவப்பு ஒளியில் முழு வானம் (2MASS ஆய்வு), நடுவில் பால்வெளி.'],
     ['#tmenu [data-tour] b', '90-second story', '90 வினாடிக் கதை'],
@@ -238,11 +238,11 @@
         'வேலையை வரிசையாகச் செய்யும் சிறிய நிரல்கள்: Navigator வானைத் திருப்புகிறது, Archivist SPHEREx படங்களைக் கண்டுபிடிக்கிறது, Aligner அவற்றைப் பதிவிறக்கி நட்சத்திரங்களை வைத்து வரிசைப்படுத்துகிறது, Analyst ஒப்பிடுகிறது, Reporter எழுதுகிறது. இவை சாதாரண நிரல்கள், AI அல்ல.'],
       ['Watch each step tick. With Auto-run on, typing a place starts them; switch it off to look around without loading.', 'ஒவ்வொரு படியும் முடிவதைப் பாருங்கள். Auto-run இயக்கத்தில் இருந்தால், ஒரு இடத்தைத் தட்டச்சு செய்ததும் தொடங்கும்; படங்களை ஏற்றாமல் சுற்றிப் பார்க்க அதை அணையுங்கள்.'],
       () => $('agents'), () => { sheet('agents'); $('agents').open = true; }),
-    G('Agents', ['Run agents here', 'இங்கே ஏஜென்ட்களை இயக்கு'],
+    G('Agents', ['Open the spot in view', 'இங்கே ஏஜென்ட்களை இயக்கு'],
       ['Loads SPHEREx images for the spot in the middle of the screen, with your settings.', 'திரையின் நடுவில் உள்ள இடத்துக்கு உங்கள் அமைப்புகளுடன் SPHEREx படங்களை ஏற்றுகிறது.'],
-      ['Pan to a spot, pick the Field size (0.25° to 1° wide) and Images per epoch (8 gives deeper, cleaner pictures but loads slower), then press Run agents here.', 'ஒரு இடத்துக்கு நகர்ந்து, Field size (0.25° முதல் 1° அகலம்), Images per epoch (8 என்றால் ஆழமான, தெளிவான படங்கள், ஆனால் ஏற நேரம் ஆகும்) தேர்ந்தெடுத்து Run agents here அழுத்துங்கள்.'],
+      ['Pan to a spot, pick the Field size (0.25° to 1° wide) and Images per pass (8 gives deeper, cleaner pictures but loads slower), then press Open the spot in view.', 'ஒரு இடத்துக்கு நகர்ந்து, Field size (0.25° முதல் 1° அகலம்), Images per pass (8 என்றால் ஆழமான, தெளிவான படங்கள், ஆனால் ஏற நேரம் ஆகும்) தேர்ந்தெடுத்து Open the spot in view அழுத்துங்கள்.'],
       () => q('.loadrow'), () => sheet('panel')),
-    G('Images & epochs', ['Time machine', 'கால இயந்திரம்'],
+    G('Images & epochs', ['Step by step', 'கால இயந்திரம்'],
       ['Every real image of this spot, one at a time, in the order they were taken.', 'இந்த இடத்தின் ஒவ்வொரு உண்மையான படமும், எடுத்த வரிசையில், ஒன்றன்பின் ஒன்றாக.'],
       ['Drag the Image slider, or click a thumbnail in the strip. E1, E2, E3 are sky passes about six months apart.', 'Image ஸ்லைடரை இழுங்கள், அல்லது கீழே உள்ள சிறுபடத்தைத் தட்டுங்கள். E1, E2, E3 என்பவை சுமார் ஆறு மாத இடைவெளியில் உள்ள வானச் சுற்றுகள்.'],
       () => [tab('time'), $('tmr'), $('strip')], () => { setMode('time'); sheet('panel'); }, { data: true }),
@@ -262,9 +262,9 @@
       ['Every change the agents found, explained: a known asteroid passing by, a star that got brighter, or something not explained yet. Detector glitches are counted but hidden. By epoch and By image show the same changes as colour maps.', 'ஏஜென்ட்கள் கண்ட ஒவ்வொரு மாற்றமும் விளக்கத்துடன்: கடந்து செல்லும் அறியப்பட்ட சிறுகோள், பிரகாசமான நட்சத்திரம், அல்லது இன்னும் விளக்க முடியாதது. கருவிப் பிழைகள் (glitches) எண்ணப்படும், ஆனால் காட்டப்படாது. By epoch, By image இதே மாற்றங்களை நிற வரைபடமாகக் காட்டும்.'],
       ['Tap a kind to step through its spots; each card flips between that image and the usual sky there. Or choose By epoch or By image and click a bar on the timeline.', 'ஒரு வகையைத் தட்டி அதன் இடங்களை ஒவ்வொன்றாகப் பாருங்கள்; ஒவ்வொரு அட்டையிலும் அந்தப் படமும் அங்குள்ள வழக்கமான வானமும் மாறி மாறித் தெரியும். அல்லது By epoch / By image தேர்ந்தெடுத்து காலவரிசையில் ஒரு பட்டையைத் தட்டுங்கள்.'],
       () => [tab('change'), $('chg')], () => { setMode('change'); sheet('panel'); }, { data: true }),
-    G('Planet X & agents', ['Hide Planet X', 'பிளானெட் X-ஐ ஒளித்து வை'],
+    G('Planet X test', ['Hide Planet X', 'பிளானெட் X-ஐ ஒளித்து வை'],
       ['A test, not a search: you hide a fake planet in these real images and the agents try to find it. Planet X itself is only a hypothesis, and ARCNAVE does not search for it.', 'இது ஒரு சோதனை, தேடல் அல்ல: இந்த உண்மையான படங்களில் நீங்கள் ஒரு போலிக் கோளை ஒளித்து வைக்கிறீர்கள், ஏஜென்ட்கள் அதைக் கண்டுபிடிக்க முயல்கின்றன. பிளானெட் X ஒரு கருதுகோள் மட்டுமே; ARCNAVE அதைத் தேடுவதில்லை.'],
-      ['Set Distance and Brightness, then press Hide it, agents seek. Map this field tries 1,120 fake planets and draws which ones can be caught.', 'Distance, Brightness அமைத்து Hide it, agents seek அழுத்துங்கள். Map this field 1,120 போலிக் கோள்களை முயன்று, எவை பிடிபடும் என்று வரைகிறது.'],
+      ['Set Distance and Brightness, then press Hide it, then search. Map this field tries 1,120 fake planets and draws which ones can be caught.', 'Distance, Brightness அமைத்து Hide it, then search அழுத்துங்கள். Map this field 1,120 போலிக் கோள்களை முயன்று, எவை பிடிபடும் என்று வரைகிறது.'],
       () => $('pxp'), () => { setMode('px'); sheet('panel'); }, { data: true }),
     G('Learn', ['Motion lab', 'இயக்க ஆய்வகம்'],
       ['A simulation, not data: the path a distant planet would trace on the sky over the years. A yearly wobble from Earth\'s own orbit, plus a slow drift.', 'இது தரவு அல்ல, ஒரு உருவகப்படுத்துதல் (simulation): தொலைவான ஒரு கோள் பல ஆண்டுகளில் வானில் வரையும் பாதை. பூமியின் சொந்தச் சுற்றால் ஆண்டுதோறும் ஒரு ஆட்டம், அதோடு மெதுவான ஒரு நகர்வு.'],
@@ -275,7 +275,7 @@
       ['Drag the Color slider and let go, or press a preset: Hot stars (1 µm), Dust & Ice (3 µm, where water ice absorbs) or Cool worlds (4.5 µm). The agents then fetch the real images taken in that colour, so it takes a few seconds.', 'Color ஸ்லைடரை இழுத்து விடுங்கள், அல்லது ஒரு முன்னமைவை அழுத்துங்கள்: Hot stars (1 µm), Dust & Ice (3 µm, நீர்ப் பனி ஒளியை உறிஞ்சும் இடம்), Cool worlds (4.5 µm). பிறகு ஏஜென்ட்கள் அந்த நிறத்தில் எடுத்த உண்மையான படங்களைக் கொண்டு வரும்; சில வினாடிகள் ஆகும்.'],
       () => [$('bandr'), q('.presets')], () => { setMode('time'); sheet('panel'); }, { data: true }),
     // v0.38: the tools added since v0.33 (targets, flags, Gaia, spectrum, light curve, deep view), in all four languages
-    G('Planet X & agents', ["NASA's 5 targets", 'நாசாவின் 5 இலக்குகள்', 'नासा के 5 लक्ष्य', 'Los 5 objetivos de la NASA'],
+    G('Planet X test', ["NASA's 5 targets", 'நாசாவின் 5 இலக்குகள்', 'नासा के 5 लक्ष्य', 'Los 5 objetivos de la NASA'],
       ["The five objects NASA asked teams to test on: Barnard's Star, Epsilon Indi B, WISE 0855, RW Aurigae and R Draconis. Each card shows what ARCNAVE measured in real SPHEREx images next to the known value, and how sure we are.",
         'நாசா சோதிக்கச் சொன்ன ஐந்து பொருட்கள்: பர்னார்ட் நட்சத்திரம், எப்சிலான் இண்டி B, WISE 0855, RW ஆரிகே, R டிராகோனிஸ். ஒவ்வொரு அட்டையும் உண்மையான SPHEREx படங்களில் ARCNAVE அளந்ததை அறியப்பட்ட மதிப்புடன் அருகருகே காட்டுகிறது, எவ்வளவு உறுதி என்றும் சொல்கிறது.',
         'नासा ने जिन पाँच पिंडों पर जाँचने को कहा: बर्नार्ड तारा, एप्सिलॉन इंडी B, WISE 0855, RW ऑरिगी और R ड्रेकोनिस। हर कार्ड असली SPHEREx तस्वीरों में ARCNAVE का माप ज्ञात मान के साथ दिखाता है, और बताता है कि हम कितने पक्के हैं।',
@@ -287,7 +287,7 @@
         'நாசாவின் SPHEREx செயலாக்கம் நம்பகமற்றவை எனக் குறித்த பிக்சல்கள்: நிறைவுற்றவை, கண்கூச்சு, பேய்ப் பிம்பங்கள், அண்டக் கதிர்கள், சூடான பிக்சல்கள். ARCNAVE அவற்றை விட்டுவிடுகிறது அல்லது சரிசெய்கிறது; இங்கே அவற்றைப் பார்க்கலாம்.',
         'वे पिक्सेल जिन्हें नासा की SPHEREx पाइपलाइन ने अविश्वसनीय माना: संतृप्त, चकाचौंध, घोस्ट, कॉस्मिक किरणें, हॉट पिक्सेल। ARCNAVE इन्हें छोड़ देता है या ठीक करता है, और यहाँ आप इन्हें देख सकते हैं।',
         'Los píxeles que el procesado de SPHEREx de la NASA marcó como poco fiables: saturados, destellos, fantasmas, rayos cósmicos, píxeles calientes. ARCNAVE los deja fuera o los repara, y aquí puedes verlos.'],
-      ['In Time machine or Blink, press Flags. Orange = flagged bad, purple = an outlier only (a cosmic ray, or a moving object).', 'Time machine அல்லது Blink-இல் Flags அழுத்துங்கள். ஆரஞ்சு = மோசம் எனக் குறிக்கப்பட்டது, ஊதா = விலகல் மட்டும் (அண்டக் கதிர் அல்லது நகரும் பொருள்).', 'Time machine या Blink में Flags दबाएँ। नारंगी = खराब चिह्नित, बैंगनी = केवल विचलन (कॉस्मिक किरण या चलती वस्तु)।', 'En Time machine o Blink, pulsa Flags. Naranja = marcado como malo, morado = solo atípico (un rayo cósmico o un objeto en movimiento).'],
+      ['In Step by step or Blink, press Flags. Orange = flagged bad, purple = an outlier only (a cosmic ray, or a moving object).', 'Step by step அல்லது Blink-இல் Flags அழுத்துங்கள். ஆரஞ்சு = மோசம் எனக் குறிக்கப்பட்டது, ஊதா = விலகல் மட்டும் (அண்டக் கதிர் அல்லது நகரும் பொருள்).', 'Step by step या Blink में Flags दबाएँ। नारंगी = खराब चिह्नित, बैंगनी = केवल विचलन (कॉस्मिक किरण या चलती वस्तु)।', 'En Step by step o Blink, pulsa Flags. Naranja = marcado como malo, morado = solo atípico (un rayo cósmico o un objeto en movimiento).'],
       () => $('flagsb'), () => { setMode('time'); sheet('panel'); }, { data: true }),
     G('Overlays', ['Gaia and motion check', 'கையா, இயக்கச் சோதனை', 'गाइया और गति जाँच', 'Gaia y prueba de movimiento'],
       ["ESA Gaia's stars drawn on the SPHEREx images, with an arrow showing where each fast star travels in 20 years. Then ARCNAVE checks the motion in the SPHEREx images themselves.",
@@ -303,19 +303,19 @@
         'El brillo de una estrella en unos 100 colores de SPHEREx de una pasada, leído al momento del archivo de la NASA y comparado con 2MASS y WISE. Las caídas muestran moléculas como agua y metano en enanas marrones frías.'],
       ['Press Spectrum, then tap a star. It takes about a minute. Stars too bright for SPHEREx (Barnard\'s Star is one) are saturated, and the card says so.', 'Spectrum அழுத்தி, ஒரு நட்சத்திரத்தைத் தட்டுங்கள். சுமார் ஒரு நிமிடம். SPHEREx-க்கு மிகப் பிரகாசமான நட்சத்திரங்கள் (பர்னார்ட் நட்சத்திரம் போல) நிறைவுறும்; அட்டை அதைச் சொல்லும்.', 'Spectrum दबाएँ, फिर किसी तारे पर टैप करें। लगभग एक मिनट। SPHEREx के लिए बहुत चमकीले तारे (जैसे बर्नार्ड तारा) संतृप्त होते हैं, और कार्ड यह बताता है।', 'Pulsa Spectrum y toca una estrella. Tarda un minuto. Las estrellas demasiado brillantes para SPHEREx (como la de Barnard) se saturan, y la tarjeta lo dice.'],
       () => $('specb'), () => { sheet('panel'); }, { data: true }),
-    G('Measure', ['Light curve', 'ஒளி வளைவு', 'प्रकाश वक्र', 'Curva de luz'],
+    G('Measure', ['Brightness over time', 'ஒளி வளைவு', 'प्रकाश वक्र', 'Curva de luz'],
       ["A star's brightness over time at one colour, in every sky pass, next to steady comparison stars measured the same way. Stars too bright for SPHEREx are measured from their outer glow. RW Aurigae and R Draconis were checked this way at several colours.",
         'ஒரு நிறத்தில், ஒவ்வொரு வானச் சுற்றிலும், ஒரு நட்சத்திரத்தின் பிரகாசம் காலப்போக்கில், அதே முறையில் அளந்த நிலையான ஒப்பீட்டு நட்சத்திரங்களுடன். SPHEREx-க்கு மிகப் பிரகாசமானவை அவற்றின் வெளி ஒளிவட்டத்தில் அளக்கப்படுகின்றன. RW ஆரிகே, R டிராகோனிஸ் பல நிறங்களில் இப்படிச் சோதிக்கப்பட்டன.',
         'एक रंग पर, हर आकाश-चक्कर में, किसी तारे की चमक समय के साथ, उसी तरह मापे गए स्थिर तुलना तारों के साथ। SPHEREx के लिए बहुत चमकीले तारे उनकी बाहरी चमक से मापे जाते हैं। RW ऑरिगी और R ड्रेकोनिस कई रंगों पर ऐसे जाँचे गए।',
         'El brillo de una estrella a lo largo del tiempo en un color, en cada pasada, junto a estrellas de comparación estables medidas igual. Las demasiado brillantes se miden en su halo exterior. RW Aurigae y R Draconis se comprobaron así en varios colores.'],
-      ['Pick a colour on the Color slider, press Light curve, tap a star. If the comparison stars stay flat and the star does not, the change is real.', 'Color ஸ்லைடரில் ஒரு நிறம் தேர்ந்தெடுத்து, Light curve அழுத்தி, ஒரு நட்சத்திரத்தைத் தட்டுங்கள். ஒப்பீட்டு நட்சத்திரங்கள் சமமாக இருந்து, இது மாறினால், மாற்றம் உண்மையானது.', 'Color स्लाइडर पर रंग चुनें, Light curve दबाएँ, किसी तारे पर टैप करें। अगर तुलना तारे सपाट रहें और यह तारा नहीं, तो बदलाव असली है।', 'Elige un color en el control Color, pulsa Light curve y toca una estrella. Si las de comparación siguen planas y ella no, el cambio es real.'],
+      ['Pick a colour on the Color slider, press Brightness over time, tap a star. If the comparison stars stay flat and the star does not, the change is real.', 'Color ஸ்லைடரில் ஒரு நிறம் தேர்ந்தெடுத்து, Brightness over time அழுத்தி, ஒரு நட்சத்திரத்தைத் தட்டுங்கள். ஒப்பீட்டு நட்சத்திரங்கள் சமமாக இருந்து, இது மாறினால், மாற்றம் உண்மையானது.', 'Color स्लाइडर पर रंग चुनें, Brightness over time दबाएँ, किसी तारे पर टैप करें। अगर तुलना तारे सपाट रहें और यह तारा नहीं, तो बदलाव असली है।', 'Elige un color en el control Color, pulsa Brightness over time y toca una estrella. Si las de comparación siguen planas y ella no, el cambio es real.'],
       () => $('lcb'), () => { sheet('panel'); }, { data: true }),
-    G('Measure', ['Deep view', 'ஆழமான பார்வை', 'डीप व्यू', 'Vista profunda'],
-      ["SPHEREx has six detectors. Deep view adds up each detector's images of one sky pass, lined up on the stars, so fainter things show. The drop in noise is measured, not assumed.",
-        'SPHEREx-க்கு ஆறு கண்டறிவான்கள் உள்ளன. Deep view ஒரு வானச் சுற்றின் ஒவ்வொரு கண்டறிவானின் படங்களையும் நட்சத்திரங்களில் சீரமைத்துக் கூட்டுகிறது; மங்கலானவை தெரியும். இரைச்சல் குறைவது அளக்கப்படுகிறது, ஊகிக்கப்படுவதில்லை.',
-        'SPHEREx में छह डिटेक्टर हैं। Deep view एक आकाश-चक्कर की हर डिटेक्टर की तस्वीरें तारों पर मिलाकर जोड़ता है, ताकि धुँधली चीज़ें दिखें। शोर में कमी मापी जाती है, मानी नहीं जाती।',
-        'SPHEREx tiene seis detectores. Deep view suma las imágenes de cada detector en una pasada, alineadas con las estrellas, para que se vea lo más débil. La bajada del ruido se mide, no se supone.'],
-      ['Load a field, then press Deep view. Six deep images and one false-colour picture appear in the card.', 'ஒரு பகுதியை ஏற்றி, Deep view அழுத்துங்கள். ஆறு ஆழமான படங்களும் ஒரு போலி-நிறப் படமும் அட்டையில் வரும்.', 'कोई क्षेत्र लोड करें, फिर Deep view दबाएँ। कार्ड में छह गहरी तस्वीरें और एक फ़ॉल्स-कलर चित्र आते हैं।', 'Carga un campo y pulsa Deep view. En la tarjeta aparecen seis imágenes profundas y una en falso color.'],
+    G('Measure', ['Add up images', 'ஆழமான பார்வை', 'डीप व्यू', 'Vista profunda'],
+      ["SPHEREx has six detectors. Add up images adds up each detector's images of one sky pass, lined up on the stars, so fainter things show. The drop in noise is measured, not assumed.",
+        'SPHEREx-க்கு ஆறு கண்டறிவான்கள் உள்ளன. Add up images ஒரு வானச் சுற்றின் ஒவ்வொரு கண்டறிவானின் படங்களையும் நட்சத்திரங்களில் சீரமைத்துக் கூட்டுகிறது; மங்கலானவை தெரியும். இரைச்சல் குறைவது அளக்கப்படுகிறது, ஊகிக்கப்படுவதில்லை.',
+        'SPHEREx में छह डिटेक्टर हैं। Add up images एक आकाश-चक्कर की हर डिटेक्टर की तस्वीरें तारों पर मिलाकर जोड़ता है, ताकि धुँधली चीज़ें दिखें। शोर में कमी मापी जाती है, मानी नहीं जाती।',
+        'SPHEREx tiene seis detectores. Add up images suma las imágenes de cada detector en una pasada, alineadas con las estrellas, para que se vea lo más débil. La bajada del ruido se mide, no se supone.'],
+      ['Load a field, then press Add up images. Six deep images and one false-colour picture appear in the card.', 'ஒரு பகுதியை ஏற்றி, Add up images அழுத்துங்கள். ஆறு ஆழமான படங்களும் ஒரு போலி-நிறப் படமும் அட்டையில் வரும்.', 'कोई क्षेत्र लोड करें, फिर Add up images दबाएँ। कार्ड में छह गहरी तस्वीरें और एक फ़ॉल्स-कलर चित्र आते हैं।', 'Carga un campo y pulsa Add up images. En la tarjeta aparecen seis imágenes profundas y una en falso color.'],
       () => $('deepb'), () => { sheet('panel'); }, { data: true }),
     G('Result', ['Result card', 'முடிவு அட்டை'],
       ['The evidence for one object: a status (Confirmed known asteroid, Likely artefact or Unconfirmed), image crops from before and after, and the numbers behind it.', 'ஒரு பொருளுக்கான சான்று: ஒரு நிலை (Confirmed known asteroid, Likely artefact, Unconfirmed), முன்னும் பின்னும் எடுத்த பட வெட்டுகள், அதன் பின்னால் உள்ள எண்கள்.'],
@@ -349,10 +349,10 @@
     ['On phones the controls, the agents and the result card share one sheet, so the sky stays visible.', 'போனில் கட்டுப்பாடுகள், ஏஜென்ட்கள், முடிவு அட்டை மூன்றும் ஒரே தாளில் இருக்கும், அதனால் வானம் தெரிந்துகொண்டே இருக்கும்.'],
     ['Tap Controls, Agents or Result to switch. Tap the open one again to fold it away. A dot on Result means a new result. Tap or drag the small handle on the sheet to make it a peek, half or full screen; dragging the sky lowers it.', 'Controls, Agents, Result தட்டி மாற்றுங்கள். திறந்ததை மீண்டும் தட்டினால் மடியும். Result மேல் ஒரு புள்ளி என்றால் புதிய முடிவு. ஷீட்டின் மேல் உள்ள சிறிய கைப்பிடியைத் தட்டி அல்லது இழுத்து, அதைச் சிறிதாக, பாதியாக அல்லது முழுத் திரையாக மாற்றலாம்; வானை இழுத்தால் அது கீழிறங்கும்.'], () => $('mnav'), null, { phoneOnly: true }));
   // v0.56: the tools added since this guide was written, in the plain words of public/tools-plain.js (one step each, put
-  // before the result card): the film, the four motion searches, known asteroid paths, WISE, the colour picture, images
+  // before the result card): the video, the four motion searches, known asteroid paths, WISE, the colour picture, images
   // per pass, the mover test, the test results, saving a picture and checking for new data.
   if (window.ARC_TOOLS) {
-    const YR = { look: 'Images & epochs', motion: 'Movers', colour: 'Bands & spectra', maps: 'Overlays', test: 'Planet X & agents', share: 'Share & report' };
+    const YR = { look: 'Images & epochs', motion: 'Movers', colour: 'Bands & spectra', maps: 'Overlays', test: 'Planet X test', share: 'Share & report' };
     const near = el => () => { sheet('panel'); try { const e = el(); e && e.scrollIntoView({ inline: 'center', block: 'nearest' }); } catch { /* not on screen */ } };
     const first = s => () => q(s.split(',')[0].trim());
     const add = ['film', 'ms', 'ds', 'df', 'sc', 'kp', 'wise', 'comp', 'ipe', 'mt', 'tested', 'png', 'relchk'].map(id => ARC_TOOLS.tools.find(t => t.id === id)).filter(Boolean)
@@ -514,7 +514,7 @@
     try { await (c.go && c.go()); } catch (e) { console.warn('tour step', e); }
     if (my !== token) return;
     // v0.38: bring the tool into view inside its scrolling panel (seen: step "Flags" pointed at a button scrolled out of sight).
-    // All of the step's targets together when they fit (Time machine = tab + slider + strip), else the first one at the top.
+    // All of the step's targets together when they fit (Step by step = tab + slider + strip), else the first one at the top.
     try { reveal(c.at ? [].concat(c.at()).filter(el => el && el.getClientRects && el.getClientRects().length) : []); } catch { /* keep */ }
     lastR = '';
     txt(); lastR = '';
