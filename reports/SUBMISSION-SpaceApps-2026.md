@@ -50,6 +50,20 @@ One-click NASA test targets (append to the live link): `#ct=barnard` · `#ct=eps
 
 ## 5. Detailed Project Description
 
+### Outstanding features at a glance
+
+- **Real SPHEREx data, live:** every image comes from NASA's archive when the user asks; SPHEREx DR1 appeared with no code change.
+- **A film of the infrared sky:** the passes of any spot play in time order, with every mover circled pass by pass.
+- **Measures, not just shows:** motion in ″/yr with errors, brightness in magnitudes, spectra from 0.75 to 5 µm,
+  each compared with ESA Gaia DR3 or NASA CatWISE2020.
+- **5 of 5 NASA test targets** answered with measured numbers, one click each.
+- **12 of 12 challenge objectives and 8 of 8 listed resources** used.
+- **Tested before trusted:** 19,880 fake planets hidden in 18 pre-chosen fields; Planet X at 1,000 AU found in 18 of 18.
+- **Planet X search:** a 625-motion shift-and-stack scan with automatic Backyard Worlds-style checks.
+- **Beyond WiseView:** blink, Gaia and WISE overlays, plus film, spectra, light curves, NEOSSat and a Jupyter export.
+- **For everyone:** English, Tamil, Hindi and Spanish with narration, a game, a 90-second story, works on phones.
+- **Light and open:** reads 4 MB of each 65 MB image, no install, no dependencies, all code public.
+
 ### What it does
 
 The challenge asked for "a public-facing web tool to display images of the sky from the SPHEREx mission, making it

@@ -1,0 +1,380 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>ARCNAVE · NASA Space Apps 2026 · Project Demo (7 slides)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=block" rel="stylesheet">
+<style>
+@page { size: 1920px 1080px; margin: 0; }
+:root{
+  --bg:#04070c; --bg2:#081019; --ink:#eef3f8; --ink2:#aab6c4; --ink3:#6c7a8b;
+  --teal:#2ee6c8; --teal2:#14b8a6; --tealDim:rgba(46,230,200,.16); --line:rgba(160,220,230,.14);
+  --amber:#ffb547; --card:rgba(14,24,34,.72); --card2:rgba(20,34,46,.55);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{background:var(--bg);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{font-family:Inter,system-ui,sans-serif;color:var(--ink)}
+.slide{width:1920px;height:1080px;position:relative;overflow:hidden;page-break-after:always;break-after:page;
+  background:
+    radial-gradient(900px 600px at 82% 38%, rgba(20,184,166,.13), transparent 70%),
+    radial-gradient(700px 500px at 8% 100%, rgba(255,181,71,.05), transparent 70%),
+    linear-gradient(180deg,#060b12 0%, #04070c 100%);}
+.slide:last-child{page-break-after:auto;break-after:auto}
+/* starfield + faint grid */
+.slide::before{content:"";position:absolute;inset:0;pointer-events:none;opacity:.55;
+  background-image:
+   radial-gradient(1.2px 1.2px at 12% 18%, #fff 50%, transparent 51%),
+   radial-gradient(1px 1px at 33% 72%, #cfe 50%, transparent 51%),
+   radial-gradient(1.4px 1.4px at 58% 12%, #fff 50%, transparent 51%),
+   radial-gradient(1px 1px at 71% 84%, #bde 50%, transparent 51%),
+   radial-gradient(1.2px 1.2px at 89% 22%, #fff 50%, transparent 51%),
+   radial-gradient(1px 1px at 46% 46%, #9cf 50%, transparent 51%),
+   radial-gradient(1px 1px at 22% 90%, #fff 50%, transparent 51%),
+   radial-gradient(1.3px 1.3px at 95% 62%, #dff 50%, transparent 51%);}
+.slide::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);
+  background-size:120px 120px;opacity:.18;
+  -webkit-mask-image:radial-gradient(ellipse at 70% 40%, #000 0%, transparent 70%);mask-image:radial-gradient(ellipse at 70% 40%, #000 0%, transparent 70%);}
+.z{position:relative;z-index:2}
+
+/* chrome: top bar + footer */
+.top{position:absolute;left:96px;right:96px;top:56px;display:flex;align-items:center;justify-content:space-between;z-index:5}
+.kicker{font:600 20px/1 "JetBrains Mono",monospace;letter-spacing:.14em;color:var(--teal);text-transform:uppercase;
+  display:inline-flex;align-items:center;gap:14px;padding:12px 20px 12px 16px;border-radius:999px;
+  background:rgba(46,230,200,.07);border:1px solid rgba(46,230,200,.35)}
+.kicker i{width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 12px var(--teal)}
+.prog{display:flex;gap:8px}
+.prog b{width:44px;height:4px;border-radius:4px;background:rgba(255,255,255,.12)}
+.prog b.on{background:var(--teal);box-shadow:0 0 10px rgba(46,230,200,.6)}
+.foot{position:absolute;left:96px;right:96px;bottom:40px;display:flex;justify-content:space-between;align-items:center;
+  font:500 17px/1 "JetBrains Mono",monospace;letter-spacing:.12em;color:var(--ink3);z-index:5}
+.foot .brand{display:flex;align-items:center;gap:14px}
+.foot .brand::before{content:"";width:28px;height:2px;background:var(--teal)}
+.foot .pg b{color:var(--ink)}
+
+h1,h2{font-family:"Space Grotesk",sans-serif;font-weight:700;letter-spacing:-.03em;line-height:.98}
+h2{font-size:96px}
+.accent{color:var(--teal)} .amber{color:var(--amber)}
+.rule{display:flex;align-items:center;gap:0;margin:34px 0 0;width:360px}
+.rule span{height:2px;flex:1;background:linear-gradient(90deg,var(--teal),rgba(46,230,200,.1))}
+.rule em{width:10px;height:10px;border-radius:50%;background:var(--amber);box-shadow:0 0 12px var(--amber);margin-left:10px}
+.lead{font-size:30px;line-height:1.45;color:var(--ink2);font-weight:400}
+.mono{font-family:"JetBrains Mono",monospace}
+
+/* screenshot frame */
+.shot{position:absolute;border-radius:20px;overflow:hidden;border:1px solid rgba(46,230,200,.45);
+  box-shadow:0 0 0 6px rgba(46,230,200,.06),0 40px 90px rgba(0,0,0,.65),0 0 80px rgba(46,230,200,.12);background:#000}
+.shot img{display:block;width:100%;height:100%;object-fit:cover}
+.shot .bar{height:34px;background:linear-gradient(180deg,#121c26,#0b131b);display:flex;align-items:center;gap:8px;padding:0 16px;border-bottom:1px solid var(--line)}
+.shot .bar i{width:11px;height:11px;border-radius:50%;background:#2a3846}
+.shot .bar i:first-child{background:#ff6b6b}.shot .bar i:nth-child(2){background:var(--amber)}.shot .bar i:nth-child(3){background:var(--teal)}
+.shot.win img{height:calc(100% - 34px)}
+.glass{background:var(--card);border:1px solid var(--line);border-radius:22px;backdrop-filter:blur(8px)}
+
+/* ---------- 1 ---------- */
+.s1 .bgimg{position:absolute;inset:0;background:url(a/p1_0.png) right center/cover no-repeat;opacity:.9}
+.s1 .bgimg::after{content:"";position:absolute;inset:0;background:
+  linear-gradient(90deg,#04070c 0%,rgba(4,7,12,.97) 34%,rgba(4,7,12,.72) 52%,rgba(4,7,12,.25) 75%,rgba(4,7,12,.55) 100%),
+  linear-gradient(0deg,rgba(4,7,12,.9) 0%,transparent 30%)}
+.s1 .hero{position:absolute;left:96px;top:150px;width:900px}
+.s1 h1{font-size:200px;letter-spacing:-.05em;line-height:.9;background:linear-gradient(180deg,#fff 30%,#bfeee6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.s1 .tag{font-family:"Space Grotesk";font-weight:700;font-size:74px;line-height:1.02;letter-spacing:-.03em;margin-top:28px}
+.s1 .lead{margin-top:30px;max-width:680px}
+.s1 .info{position:absolute;left:96px;bottom:104px;width:880px;padding:10px 34px}
+.s1 .row{display:grid;grid-template-columns:190px 1fr;align-items:center;padding:16px 0;border-bottom:1px solid var(--line)}
+.s1 .row:last-child{border-bottom:0}
+.s1 .row .k{font:600 19px/1 "JetBrains Mono";letter-spacing:.16em;color:var(--teal)}
+.s1 .row .v{font:500 22px/1.45 "JetBrains Mono";color:var(--ink)}
+.s1 .row .v.team{font-size:18px;color:var(--ink2)}
+.s1 .qr{position:absolute;right:96px;bottom:104px;padding:18px 18px 14px;text-align:center}
+.s1 .qr img{width:210px;height:210px;border-radius:12px;display:block}
+.s1 .qr div{font:600 16px/1 "JetBrains Mono";letter-spacing:.16em;color:var(--teal);margin-top:14px}
+
+/* ---------- 2 ---------- */
+.s2 .left{position:absolute;left:96px;top:150px;width:640px}
+.s2 .left p{margin-top:28px}
+.s2 .call{margin-top:34px;padding:24px 28px;border-left:4px solid var(--teal);background:linear-gradient(90deg,rgba(46,230,200,.12),transparent);border-radius:0 16px 16px 0;font-size:30px;line-height:1.4;color:#d9fff7}
+.s2 .call b{color:var(--teal)}
+.s2 .pair{position:absolute;left:820px;right:96px;top:250px;display:grid;grid-template-columns:1fr 150px 1fr;align-items:center}
+.s2 .pane .lab{font:600 22px/1 "JetBrains Mono";letter-spacing:.14em;color:var(--teal);margin-bottom:18px;display:flex;gap:18px;align-items:center}
+.s2 .pane .lab span{color:var(--ink2)}
+.s2 .pane .lab::before{content:"";width:10px;height:10px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal)}
+.s2 .pane .shot{position:relative;width:100%;aspect-ratio:601/561}
+.s2 .gap{text-align:center;font:600 20px/1.35 "JetBrains Mono";letter-spacing:.14em;color:var(--amber)}
+.s2 .gap svg{display:block;margin:0 auto 14px}
+
+/* ---------- 3 ---------- */
+.s3 .left{position:absolute;left:96px;top:150px;width:680px}
+.s3 .steps{margin-top:44px;display:flex;flex-direction:column;gap:20px}
+.s3 .step{display:grid;grid-template-columns:86px 1fr;gap:26px;align-items:center;padding:22px 26px}
+.s3 .step .n{width:86px;height:86px;border-radius:20px;display:grid;place-items:center;font:700 46px/1 "Space Grotesk";color:#04201b;background:linear-gradient(135deg,var(--teal),var(--teal2));box-shadow:0 0 30px rgba(46,230,200,.35)}
+.s3 .step .t{font:500 29px/1.35 "JetBrains Mono";color:var(--ink)}
+.s3 .shot{left:840px;right:96px;top:150px;height:690px}
+.s3 .chips{position:absolute;left:96px;right:96px;bottom:110px;display:flex;gap:14px}
+.s3 .chip{flex:1 1 auto;text-align:center;padding:22px 10px;border-radius:16px;font:500 22px/1.2 "JetBrains Mono";color:var(--ink);
+  background:linear-gradient(180deg,rgba(46,230,200,.10),rgba(46,230,200,.03));border:1px solid rgba(46,230,200,.32)}
+
+/* ---------- 4 ---------- */
+.s4 .head{position:absolute;left:96px;top:150px;width:1400px}
+.s4 .flow{position:absolute;left:96px;right:96px;top:440px;display:grid;grid-template-columns:repeat(6,1fr);gap:26px}
+.s4 .st{position:relative;padding:30px 26px 30px;min-height:330px}
+.s4 .st .num{font:700 64px/1 "Space Grotesk";color:transparent;-webkit-text-stroke:1.5px var(--teal);opacity:.9}
+.s4 .st .nm{font:600 30px/1 "JetBrains Mono";letter-spacing:.06em;margin:22px 0 18px;color:var(--ink)}
+.s4 .st .nm::after{content:"";display:block;width:40px;height:3px;background:var(--teal);margin-top:16px;border-radius:3px}
+.s4 .st p{font:400 21px/1.5 "JetBrains Mono";color:var(--ink2)}
+.s4 .st:not(:last-child)::after{content:"";position:absolute;right:-22px;top:62px;width:18px;height:18px;border-top:2px solid var(--teal);border-right:2px solid var(--teal);transform:rotate(45deg);opacity:.8}
+.s4 .band{position:absolute;left:96px;right:96px;bottom:104px;height:200px;display:grid;grid-template-columns:300px 1fr 400px;align-items:center;padding:0 44px;
+  background:linear-gradient(90deg,rgba(46,230,200,.13),rgba(14,24,34,.7) 40%);border:1px solid rgba(46,230,200,.35);border-radius:24px}
+.s4 .big{font:700 124px/1 "Space Grotesk";letter-spacing:-.04em;color:var(--teal);text-shadow:0 0 40px rgba(46,230,200,.35)}
+.s4 .band .txt{border-left:1px solid var(--line);padding-left:40px;font:400 23px/1.6 "JetBrains Mono";color:var(--ink2)}
+.s4 .band .txt b{display:block;color:var(--ink);font-weight:600;font-size:25px;margin-bottom:4px}
+.s4 .badge{justify-self:end;text-align:center;padding:20px 24px;border-radius:16px;font:600 18px/1.5 "JetBrains Mono";letter-spacing:.08em;color:var(--teal);
+  border:1px solid var(--teal);background:rgba(46,230,200,.08);box-shadow:0 0 30px rgba(46,230,200,.18)}
+
+/* ---------- 5 ---------- */
+.s5 .head{position:absolute;left:96px;top:150px}
+.s5 .head .big{font:700 150px/.9 "Space Grotesk";letter-spacing:-.04em;color:var(--amber);text-shadow:0 0 50px rgba(255,181,71,.25)}
+.s5 .head h2{font-size:84px;margin-top:14px}
+.s5 .shot{right:96px;top:130px;width:820px;height:331px}
+.s5 table{position:absolute;left:96px;right:96px;bottom:104px;border-collapse:separate;border-spacing:0;width:calc(100% - 192px);
+  background:var(--card);border:1px solid var(--line);border-radius:22px;overflow:hidden}
+.s5 th{font:600 18px/1 "JetBrains Mono";letter-spacing:.16em;color:var(--teal);text-align:left;padding:24px 34px;background:rgba(46,230,200,.07);border-bottom:1px solid rgba(46,230,200,.3)}
+.s5 td{font:500 27px/1.2 Inter;padding:22px 34px;border-bottom:1px solid var(--line);color:var(--ink)}
+.s5 tr:last-child td{border-bottom:0}
+.s5 tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+.s5 td:first-child{font-family:"Space Grotesk";font-weight:600}
+.s5 td.ref{color:var(--ink2)}
+.s5 td.ok span{display:inline-block;padding:9px 18px;border-radius:999px;font-size:23px;font-weight:600;color:var(--teal);background:rgba(46,230,200,.1);border:1px solid rgba(46,230,200,.35)}
+
+/* ---------- 6 ---------- */
+.s6 .left{position:absolute;left:96px;top:150px;width:720px}
+.s6 .sub{font:400 30px/1 "JetBrains Mono";color:var(--ink2);margin-top:30px;letter-spacing:.02em}
+.s6 .stats{margin-top:36px;display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.s6 .stat{padding:28px 30px}
+.s6 .stat b{display:block;font:700 86px/1 "Space Grotesk";letter-spacing:-.03em;color:var(--teal)}
+.s6 .stat b.amber{color:var(--amber)}
+.s6 .stat span{display:block;margin-top:14px;font:400 21px/1.4 "JetBrains Mono";color:var(--ink2)}
+.s6 .close{position:absolute;left:96px;bottom:104px;width:760px;font-size:28px;line-height:1.5;color:var(--ink)}
+.s6 .close::before{content:"";display:block;width:60px;height:3px;background:var(--amber);margin-bottom:18px;border-radius:3px}
+.s6 .shot{left:880px;right:96px;top:200px;height:690px}
+
+/* ---------- 7 ---------- */
+.s7 .phone{position:absolute;left:96px;top:130px;width:420px;height:848px;border-radius:46px;padding:14px;background:linear-gradient(160deg,#1a2632,#0a1118);
+  border:1px solid rgba(46,230,200,.4);box-shadow:0 40px 90px rgba(0,0,0,.6),0 0 70px rgba(46,230,200,.15)}
+.s7 .phone img{width:100%;height:100%;object-fit:cover;object-position:top;border-radius:34px;display:block}
+.s7 .shot{left:470px;top:560px;width:440px;height:284px;z-index:3}
+.s7 .right{position:absolute;left:1000px;right:96px;top:150px}
+.s7 h2{font-size:80px}
+.s7 .cols{display:grid;grid-template-columns:1.15fr 1fr;gap:40px;margin-top:44px}
+.s7 .cols h3{font:600 24px/1 "JetBrains Mono";letter-spacing:.16em;color:var(--teal);padding-bottom:16px;border-bottom:1px solid rgba(46,230,200,.35);margin-bottom:18px}
+.s7 .cols li{list-style:none;font:400 21px/1.4 "JetBrains Mono";color:var(--ink);padding:9px 0 9px 26px;position:relative}
+.s7 .cols li::before{content:"";position:absolute;left:0;top:19px;width:10px;height:10px;border-radius:3px;background:var(--teal);box-shadow:0 0 8px var(--teal)}
+.s7 .cols .next li::before{background:var(--amber);box-shadow:0 0 8px var(--amber)}
+.s7 .links{position:absolute;left:1000px;right:96px;bottom:118px;display:grid;grid-template-columns:200px 1fr;gap:36px;align-items:center;padding:24px}
+.s7 .links img{width:200px;height:200px;border-radius:12px;display:block}
+.s7 .links a{display:block;text-decoration:none;font:600 30px/1.2 "JetBrains Mono";color:var(--teal)}
+.s7 .links small{display:block;font:400 21px/1 "JetBrains Mono";color:var(--ink2);margin:10px 0 26px}
+.s7 .links div > :last-child{margin-bottom:0}
+.s7 .ai{position:absolute;left:96px;right:96px;bottom:72px;font:400 14px/1.3 "JetBrains Mono";color:var(--ink3);z-index:5}
+/* fixes v2 */
+.s1 .bgimg::after{background:
+  linear-gradient(90deg,#04070c 0%,#04070c 44%,rgba(4,7,12,.8) 56%,rgba(4,7,12,.3) 75%,rgba(4,7,12,.55) 100%),
+  linear-gradient(180deg,rgba(4,7,12,.95) 0%,transparent 14%),
+  linear-gradient(0deg,rgba(4,7,12,.9) 0%,transparent 30%)}
+.s1 .hero{top:130px;width:980px}
+.s1 h1{font-size:170px}
+.s1 .tag{font-size:64px;margin-top:22px}
+.s1 .rule{margin-top:26px}
+.s1 .lead{max-width:880px;margin-top:22px;font-size:29px}
+.s1 .info{bottom:96px;padding:6px 34px}
+.s1 .row{padding:12px 0}
+.s1 .qr{bottom:96px}
+.s2 .left{top:140px;width:660px}
+.s2 h2{font-size:84px}
+.s2 .left p{margin-top:20px;font-size:27px}
+.s2 .rule{margin-top:28px}
+.s2 .call{margin-top:26px;font-size:27px;padding:20px 26px}
+.s2 .pair{top:230px}
+.s4 .flow{top:400px}
+.s4 .st{min-height:0;height:320px;padding:26px 24px}
+.s4 .band{height:170px;grid-template-columns:280px 1fr 440px}
+.s4 .big{font-size:110px}
+.s4 .badge{font-size:17px}
+.s5 .head{top:140px}
+.s5 .head .big{font-size:120px}
+.s5 .head h2{font-size:64px;margin-top:10px}
+.s5 td{padding:19px 34px;font-size:26px}
+.s5 th{padding:22px 34px}
+.s6 .left{top:140px}
+.s6 h2{font-size:86px}
+.s6 .sub{margin-top:24px}
+.s6 .stats{margin-top:30px}
+.s6 .stat{padding:22px 28px}
+.s6 .stat b{font-size:72px}
+.s7 .right{top:140px}
+.s7 h2{font-size:66px}
+.s7 .cols{margin-top:30px}
+.s7 .cols h3{font-size:22px;margin-bottom:10px;padding-bottom:14px}
+.s7 .cols li{font-size:20px;padding:6px 0 6px 26px}
+.s7 .cols li::before{top:15px}
+.s7 .links{bottom:110px;grid-template-columns:170px 1fr;padding:22px 26px;gap:32px}
+.s7 .links img{width:170px;height:170px}
+.s7 .links a{font-size:28px}
+.s7 .links small{font-size:19px;margin:8px 0 20px}
+</style>
+</head>
+<body>
+
+<!-- 1 -->
+<section class="slide s1">
+  <div class="bgimg"></div>
+  <div class="top"><span class="kicker"><i></i>01 · Mission</span><span class="prog"><b class="on"></b><b></b><b></b><b></b><b></b><b></b><b></b></span></div>
+  <div class="hero z">
+    <h1>ARCNAVE</h1>
+    <div class="tag">Watch the sky change.<br><span class="accent">Find what moves.</span></div>
+    <div class="rule"><span></span><em></em></div>
+    <p class="lead">Real NASA SPHEREx images of any spot in the sky, played as a film, with every mover measured.</p>
+  </div>
+  <div class="info glass z">
+    <div class="row"><span class="k">CHALLENGE</span><span class="v">Planet X and SPHEREx</span></div>
+    <div class="row"><span class="k">TEAM</span><span class="v team">ARCNAVE · VL DEENADAYALAN · GOKULRAJ B · KISHORE R<br>AKASH B · ASWIN V · SABARI VIGNESH S</span></div>
+    <div class="row"><span class="k">WEB</span><span class="v">arcnave.vldeena2008.workers.dev</span></div>
+    <div class="row"><span class="k">CODE</span><span class="v">github.com/deen2923/arcnave</span></div>
+    <div class="row"><span class="k">DATA</span><span class="v">NASA SPHEREx via NASA/IPAC IRSA</span></div>
+  </div>
+  <div class="qr glass z"><img src="a/p1_4.png" alt=""><div>SCAN · LIVE APP</div></div>
+  <div class="foot"><span class="brand">ARCNAVE · PLANET X AND SPHEREx</span><span class="pg"><b>01</b> / 07</span></div>
+</section>
+
+<!-- 2 -->
+<section class="slide s2">
+  <div class="top"><span class="kicker"><i></i>02 · The problem</span><span class="prog"><b class="on"></b><b class="on"></b><b></b><b></b><b></b><b></b><b></b></span></div>
+  <div class="left z">
+    <h2>Millions of sources.<br><span class="accent">Which one moved?</span></h2>
+    <div class="rule"><span></span><em></em></div>
+    <p class="lead">SPHEREx photographs the whole sky every six months in 102 infrared colours.</p>
+    <p class="lead">Movers hide among millions of sources.</p>
+    <p class="lead">In 1930 Clyde Tombaugh found Pluto by blinking two plates. That power belongs in everyone’s hands.</p>
+    <div class="call"><b>The challenge:</b> a public tool that shows how SPHEREx images change over time.</div>
+  </div>
+  <div class="pair z">
+    <div class="pane"><div class="lab">PASS 1 <span>AUG 2025</span></div><div class="shot"><img src="a/p2_5.png" alt=""></div></div>
+    <div class="gap"><svg width="110" height="24" viewBox="0 0 110 24"><path d="M2 12h98" stroke="#ffb547" stroke-width="3" stroke-dasharray="6 6"/><path d="M92 3l14 9-14 9" fill="none" stroke="#ffb547" stroke-width="3"/></svg>359 DAYS<br>APART</div>
+    <div class="pane"><div class="lab">PASS 3 <span>AUG 2026</span></div><div class="shot"><img src="a/p2_6.png" alt=""></div></div>
+  </div>
+  <div class="foot"><span class="brand">ARCNAVE · PLANET X AND SPHEREx</span><span class="pg"><b>02</b> / 07</span></div>
+</section>
+
+<!-- 3 -->
+<section class="slide s3">
+  <div class="top"><span class="kicker"><i></i>03 · The tool</span><span class="prog"><b class="on"></b><b class="on"></b><b class="on"></b><b></b><b></b><b></b><b></b></span></div>
+  <div class="left z">
+    <h2>Type a spot.<br>Watch it <span class="accent">move.</span></h2>
+    <div class="steps">
+      <div class="step glass"><div class="n">1</div><div class="t">Type any RA/Dec or name</div></div>
+      <div class="step glass"><div class="n">2</div><div class="t">NASA’s real SPHEREx passes play like a film</div></div>
+      <div class="step glass"><div class="n">3</div><div class="t">Movers are circled pass by pass, measured and checked</div></div>
+    </div>
+  </div>
+  <div class="shot win z"><div class="bar"><i></i><i></i><i></i></div><img src="a/p3_17.png" alt=""></div>
+  <div class="chips z">
+    <div class="chip">Film</div><div class="chip">Blink</div><div class="chip">Difference</div><div class="chip">Gaia &amp; WISE overlays</div><div class="chip">Spectra</div>
+    <div class="chip">Light curves</div><div class="chip">Hide Planet X</div><div class="chip">Game</div><div class="chip">4 languages</div><div class="chip">Phone</div>
+  </div>
+  <div class="foot"><span class="brand">ARCNAVE · PLANET X AND SPHEREx</span><span class="pg"><b>03</b> / 07</span></div>
+</section>
+
+<!-- 4 -->
+<section class="slide s4">
+  <div class="top"><span class="kicker"><i></i>04 · The data</span><span class="prog"><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b></b><b></b><b></b></span></div>
+  <div class="head z">
+    <h2>From NASA’s archive<br>to a <span class="accent">measured motion</span></h2>
+    <div class="rule"><span></span><em></em></div>
+  </div>
+  <div class="flow z">
+    <div class="st glass"><div class="num">1</div><div class="nm">FIND</div><p>IRSA TAP lists every SPHEREx image (QR2, QR3, DR1)</p></div>
+    <div class="st glass"><div class="num">2</div><div class="nm">READ</div><p>4 MB, not 65 MB: only the rows needed, from NASA's AWS copy</p></div>
+    <div class="st glass"><div class="num">3</div><div class="nm">CLEAN</div><p>pipeline FLAGS and zodiacal light removed</p></div>
+    <div class="st glass"><div class="num">4</div><div class="nm">ALIGN</div><p>every image registered on ESA Gaia DR3 stars</p></div>
+    <div class="st glass"><div class="num">5</div><div class="nm">MEASURE</div><p>PSF fits, motion through the passes</p></div>
+    <div class="st glass"><div class="num">6</div><div class="nm">CHECK</div><p>Gaia DR3, NASA WISE/ CatWISE2020, SkyBoT, MPC, JPL Horizons</p></div>
+  </div>
+  <div class="band z">
+    <div class="big">8 / 8</div>
+    <div class="txt"><b>challenge resources used</b>IRSA SPHEREx · tutorial notebooks · WiseView · Gaia DR3 · CSA NEOSSat · CADC · NEOSSat tutorial · open dataset</div>
+    <div class="badge">NASA DR1 (NOV 2026) PICKED UP<br>WITH NO CODE CHANGE</div>
+  </div>
+  <div class="foot"><span class="brand">ARCNAVE · PLANET X AND SPHEREx</span><span class="pg"><b>04</b> / 07</span></div>
+</section>
+
+<!-- 5 -->
+<section class="slide s5">
+  <div class="top"><span class="kicker"><i></i>05 · Results</span><span class="prog"><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b></b><b></b></span></div>
+  <div class="head z">
+    <div class="big">5 / 5</div>
+    <h2>NASA test targets,<br>measured</h2>
+  </div>
+  <div class="shot win z"><div class="bar"><i></i><i></i><i></i></div><img src="a/p5_3.png" alt="" style="object-position:top"></div>
+  <table class="z">
+    <tr><th>TARGET</th><th>MEASURED BY ARCNAVE</th><th>REFERENCE</th><th>VERDICT</th></tr>
+    <tr><td>Barnard's Star</td><td>9.7" north in 359 days (9.9"/yr)</td><td class="ref">catalogue 10.2"</td><td class="ok"><span>✓ Motion seen</span></td></tr>
+    <tr><td>Epsilon Indi B</td><td>4.3 ± 0.3"/yr over 4 passes</td><td class="ref">catalogue 4.7"</td><td class="ok"><span>✓ Motion seen</span></td></tr>
+    <tr><td>WISE 0855</td><td>8.82 ± 1.10"/yr, 11.8σ</td><td class="ref">CatWISE2020 7.94"</td><td class="ok"><span>✓ Agrees</span></td></tr>
+    <tr><td>RW Aurigae</td><td>faded 0.74 mag in 6 of 6 colours</td><td class="ref">comparison stars 0.13 mag</td><td class="ok"><span>✓ Change seen</span></td></tr>
+    <tr><td>R Draconis</td><td>changed 1.24 mag at 0.85 µm</td><td class="ref">comparison stars 0.12-0.13 mag</td><td class="ok"><span>✓ Change seen</span></td></tr>
+  </table>
+  <div class="foot"><span class="brand">ARCNAVE · PLANET X AND SPHEREx</span><span class="pg"><b>05</b> / 07</span></div>
+</section>
+
+<!-- 6 -->
+<section class="slide s6">
+  <div class="top"><span class="kicker"><i></i>06 · Trust</span><span class="prog"><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b></b></span></div>
+  <div class="left z">
+    <h2>We tried<br>to <span class="accent">fool it first.</span></h2>
+    <div class="sub">Rigorous tests. Honest reporting.</div>
+    <div class="stats">
+      <div class="stat glass"><b>18</b><span>test fields chosen before the runs</span></div>
+      <div class="stat glass"><b>19,880</b><span>fake planets hidden and searched for</span></div>
+      <div class="stat glass"><b class="amber">18 / 18</b><span>fields where a planet at 1,000 AU was found</span></div>
+      <div class="stat glass"><b>82%</b><span>of 720 stars caught at 1.5x brighter</span></div>
+    </div>
+  </div>
+  <div class="close z">Every result says how sure we are.<br>Misses are shown. Nothing is ever called a discovery.</div>
+  <div class="shot win z"><div class="bar"><i></i><i></i><i></i></div><img src="a/p6_6.png" alt=""></div>
+  <div class="foot"><span class="brand">ARCNAVE · PLANET X AND SPHEREx</span><span class="pg"><b>06</b> / 07</span></div>
+</section>
+
+<!-- 7 -->
+<section class="slide s7">
+  <div class="top" style="left:1000px"><span class="kicker"><i></i>07 · Impact</span><span class="prog"><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b><b class="on"></b></span></div>
+  <div class="phone z"><img src="a/p7_6.png" alt=""></div>
+  <div class="shot win"><div class="bar"><i></i><i></i><i></i></div><img src="a/p7_7.png" alt="" style="object-position:top"></div>
+  <div class="right z">
+    <h2>Open it, type any spot in the sky, and <span class="accent">watch it change.</span></h2>
+    <div class="cols">
+      <div><h3>FOR EVERYONE</h3><ul>
+        <li>4 languages with narration (English, Tamil, Hindi, Spanish)</li>
+        <li>Works on phones</li>
+        <li>60-second Find the asteroid game</li>
+        <li>Python and Jupyter export</li>
+        <li>Citizen-science checks (Backyard Worlds style)</li></ul></div>
+      <div class="next"><h3>WHAT'S NEXT</h3><ul>
+        <li>Re-measure every result on SPHEREx DR1</li>
+        <li>A volunteer mode where many people check the same field</li></ul></div>
+    </div>
+  </div>
+  <div class="links glass z">
+    <img src="a/p7_5.png" alt="">
+    <div>
+      <a>arcnave.vldeena2008.workers.dev</a><small>Live app · opens without login</small>
+      <a>github.com/deen2923/arcnave</a><small>Code · public on GitHub</small>
+    </div>
+  </div>
+  <div class="ai">AI disclosure: code written with help from an AI assistant (Claude); tour narration uses AI text-to-speech. All data and results come from real archive data, computed by our code.</div>
+  <div class="foot"><span class="brand">ARCNAVE · PLANET X AND SPHEREx</span><span class="pg"><b>07</b> / 07</span></div>
+</section>
+
+</body>
+</html>
