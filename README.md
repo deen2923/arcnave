@@ -3,7 +3,7 @@
 Real SPHEREx images in a sky viewer, with known movers. Needs Node 18+ and internet. No npm install.
 
 ## For judges (NASA Space Apps 2026, "Planet X and SPHEREx")
-- **Live:** _link added at submission_ · **Code:** this repository
+- **Live:** <https://arcnave.vldeena2008.workers.dev> (Cloudflare, always on) · **Code:** this repository
 - **What it does:** type any RA/Dec (or a name) and NASA's real SPHEREx images of that spot play like a film; stars that
   move are circled pass by pass and measured, checked against ESA Gaia DR3 and NASA WISE (CatWISE2020). SPHEREx's own
   all-sky map, spectra, light curves, a Planet X shift-and-stack search, a game and guided tours in English, Tamil, Hindi
