@@ -303,7 +303,7 @@ async function spherexSearch(q) {
       'FROM spherex.artifact a JOIN spherex.plane p ON a.planeid = p.planeid ' +
       `WHERE CONTAINS(POINT('ICRS', ${ra}, ${dec}), p.poly) = 1 ORDER BY p.time_bounds_lower`;
     const url = 'https://irsa.ipac.caltech.edu/TAP/sync?REQUEST=doQuery&LANG=ADQL&FORMAT=csv&QUERY=' + encodeURIComponent(adql);
-    const images = P.normaliseSpherex(P.parseCSV(await upstream(url, { timeout: 90000 })));
+    const images = P.normaliseSpherex(P.parseCSV(await upstream(url, { timeout: 90000, retries: 1 })));   // v0.57.15: one retry, as the other IRSA queries: with IRSA down, 4 tries of 90 s kept the page on "Searching..." for minutes
     const out = { ra, dec, count: images.length, images, checkedAt: new Date().toISOString() };   // v0.55 U7: when the archive was asked
     SEARCHES.push({ at: out.checkedAt, adql, ...out }); if (SEARCHES.length > 5) SEARCHES.shift();
     return out;

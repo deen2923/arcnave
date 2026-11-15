@@ -33,6 +33,68 @@ node test/psf.test.js # empirical PSF + fake injection, on real SPHEREx images
 node test/psf.official.test.js # ARCNAVE PSF vs the official SPHEREx PSF (slow, ~3 min)
 ```
 
+## v0.57.18: press a star and see it move (15 Nov 2026)
+- **The video opens on the star itself:** on a test target's field the video zooms to the target and stays on it, close
+  enough that its track is about 80 screen pixels long. The track is then drawn at its true size and the ring sits on the
+  star (the wide view drew the paths up to 19 times longer than real, away from the star). Follow off shows all movers.
+- **One colour in every pass:** each pass is shown in the same matched colour, the longest wavelength loaded. It showed the
+  image that came first in time: Barnard's Star at 4.9 µm in one pass and 3.4 µm in the next, so the whole picture changed.
+- **The target is always in the video:** WISE 0855 is too faint for a pass-by-pass track, so its known path is shown, dashed
+  and said to be so; its measurement stays on its card.
+- **Variable stars:** RW Aurigae and R Draconis do not move; they open on their report, which gives the brightness change.
+- Files: `public/app.js`, `public/arc.js`, `public/index.html`.
+
+## v0.57.17: the star's own tools next to the star, and every menu weighed (15 Nov 2026)
+- **Not a checklist, the controls themselves:** the numbered challenge checklist of v0.57.16 is gone from the tool. In its
+  place, at the top of the right panel, are the working controls for the open star, with their state: Video, Blink, Movers,
+  Add, Subtract; the 102-band slider and the six detectors; Spectrum, Gaia, WISE, Flags; the data releases of the images on
+  screen, the newest image's date and a check for new data; Copy link, Embed, Astropy, Aladin. The star's name and its RA and
+  Dec head the panel. Each control drives the tool's own button, so nothing is computed twice.
+- **A star opens as a video:** the five target cards on the start page open straight into the film.
+- **Every menu weighed against the challenge:** in Beginner the top bar keeps the RA / Dec box, field of view, Examples,
+  Tour, Tested and the view switches; Share (a second Copy link), the game, Learn and the language list are in Advanced. The
+  90-second story card leaves the controls once a star is open, so the five targets and the film are on screen unscrolled.
+- **Field of view applies at once:** picking 0.25°, 0.5° or 1° opens the same patch again at that size (it used to ask for
+  "Run agents here").
+- **Nothing cut or overlapping:** the controls panel is wide enough for its rows on 1280 to 1500px screens, and the play
+  bar's date and caption wrap inside the bar (they ran under the right panel).
+- **Start page, the main objective only:** the numbered objectives band of v0.57.16 is gone. Under the headline is one
+  sentence (enter RA and Dec, the images play like a little video, movers are easy to spot), the RA / Dec box, and one
+  example (Barnard's Star, as a video). The second Launch button, the story button, the trust line and the language list
+  left the hero; How it works and the five test targets follow as before.
+- **Five test targets at the top:** right under the sentence, five compact cards (picture, name, what ARCNAVE measured);
+  one press opens the target as a video. The long cards further down, the single example button and the pill above the
+  headline are gone. The site no longer names the hackathon (start page, About, the notebook, messages).
+- **Whole-sky screen:** the explanation of the map is in the right panel instead of on top of the map (the panel repeated
+  it), and the list of steps shows once something has run.
+- **Every button says what it does:** "Run agents here" is now "Open the spot in view", "Play the film" is "Play as a
+  video", "Time machine" is "Step by step", "Difference" is "Subtract", "Deep view" is "Add up images", "Light curve" is
+  "Brightness over time", "Agent report" is "Report on this patch", "Agents · progress" is "Progress, step by step", FOV is
+  "Field of view", Epoch is "Pass". The same words are used in the tours, the messages and the translations' keys.
+- Files: `public/index.html`, `public/arc.css`, `public/arc.js`, `public/app.js`, `public/tour.js`, `public/i18n.js`.
+
+## v0.57.16: the challenge's objectives where nobody has to look for them (15 Nov 2026)
+- **Start page: the 4 main objectives, first thing.** Under the menu, before the headline: enter RA and Dec, images like a little
+  video, moving objects easy to spot, tested on the five named targets. Each is a button (the box, the film on Barnard's Star,
+  the film on Epsilon Indi B, the five target cards).
+- **In the tool: the whole checklist next to the star, 13 of 13.** On top of "What am I seeing?": the 4 objectives and the
+  challenge's 9 potential considerations (new data releases, 102 bands and the 6 detectors, spectra on the fly, add or subtract
+  images, field of view, Gaia and WISE overlays, coordinates in the URL and embed, contamination flags, Astropy and Aladin).
+  A press does that point **on the star that is open**, with the tool's own buttons (the film, Changes, Difference, the Colour
+  slider, the star's spectrum, both overlays, Flags, Copy link, Python notebook...), and one line says what happened. On
+  tablets and phones it is one line across the top that scrolls sideways.
+- English only; the look is unchanged. Files: `public/index.html`, `public/arc.css`, `public/arc.js`.
+
+## v0.57.15: the start page shows only what the challenge asks; a clear message when NASA's archive is down (15 Nov 2026)
+- **Start page, same look, shorter:** the hero (enter RA and Dec or a name, Launch, Try Barnard's Star, the real blink), the three
+  steps and NASA's five test targets. The Features, Two ways in, Tested, What is SPHEREx and Learn and play sections are off the
+  start page (6,155 px to 3,306 px at 1440 px wide); what they said is still in the tool, on `about.html` and on `tools.html`.
+- **NASA's archive down:** on 15 Nov 2026 IRSA's TAP service answered "502 Proxy Error", and a newly typed place stayed on
+  "Searching the IRSA archive..." for minutes (4 tries of up to 90 s), then showed the raw HTML of the error. Now one retry, as
+  for the other IRSA queries (server.js and the Cloudflare edge-api.js), and the page says in plain words that NASA's archive
+  is not answering, that it is not ARCNAVE, and that the five test targets and the examples still open from saved images.
+  Measured with IRSA down: the message after 2 to 10 s. The saved targets are not affected (Epsilon Indi B: report after 30 s).
+
 ## v0.57.14: the trip by the galactic centre made shorter, the new field opens on time (15 Nov 2026)
 Asked by the team: after v0.57.13 a new field opened late.
 - Measured (cached fields, report time): the 2.3 s trip made the report 2 to 5 s later than a direct jump (WISE 0855

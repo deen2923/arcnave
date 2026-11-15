@@ -104,7 +104,7 @@
         'FROM spherex.artifact a JOIN spherex.plane p ON a.planeid = p.planeid ' +
         `WHERE CONTAINS(POINT('ICRS', ${ra}, ${dec}), p.poly) = 1 ORDER BY p.time_bounds_lower`;
       // a fresh check must reach the archive: no edge copy
-      const images = P().normaliseSpherex(P().parseCSV(await upstream(IRSA_TAP + encodeURIComponent(adql), { timeout: 90000, ttl: fresh ? 0 : ttlS(DAY) })));
+      const images = P().normaliseSpherex(P().parseCSV(await upstream(IRSA_TAP + encodeURIComponent(adql), { timeout: 90000, retries: 1, ttl: fresh ? 0 : ttlS(DAY) })));
       return { ra, dec, count: images.length, images, checkedAt: new Date().toISOString() };
     };
     if (!fresh) return cachedJSON(kind, key, DAY, run);

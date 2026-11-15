@@ -26,7 +26,7 @@ This notebook redoes, in plain Python, what [ARCNAVE](${p.url || 'https://github
 3. **Gaia DR3** stars moved to each image's date by their proper motions
 4. A **spectrum on the fly** at the centre, from each image's own wavelength table (WCS-WAVE)
 
-Made by ARCNAVE ${p.version ? 'v' + p.version + ' ' : ''}for the NASA Space Apps 2026 *Planet X and SPHEREx* challenge, in the style of [IRSA's SPHEREx tutorial notebooks](https://caltech-ipac.github.io/irsa-tutorials/spherex/).
+Made by ARCNAVE ${p.version ? 'v' + p.version + ' ' : ''}in the style of [IRSA's SPHEREx tutorial notebooks](https://caltech-ipac.github.io/irsa-tutorials/spherex/).
 Install once: \`pip install astroquery matplotlib reproject\`. Downloads are small cutouts, not whole 70 MB images.`],
       ['code', `import warnings
 warnings.simplefilter('ignore')          # astropy notes about SPHEREx's SIP keywords; harmless here
@@ -113,7 +113,7 @@ for ax in axes:
     ax.coords[0].set_ticklabel_visible(False); ax.coords[1].set_ticklabel_visible(False)
 plt.tight_layout(); plt.show()
 
-# The "little video" the challenge asks for: the passes one after the other
+# The "little video": the passes one after the other
 fig2, ax2 = plt.subplots(figsize=(5, 5)); ax2.axis('off')
 im = ax2.imshow(frames[0], origin='lower', cmap='gray', vmin=lo, vmax=hi)
 ax2.plot(x0, y0, 'o', mfc='none', mec='cyan', ms=22)
